@@ -2396,6 +2396,12 @@ div:empty,
     display: none !important;
 }
     </style>
+<style id="print-pgto-resumo-css">
+.print-pgto-resumo-mode body > *:not(#panelPgtoResumo) { display:none !important; }
+.print-pgto-resumo-mode #panelPgtoResumo { position:static !important; width:100% !important; margin:0 !important; padding:10px !important; box-shadow:none !important; }
+.print-pgto-resumo-mode .pgto-month-nav button { display:none !important; }
+.print-pgto-resumo-mode .lanc-actions { display:none !important; }
+</style>
 </head>
 
 <body class="dark-mode">
@@ -2526,6 +2532,7 @@ div:empty,
                             <button class="btn-primary" onclick="abrirModalListaCorte()" style="background: #4a5568; color: #fff;">Inserir Listas de Corte</button>
                             <button class="warning" style="color:#000" onclick="abrirModalConfig()">Ocultar/Mostrar Colunas</button>
                             <button class="success" onclick="abrirModalItem()">Adicionar Item</button>
+                            <button class="info" onclick="duplicarItem()" style="margin-left:8px;">📋 Duplicar Item</button>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -3490,6 +3497,7 @@ div:empty,
                         <button onclick="mudarMesPgto(-1)">◀</button>
                         <span id="pgtoMesAnoLabel">Jan/2026</span>
                         <button onclick="mudarMesPgto(1)">▶</button>
+                        <button onclick="imprimirPaginaPgtoResumo()" style="font-size:0.8rem;margin-left:8px;">🖨️ Imprimir</button>
                     </div>
 
                     <!-- Lançamentos table (grouped by obra) -->
@@ -4645,6 +4653,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
             
                 function trocarObra(id) {
                     db.obraAtualId = id;
+                    localStorage.setItem("esq_activeObra", id);
                     cronogramaInitialized = false;
                     salvarDB();
                     render();
@@ -4670,6 +4679,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         initCustoTab();
                     }
                     render();
+                    localStorage.setItem("esq_activeTab", aba);
                 }
             
                 
@@ -5713,44 +5723,35 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     URL.revokeObjectURL(url);
                 }
 
-    function exportarEspecificacoes() {
-        const obra = getObraAtual();
-        if (!obra || !obra.itens || !obra.itens.length) {
-            alert('Nenhum item encontrado na obra atual.');
-            return;
-        }
-        const obraNome = (obra.nome || obra.cliente || 'obra').replace(/[^a-zA-Z0-9À-ÿ]/g, '_');
-        const hoje = new Date().toISOString().slice(0, 10);
-        const fileName = 'especificacoes_' + obraNome + '_' + hoje + '.csv';
-
-        // Cabeçalho CSV
-        const header = 'Ref;Tipo;Loc;Vidro;Qtd;Larg;Alt;HasBottom;CtmProfile';
-        const rows = obra.itens.map(item => {
-            const ref = String(item.ref || '').replace(/;/g, ',');
-            const tipo = String(item.tipo || '').replace(/;/g, ',');
-            const loc = String(item.loc || item.local || '').replace(/;/g, ',');
-            const vidro = String(item.vidro || '').replace(/;/g, ',');
-            const qtd = item.qtd || item.quantidade || 0;
-            const larg = item.larg || item.largura || 0;
-            const alt = item.alt || item.altura || 0;
-            const hasBottom = item.hasBottom ? 'Sim' : 'Não';
-            const ctmProfile = String(item.ctmProfile || '').replace(/;/g, ',');
-            return [ref, tipo, loc, vidro, qtd, larg, alt, hasBottom, ctmProfile].join(';');
-        });
-
-        const csvContent = '﻿' + header + '
-' + rows.join('
-');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }
+            function duplicarItem() {
+              var obra = db.obras.find(function(o){ return o.id === db.obraAtualId; });
+              if(!obra || !obra.itens || obra.itens.length === 0) {
+                alert("Nenhum item para duplicar.");
+                return;
+              }
+              var lista = obra.itens.map(function(it, idx) {
+                return (idx + 1) + ". " + (it.ref || "(sem ref)") + " - " + (it.tipo || "(sem tipo)");
+              }).join("\n");
+              var escolha = prompt("Digite o NUMERO do item que deseja duplicar:\n\n" + lista);
+              if(escolha === null) return;
+              var idx = parseInt(escolha, 10) - 1;
+              if(isNaN(idx) || idx < 0 || idx >= obra.itens.length) {
+                alert("Numero invalido.");
+                return;
+              }
+              var orig = obra.itens[idx];
+              var novaRef = prompt("Ref do novo item:", orig.ref + " (copia)");
+              if(novaRef === null) return;
+              var clone = Object.assign({}, orig);
+              clone.id = "item_" + Date.now();
+              clone.ref = novaRef || (orig.ref + " (copia)");
+              clone.instalado = false;
+              clone.dataInstalacao = "";
+              clone.historicoMedicoes = [];
+              obra.itens.push(clone);
+              salvarDB();
+              render();
+            }
             
                 function renderRecebimentos(obra) {
                     const tbody = document.getElementById('tbodyRecebimento');
@@ -6995,7 +6996,20 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
             window.addEventListener('DOMContentLoaded', async () => {
                 carregarTemaPreferido();
-                trocarAba('itens');
+                const savedObra = localStorage.getItem("esq_activeObra");
+                if (savedObra && db.obras.find(o => o.id === savedObra)) {
+                  trocarObra(savedObra);
+                }
+                const savedTab = localStorage.getItem("esq_activeTab");
+                if (savedTab) {
+                  trocarAba(savedTab);
+                } else {
+                  trocarAba('itens');
+                }
+                const savedPgtoSubTab = localStorage.getItem("esq_pgtoSubTab");
+                if (savedPgtoSubTab) {
+                  trocarSubTabPgtoNovo(savedPgtoSubTab);
+                }
                 
                 // Puxa os dados atualizados do Supabase e depois inicializa a escuta
                 if (typeof carregarBancoDaNuvem === 'function') {
@@ -8516,6 +8530,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
             }
             
             function trocarSubTabPgtoNovo(tab) {
+              localStorage.setItem("esq_pgtoSubTab", tab);
               pgtoSubTab = tab;
               document.getElementById('subTabPgtoLancamentos').classList.toggle('active', tab === 'lancamentos');
               document.getElementById('subTabPgtoResumo').classList.toggle('active', tab === 'resumo');
@@ -8524,6 +8539,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('panelPgtoResumo').style.display = tab === 'resumo' ? '' : 'none';
               document.getElementById('panelPgtoColaboradores').style.display = tab === 'colaboradores' ? '' : 'none';
               if(tab === 'colaboradores') renderListaColaboradores();
+              renderPagamento();
             }
             
             function getColaboradoresAll() {
@@ -8703,6 +8719,19 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 selAjud.innerHTML += `<option value="${escaparHTML(c.id)}">${escaparHTML(c.nome)}</option>`;
               });
             }
+
+            function popularSelectsEditLanc() {
+              const selProf = document.getElementById('editLancProfissionais');
+              selProf.innerHTML = '';
+              getProfissionaisAll().forEach(c => {
+                selProf.innerHTML += `<option value="${escaparHTML(c.id)}">${escaparHTML(c.nome)}</option>`;
+              });
+              const selAjud = document.getElementById('editLancAjudantes');
+              selAjud.innerHTML = '';
+              getAjudantesAll().forEach(c => {
+                selAjud.innerHTML += `<option value="${escaparHTML(c.id)}">${escaparHTML(c.nome)}</option>`;
+              });
+            }
             
             // --- Data model ---
             // obra.lancamentosProducao = [{id, obraId, obraNome, data, mesAnoKey, instalacaoM2, material,
@@ -8829,6 +8858,15 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('editLancMaterial').value = lanc.material;
               document.getElementById('editLancTaxaProf').value = lanc.taxaProf;
               document.getElementById('editLancTaxaAjud').value = lanc.taxaAjud;
+              popularSelectsEditLanc();
+              const selProf = document.getElementById('editLancProfissionais');
+              Array.from(selProf.options).forEach(opt => {
+                opt.selected = (lanc.profissionais || []).includes(opt.value);
+              });
+              const selAjud = document.getElementById('editLancAjudantes');
+              Array.from(selAjud.options).forEach(opt => {
+                opt.selected = (lanc.ajudantes || []).includes(opt.value);
+              });
               document.getElementById('modalLancamentoPgto').style.display = 'flex';
             }
             
@@ -8843,8 +8881,10 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               lanc.material = document.getElementById('editLancMaterial').value.trim();
               lanc.taxaProf = parseFloat(document.getElementById('editLancTaxaProf').value) || 6;
               lanc.taxaAjud = parseFloat(document.getElementById('editLancTaxaAjud').value) || 4;
-              const numProf = (lanc.profissionais || []).length || 1;
-              const numAjud = (lanc.ajudantes || []).length || 1;
+              lanc.profissionais = Array.from(document.getElementById('editLancProfissionais').selectedOptions).map(o => o.value);
+              lanc.ajudantes = Array.from(document.getElementById('editLancAjudantes').selectedOptions).map(o => o.value);
+              const numProf = lanc.profissionais.length || 1;
+              const numAjud = lanc.ajudantes.length || 1;
               lanc.valorProf = lanc.instalacaoM2 * lanc.taxaProf / numProf;
               lanc.valorAjud = lanc.instalacaoM2 * lanc.taxaAjud / numAjud;
               salvarDB();
@@ -8854,6 +8894,12 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
             
             function fecharModalLancamento() {
               document.getElementById('modalLancamentoPgto').style.display = 'none';
+            }
+
+            function imprimirPaginaPgtoResumo() {
+              document.body.classList.add('print-pgto-resumo-mode');
+              window.print();
+              document.body.classList.remove('print-pgto-resumo-mode');
             }
             
             // --- Delete lançamento ---
@@ -9261,6 +9307,14 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         <div>
                             <label style="font-size:0.82rem;font-weight:600;">Taxa Ajudante R$/m²</label>
                             <input type="number" id="editLancTaxaAjud" step="0.01" min="0" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem;font-weight:600;">Profissionais</label>
+                            <select id="editLancProfissionais" multiple style="width:100%;min-height:60px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.82rem;font-weight:600;">Ajudantes</label>
+                            <select id="editLancAjudantes" multiple style="width:100%;min-height:60px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;"></select>
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -10730,6 +10784,19 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   salvarDB();
                   renderCustoDashboard();
                 };
+
+                window.duplicarCusto = function(id){
+                  var c = db.custosExtras.find(function(x){ return x.id===id; });
+                  if(!c) return;
+                  var novaDesc = prompt("Descricao do novo custo:", c.descricao);
+                  if(novaDesc === null) return;
+                  var clone = Object.assign({}, c);
+                  clone.id = "custo_" + Date.now();
+                  clone.descricao = novaDesc || c.descricao;
+                  db.custosExtras.push(clone);
+                  salvarDB();
+                  renderCustosExtras();
+                };
                 
                 window.renderCustoDashboard = function(){
                   var custos = getCustosFiltered();
@@ -10763,7 +10830,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       var vStr = c.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
                       html += '<tr><td>' + (c.data||"-") + '</td><td>' + escaparHTML(c.categoria) + '</td><td>' + escaparHTML(c.descricao) + '</td><td>' + escaparHTML(c.regiao||"-") + '</td>';
                       html += '<td>R$ ' + vStr + '</td>';
-                      html += '<td class="lanc-actions">' + (c._producao ? '<span style="font-size:0.75rem;color:#94a3b8;">Produção</span>' : '<button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button>' + '<button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button>') + '</td></tr>';
+                      html += '<td class="lanc-actions"><button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button><button class="btn-icon-sm" onclick="duplicarCusto(\'' + c.id + '\')" title="Duplicar">📋</button><button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button></td></tr>';
                     });
                     var gTotalStr = gTotal.toLocaleString("pt-BR", {minimumFractionDigits:2});
                     html += '</tbody><tfoot><tr class="lanc-totals-row"><td colspan="4"><strong>Total</strong></td><td><strong>R$ ' + gTotalStr + '</strong></td><td></td></tr></tfoot></table></div>';

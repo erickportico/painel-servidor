@@ -8485,6 +8485,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('panelPgtoResumo').style.display = tab === 'resumo' ? '' : 'none';
               document.getElementById('panelPgtoColaboradores').style.display = tab === 'colaboradores' ? '' : 'none';
               if(tab === 'colaboradores') renderListaColaboradores();
+              renderPagamento();
             }
             
             function getColaboradoresAll() {

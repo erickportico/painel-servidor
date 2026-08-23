@@ -3825,10 +3825,9 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                 .single();
 
             if (!error && data && data.dados) {
-                // Desempacota se estiver no formato { db: ... } ou pega o objeto direto
                 bancoEncontrado = data.dados.db ? data.dados.db : data.dados;
                 if (bancoEncontrado && bancoEncontrado.obras && bancoEncontrado.obras.length > 0) {
-                    fonte = 'Supabase Online';
+                    fonte = '⚡ Supabase Online';
                 }
             }
         }
@@ -3843,7 +3842,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
             if (backupLocal) {
                 bancoEncontrado = JSON.parse(backupLocal);
                 if (bancoEncontrado && bancoEncontrado.obras) {
-                    fonte = 'Servidor Local (HD)';
+                    fonte = '💾 Servidor Local (HD)';
                 }
             }
         } catch (errLocal) {
@@ -3851,74 +3850,32 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
         }
     }
 
-    // 3. Aplica os dados carregados globalmente
+    // 3. Aplica os dados carregados globalmente na aplicação
     if (bancoEncontrado && bancoEncontrado.obras) {
         db = bancoEncontrado;
         window.db = db;
         window.dbObras = db.obras;
         window.obrasDB = db.obras;
 
-        // Atualiza a chave principal do localStorage com os dados corretos
+        // Atualiza o localStorage principal
         localStorage.setItem('obrasDB_v8', JSON.stringify(db));
 
-        // Atualiza os componentes da interface
+        // Atualiza a interface do usuário
         if (typeof popularSelectObras === 'function') popularSelectObras();
         if (typeof preencherSelectObras === 'function') preencherSelectObras();
         if (typeof render === 'function') render();
 
         const totalObras = db.obras.length;
-        atualizarStatusNuvem(`⚡ ${fonte} (${totalObras} obras)`, 'ok');
-        console.log(`✅ ${totalObras} obras e dados carregados via ${fonte}!`);
-    } else {
-        atualizarStatusNuvem('⚠️ Erro ao carregar dados', 'erro');
-    }
-}
-    // 3. TENTATIVA 2 (FALLBACK HD): Lê direto do HD (localStorage) do navegador
-if (!obrasCarregadas) {
-    try {
-        const dadosLocais = localStorage.getItem('obrasDB_v8');
-        if (dadosLocais) {
-            const pacoteLocal = JSON.parse(dadosLocais);
-            const obrasTemp = pacoteLocal.db ? pacoteLocal.db.obras : (pacoteLocal.obras || pacoteLocal);
-            
-            if (Array.isArray(obrasTemp) && obrasTemp.length > 0) {
-                // Preserva o objeto completo ou o array de obras
-                obrasCarregadas = pacoteLocal.db ? pacoteLocal.db : pacoteLocal;
-                fonteDados = '💾 Servidor Local (HD)';
-            }
+        atualizarStatusNuvem(`${fonte} (${totalObras} obras)`, 'ok');
+        if (typeof mostrarToastPainel === 'function') {
+            mostrarToastPainel(`✅ ${totalObras} obras carregadas via ${fonte}!`, 'ok');
         }
-    } catch (erroHD) {
-        console.error('Erro ao ler do HD local:', erroHD);
-    }
-}
-    // 4. APLICAÇÃO DOS DADOS NA TELA
-    if (obrasCarregadas && obrasCarregadas.length > 0) {
-        // Atualiza a memória global do painel
-        if (typeof obrasDB !== 'undefined') obrasDB = obrasCarregadas;
-        if (typeof bancoDeDados !== 'undefined') bancoDeDados.obras = obrasCarregadas;
-        window.obrasDB = obrasCarregadas;
-
-        // Atualiza a cópia de sincronização local
-        localStorage.setItem('obrasDB_v8', JSON.stringify(obrasCarregadas));
-
-        // Define variáveis globais de controle
-        bancoNuvemRev = revBanco;
-        bancoNuvemDisponivel = true;
-        bancoNuvemCarregado = true;
-
-        // Redesenha a interface do usuário
-        render();
-
-        atualizarStatusNuvem(`${fonteDados} (${obrasCarregadas.length} obras)`, 'ok');
-        mostrarToastPainel(`✅ ${obrasCarregadas.length} obras carregadas via ${fonteDados}!`, 'ok');
         return true;
     } else {
-        // Fallback final: usa o cache emergencial do próprio navegador
-        bancoNuvemDisponivel = false;
-        atualizarStatusNuvem('⚠️ Servidores indisponíveis — usando dados do navegador', 'erro');
-        mostrarToastPainel('⚠️ Não foi possível ler da nuvem nem do HD. Exibindo dados em cache.', 'erro');
+        atualizarStatusNuvem('⚠️ Erro ao carregar dados', 'erro');
         return false;
     }
+}
 
 async function salvarNoServidorLocal() {
     try {

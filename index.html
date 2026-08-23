@@ -3873,23 +3873,24 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
         atualizarStatusNuvem('⚠️ Erro ao carregar dados', 'erro');
     }
 }
-    // 3. TENTATIVA 2 (FALLBACK HD): Se a nuvem falhar, lê do seu computador
-    if (!obrasCarregadas) {
-        try {
-            const resLocal = await fetch('/dados_painel.json', { cache: 'no-store' });
-            if (resLocal.ok) {
-                const pacoteLocal = await resLocal.json();
-                const dadosLocais = pacoteLocal.db ? pacoteLocal.db.obras : (pacoteLocal.obras || pacoteLocal);
-                if (Array.isArray(dadosLocais) && dadosLocais.length > 0) {
-                    obrasCarregadas = dadosLocais;
-                    revBanco = Number(pacoteLocal.revision || pacoteLocal.rev || 1);
-                    fonteDados = '💾 Servidor Local (HD)';
-                }
+    // 3. TENTATIVA 2 (FALLBACK HD): Lê direto do HD (localStorage) do navegador
+if (!obrasCarregadas) {
+    try {
+        const dadosLocais = localStorage.getItem('obrasDB_v8');
+        if (dadosLocais) {
+            const pacoteLocal = JSON.parse(dadosLocais);
+            const obrasTemp = pacoteLocal.db ? pacoteLocal.db.obras : (pacoteLocal.obras || pacoteLocal);
+            
+            if (Array.isArray(obrasTemp) && obrasTemp.length > 0) {
+                // Preserva o objeto completo ou o array de obras
+                obrasCarregadas = pacoteLocal.db ? pacoteLocal.db : pacoteLocal;
+                fonteDados = '💾 Servidor Local (HD)';
             }
-        } catch (erroHD) {
-            console.error('Erro ao ler do HD local:', erroHD);
         }
+    } catch (erroHD) {
+        console.error('Erro ao ler do HD local:', erroHD);
     }
+}
     // 4. APLICAÇÃO DOS DADOS NA TELA
     if (obrasCarregadas && obrasCarregadas.length > 0) {
         // Atualiza a memória global do painel

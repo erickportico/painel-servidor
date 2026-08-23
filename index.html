@@ -3803,51 +3803,62 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
     let fonteDados = '';
     let revBanco = 1;
 
-    // 1. TENTATIVA PRINCIPAL: Busca no Supabase (Tempo Real & Permanente)
+   async function carregarBancoDaNuvem() {
+    // 1. Backup de segurança no localStorage antes de qualquer tentativa
     try {
-        const { data, error } = await _supabase
-            .from('painel_dados')
-            .select('dados')
-            .eq('id', 1)
-            .maybeSingle();
-
-        if (!error && data && data.dados) {
-            const pacoteSupabase = data.dados;
-            const dados = pacoteSupabase.db ? pacoteSupabase.db.obras : (pacoteSupabase.obras || pacoteSupabase);
-            
-            if (Array.isArray(dados) && dados.length > 0) {
-                obrasCarregadas = dados;
-                revBanco = Number(pacoteSupabase.revision || pacoteSupabase.rev || 1);
-                fonteDados = '⚡ Supabase Realtime';
-                console.log('✅ Dados carregados com sucesso do Supabase!');
-            }
-        } else {
-            throw new Error("Sem dados no Supabase ou erro na consulta");
+        const backupPreNuvem = localStorage.getItem('obrasDB_v8');
+        if (backupPreNuvem) {
+            localStorage.setItem('obrasDB_v8_pre_nuvem_backup', backupPreNuvem);
         }
-    } catch (e) {
-        console.warn('⚠️ Supabase indisponível ou sem dados. Tentando Render...', e);
+    } catch (e) { console.warn('Erro ao fazer backup pré-nuvem:', e); }
 
-        // 2. TENTATIVA 2 (FALLBACK): Busca na NUVEM (Render)
-        try {
-            const resNuvem = await fetch('https://painel-obras-supabase-realtime.onrender.com/dados_painel.json', {
-                cache: 'no-store',
-                signal: AbortSignal.timeout(4000)
-            });
+    atualizarStatusNuvem('🔄 Conectando aos servidores...', 'normal');
 
-            if (resNuvem.ok) {
-                const pacoteNuvem = await resNuvem.json();
-                const dados = pacoteNuvem.db ? pacoteNuvem.db.obras : (pacoteNuvem.obras || pacoteNuvem);
-                if (Array.isArray(dados) && dados.length > 0) {
-                    obrasCarregadas = dados;
-                    revBanco = Number(pacoteNuvem.revision || pacoteNuvem.rev || 1);
-                    fonteDados = '☁️ Nuvem Render';
+    // 2. Tenta carregar do Supabase com verificação de segurança
+    try {
+        if (typeof _supabase !== 'undefined' && _supabase) {
+            const { data, error } = await _supabase
+                .from('painel_dados')
+                .select('dados')
+                .eq('id', 1)
+                .single();
+
+            if (!error && data && data.dados) {
+                const dadosNuvem = data.dados.db?.obras || data.dados.obras;
+                if (dadosNuvem && dadosNuvem.length > 0) {
+                    db.obras = dadosNuvem;
+                    window.obrasDB = dadosNuvem;
+                    console.log("⚡ Dados carregados com sucesso do Supabase!");
+                    atualizarStatusNuvem(`⚡ Supabase Online (${dadosNuvem.length} obras)`, 'ok');
+                    if (typeof render === 'function') render();
+                    return;
                 }
             }
-        } catch (errRender) {
-            console.warn('⚠️ Nuvem Render indisponível. Redirecionando para o HD local...');
+        } else {
+            console.warn('⚠️ Cliente _supabase não inicializado. Usando dados locais...');
         }
+    } catch (errSupabase) {
+        console.warn('⚠️ Supabase indisponível no momento:', errSupabase);
     }
 
+    // 3. Fallback: Se o Supabase falhar ou estiver sem dados, recupera o backup local
+    try {
+        const backupLocal = localStorage.getItem('obrasDB_v8') || localStorage.getItem('obrasDB_v8_pre_nuvem_backup');
+        if (backupLocal) {
+            const dadosRestaurados = JSON.parse(backupLocal);
+            const listaObras = dadosRestaurados.obras || dadosRestaurados;
+            if (listaObras && listaObras.length > 0) {
+                db.obras = listaObras;
+                window.obrasDB = listaObras;
+                console.log(`📦 Dados recuperados do Backup Local (${listaObras.length} obras)`);
+                atualizarStatusNuvem(`📦 Backup Local (${listaObras.length} obras)`, 'normal');
+                if (typeof render === 'function') render();
+            }
+        }
+    } catch (errLocal) {
+        console.error('Erro ao carregar do localStorage:', errLocal);
+    }
+}
     // 3. TENTATIVA 2 (FALLBACK HD): Se a nuvem falhar, lê do seu computador
     if (!obrasCarregadas) {
         try {
@@ -3988,19 +3999,28 @@ async function salvarNoServidorLocal() {
         
         try { render(); } catch (e) { console.warn(e); }
         var dbPreNuvem = JSON.parse(JSON.stringify(db));
-        await carregarBancoDaNuvem();
-        // PROTEÃ‡ÃƒO: Se apÃ³s merge db.obras estÃ¡ vazio, restaurar backup local
+      await carregarBancoDaNuvem();
+
+        // PROTEÇÃO: Se após o carregamento da nuvem db.obras está vazio, restaura o backup local
         if (!db.obras || db.obras.length === 0) {
-            console.warn('[INIT] ApÃ³s merge nuvem, db.obras vazio â€” restaurando backup local.');
-            db = dbPreNuvem;
-            salvarLocalComoBackup();
-            render();
-            mostrarToastPainel('âš ï¸ Dados da nuvem estavam vazios. Dados locais preservados.', 'erro');
+            console.warn('[INIT] Após tentativa de carregar da nuvem, db.obras ficou vazio — restaurando backup local.');
+            if (typeof dbPreNuvem !== 'undefined' && dbPreNuvem && dbPreNuvem.obras && dbPreNuvem.obras.length > 0) {
+                db = dbPreNuvem;
+            } else {
+                // Fallback direto do localStorage se dbPreNuvem também estiver vazio
+                const backupBruto = localStorage.getItem('obrasDB_v8') || localStorage.getItem('obrasDB_v8_pre_nuvem_backup');
+                if (backupBruto) {
+                    db = JSON.parse(backupBruto);
+                }
+            }
+            if (typeof salvarLocalComoBackup === 'function') salvarLocalComoBackup();
+            if (typeof render === 'function') render();
+            if (typeof mostrarToastPainel === 'function') mostrarToastPainel('⚠️ Dados da nuvem indisponíveis. Backup local mantido.', 'erro');
         } else {
-            // Verificar se alguma obra local com valorContrato > 0 foi perdida
-            var idsPreNuvem = new Set((dbPreNuvem.obras || []).map(function(o) { return o.id; }));
+            // Verificar se alguma obra local importante foi ignorada no merge
+            var idsPreNuvem = new Set(((dbPreNuvem && dbPreNuvem.obras) || []).map(function(o) { return o.id; }));
             var idsPosMerge = new Set(db.obras.map(function(o) { return o.id; }));
-            var obrasPerdidas = (dbPreNuvem.obras || []).filter(function(o) {
+            var obrasPerdidas = ((dbPreNuvem && dbPreNuvem.obras) || []).filter(function(o) {
                 return !idsPosMerge.has(o.id) && (o.valorContrato || 0) > 0;
             });
             if (obrasPerdidas.length > 0) {
@@ -4039,7 +4059,7 @@ function iniciarAtualizacaoEmTempoReal() {
             `Obras: <b>${r.obras}</b> &nbsp;|&nbsp; Itens de produção: <b>${r.itens}</b> &nbsp;|&nbsp; Recebimentos: <b>${r.recebimentos}</b>`;
     }
     }
-    
+
     function fecharBancoCompartilhado() {
         document.getElementById('modalBancoCompartilhado').style.display = 'none';
     }
@@ -10406,6 +10426,19 @@ if (typeof window.popularCustoObraSelect !== 'function') {
         // Função auxiliar para evitar o erro ReferenceError no render()
     };
 }
+
+<!-- 1. Script CDN do Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+  // 2. Inicialização do Cliente Supabase
+  const SUPABASE_URL = 'https://hosvxzayiuklouhrqeuv.supabase.co/rest/v1/';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvc3Z4emF5aXVrbG91aHJxZXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDIyMzYsImV4cCI6MjEwMzAxODIzNn0.sq3JsZyT7TKPQpQTsD9Ykn-V1FSWm2o8R4Eud-7yewQ';
+
+  // Declaração da variável global esperada pelas funções
+  var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
 </script>
 
 </body>

@@ -3984,37 +3984,38 @@ async function salvarNoServidorLocal() {
 }
 }
   function sincronizarBancoNuvem() {
-        if (!sincronizacaoNuvemAtiva) return;
+    if (!sincronizacaoNuvemAtiva) return;
 
-        filaSincronizacaoNuvem = filaSincronizacaoNuvem.then(async () => {
-            sincronizacaoPutEmAndamento = true;
-            const bancoParaEnviar = JSON.parse(JSON.stringify(db));
-            atualizarStatusNuvem('☁️ Salvando...', 'normal');
+    filaSincronizacaoNuvem = filaSincronizacaoNuvem.then(async () => {
+        sincronizacaoPutEmAndamento = true;
+        const bancoParaEnviar = JSON.parse(JSON.stringify(db));
+        atualizarStatusNuvem('☁️ Salvando...', 'normal');
 
-            try {
-                // Envia direto para a tabela do Supabase
-                const { error } = await _supabase
-                    .from('painel_dados')
-                    .upsert({ 
-                        id: 1, 
-                        dados: { db: bancoParaEnviar, revision: Date.now() }, 
-                        updated_at: new Date() 
-                    });
+        try {
+            // Salva o objeto db diretamente na coluna 'dados'
+            const { error } = await _supabase
+                .from('painel_dados')
+                .upsert({ 
+                    id: 1, 
+                    dados: bancoParaEnviar, 
+                    updated_at: new Date() 
+                });
 
-                if (!error) {
-                    atualizarStatusNuvem('⚡ Supabase Realtime Ativo', 'ok');
-                } else {
-                    console.error("Erro no Supabase:", error);
-                    atualizarStatusNuvem('⚠️ Erro de Salvamento', 'erro');
-                }
-            } catch (erro) {
-                console.error("Falha ao conectar no Supabase:", erro);
-                atualizarStatusNuvem('⚠️ Supabase Indisponível', 'erro');
-            } finally {
-                sincronizacaoPutEmAndamento = false;
+            if (!error) {
+                atualizarStatusNuvem('⚡ Supabase Realtime Ativo', 'ok');
+                console.log("✅ Dados da nova obra salvos com sucesso na nuvem!");
+            } else {
+                console.error("Erro no Supabase:", error);
+                atualizarStatusNuvem('⚠️ Erro de Salvamento', 'erro');
             }
-        }).catch(erro => console.error('Fila de sincronização:', erro));
-    }
+        } catch (erro) {
+            console.error("Falha ao conectar no Supabase:", erro);
+            atualizarStatusNuvem('⚠️ Supabase Indisponível', 'erro');
+        } finally {
+            sincronizacaoPutEmAndamento = false;
+        }
+    }).catch(erro => console.error('Fila de sincronização:', erro));
+}
 
     async function inicializarBancoNuvem() {
         

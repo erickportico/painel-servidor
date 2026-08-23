@@ -5712,45 +5712,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     a.click();
                     URL.revokeObjectURL(url);
                 }
-
-    function exportarEspecificacoes() {
-        const obra = getObraAtual();
-        if (!obra || !obra.itens || !obra.itens.length) {
-            alert('Nenhum item encontrado na obra atual.');
-            return;
-        }
-        const obraNome = (obra.nome || obra.cliente || 'obra').replace(/[^a-zA-Z0-9À-ÿ]/g, '_');
-        const hoje = new Date().toISOString().slice(0, 10);
-        const fileName = 'especificacoes_' + obraNome + '_' + hoje + '.csv';
-
-        // Cabeçalho CSV
-        const header = 'Ref;Tipo;Loc;Vidro;Qtd;Larg;Alt;HasBottom;CtmProfile';
-        const rows = obra.itens.map(item => {
-            const ref = String(item.ref || '').replace(/;/g, ',');
-            const tipo = String(item.tipo || '').replace(/;/g, ',');
-            const loc = String(item.loc || item.local || '').replace(/;/g, ',');
-            const vidro = String(item.vidro || '').replace(/;/g, ',');
-            const qtd = item.qtd || item.quantidade || 0;
-            const larg = item.larg || item.largura || 0;
-            const alt = item.alt || item.altura || 0;
-            const hasBottom = item.hasBottom ? 'Sim' : 'Não';
-            const ctmProfile = String(item.ctmProfile || '').replace(/;/g, ',');
-            return [ref, tipo, loc, vidro, qtd, larg, alt, hasBottom, ctmProfile].join(';');
-        });
-
-        const csvContent = '﻿' + header + '
-' + rows.join('
-');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }
             
                 function renderRecebimentos(obra) {
                     const tbody = document.getElementById('tbodyRecebimento');
@@ -10763,7 +10724,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       var vStr = c.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
                       html += '<tr><td>' + (c.data||"-") + '</td><td>' + escaparHTML(c.categoria) + '</td><td>' + escaparHTML(c.descricao) + '</td><td>' + escaparHTML(c.regiao||"-") + '</td>';
                       html += '<td>R$ ' + vStr + '</td>';
-                      html += '<td class="lanc-actions">' + (c._producao ? '<span style="font-size:0.75rem;color:#94a3b8;">Produção</span>' : '<button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button>' + '<button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button>') + '</td></tr>';
+                      html += '<td class="lanc-actions"><button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button><button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button></td></tr>';
                     });
                     var gTotalStr = gTotal.toLocaleString("pt-BR", {minimumFractionDigits:2});
                     html += '</tbody><tfoot><tr class="lanc-totals-row"><td colspan="4"><strong>Total</strong></td><td><strong>R$ ' + gTotalStr + '</strong></td><td></td></tr></tfoot></table></div>';

@@ -1309,17 +1309,17 @@ body.dark-mode .lanc-table tfoot tr { border-top-color: #b45309; }
 body.dark-mode .lanc-totals-row { background: #2d2006; color: #fbbf24; }
 body.dark-mode .btn-icon-sm { border-color: var(--border,#334155); color: var(--text,#f8fafc); }
 body.dark-mode .btn-icon-sm:hover { background: var(--card-bg,#1e293b); }
-/* Dark mode: payment modals (modal-bg) */
-body.dark-mode .modal-bg { background: rgba(0,0,0,0.75); }
-body.dark-mode .modal-bg .modal { background: var(--card-bg,#1e293b); border: 1px solid var(--border,#334155); }
-body.dark-mode .modal-bg .modal h3 { color: var(--text,#f8fafc); }
-body.dark-mode .modal-bg .modal label { color: var(--text-light,#94a3b8); }
-body.dark-mode .modal-bg .modal input,
-body.dark-mode .modal-bg .modal select,
-body.dark-mode .modal-bg .modal textarea { background: var(--input-bg,#0f172a); color: var(--text,#f8fafc); border-color: var(--border,#334155); }
-body.dark-mode .modal-bg .modal p { color: var(--text-light,#94a3b8); }
-body.dark-mode .modal-bg .modal .btn-cancel { background: #334155; color: var(--text,#f8fafc); border-color: var(--border,#334155); }
-body.dark-mode .modal-bg .modal .btn-save { background: #ff7b00; color: #fff; }
+/* Dark mode: payment modals (modal-overlay) */
+body.dark-mode .modal-overlay { background: rgba(0,0,0,0.75); }
+body.dark-mode .modal-overlay .modal { background: var(--card-bg,#1e293b); border: 1px solid var(--border,#334155); }
+body.dark-mode .modal-overlay .modal h3 { color: var(--text,#f8fafc); }
+body.dark-mode .modal-overlay .modal label { color: var(--text-light,#94a3b8); }
+body.dark-mode .modal-overlay .modal input,
+body.dark-mode .modal-overlay .modal select,
+body.dark-mode .modal-overlay .modal textarea { background: var(--input-bg,#0f172a); color: var(--text,#f8fafc); border-color: var(--border,#334155); }
+body.dark-mode .modal-overlay .modal p { color: var(--text-light,#94a3b8); }
+body.dark-mode .modal-overlay .modal .btn-cancel { background: #334155; color: var(--text,#f8fafc); border-color: var(--border,#334155); }
+body.dark-mode .modal-overlay .modal .btn-save { background: #ff7b00; color: #fff; }
 /* Dark mode: pagamento form inputs */
 body.dark-mode #tab-pagamento input,
 body.dark-mode #tab-pagamento select { background: var(--input-bg,#0f172a); color: var(--text,#f8fafc); border-color: var(--border,#334155); }
@@ -3781,8 +3781,8 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                 </div>
             </div>
             <!-- Modal Importar Lista de Materiais / Esquadrias -->
-            <div class="modal-bg" id="modalImportarLista" style="display:none;">
-                <div class="modal" style="width:90%; max-width:750px;">
+            <div class="modal-bg" id="modalImportarLista" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+                <div class="modal-card" style="background:#fff; width:90%; max-width:750px; border-radius:8px; padding:20px; box-shadow:0 4px 15px rgba(0,0,0,0.2); font-family:sans-serif;">
 
                     <h3 style="margin-top:0; color:#2c3e50; display:flex; align-items:center; gap:8px;">
             Importar Lista de Materiais / Esquadrias
@@ -5712,45 +5712,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     a.click();
                     URL.revokeObjectURL(url);
                 }
-
-    function exportarEspecificacoes() {
-        const obra = getObraAtual();
-        if (!obra || !obra.itens || !obra.itens.length) {
-            alert('Nenhum item encontrado na obra atual.');
-            return;
-        }
-        const obraNome = (obra.nome || obra.cliente || 'obra').replace(/[^a-zA-Z0-9À-ÿ]/g, '_');
-        const hoje = new Date().toISOString().slice(0, 10);
-        const fileName = 'especificacoes_' + obraNome + '_' + hoje + '.csv';
-
-        // Cabeçalho CSV
-        const header = 'Ref;Tipo;Loc;Vidro;Qtd;Larg;Alt;HasBottom;CtmProfile';
-        const rows = obra.itens.map(item => {
-            const ref = String(item.ref || '').replace(/;/g, ',');
-            const tipo = String(item.tipo || '').replace(/;/g, ',');
-            const loc = String(item.loc || item.local || '').replace(/;/g, ',');
-            const vidro = String(item.vidro || '').replace(/;/g, ',');
-            const qtd = item.qtd || item.quantidade || 0;
-            const larg = item.larg || item.largura || 0;
-            const alt = item.alt || item.altura || 0;
-            const hasBottom = item.hasBottom ? 'Sim' : 'Não';
-            const ctmProfile = String(item.ctmProfile || '').replace(/;/g, ',');
-            return [ref, tipo, loc, vidro, qtd, larg, alt, hasBottom, ctmProfile].join(';');
-        });
-
-        const csvContent = '﻿' + header + '
-' + rows.join('
-');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }
             
                 function renderRecebimentos(obra) {
                     const tbody = document.getElementById('tbodyRecebimento');
@@ -9179,8 +9140,8 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 
 
             <!-- Modal Importar Esquadrias / Lista de Corte -->
-            <div class="modal-bg" id="modalInserirListaCorte" style="display:none;">
-                <div class="modal" style="width:90%; max-width:760px;">
+            <div class="modal-bg" id="modalInserirListaCorte" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+                <div class="modal-card" style="background:#fff; width:90%; max-width:760px; border-radius:8px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,0.15); font-family:sans-serif;">
                     <h2 style="margin-top:0; font-size:1.4rem; color:#1e293b; font-weight:700; margin-bottom:16px;">
             Importar Esquadrias / Lista de Corte
         </h2>
@@ -9240,7 +9201,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 
             <!-- MODAL: Colaborador Pgto -->
             <!-- Modal: Editar Lançamento -->
-            <div class="modal-bg" id="modalLancamentoPgto" style="display:none;" onclick="if(event.target===this)fecharModalLancamento()">
+            <div class="modal-overlay" id="modalLancamentoPgto" style="display:none;" onclick="if(event.target===this)fecharModalLancamento()">
                 <div class="modal">
                     <h3 style="margin-top:0;">✏️ Editar Lançamento</h3>
                     <input type="hidden" id="editLancId">
@@ -9271,7 +9232,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
             </div>
 
             <!-- Modal: Confirmar Ação -->
-            <div class="modal-bg" id="modalConfirmPgto" style="display:none;" onclick="if(event.target===this)fecharModalConfirmPgto()">
+            <div class="modal-overlay" id="modalConfirmPgto" style="display:none;" onclick="if(event.target===this)fecharModalConfirmPgto()">
                 <div class="modal">
                     <h3 style="margin-top:0;">⚠️ Confirmar</h3>
                     <p id="msgConfirmPgto" style="font-size:0.9rem;"></p>
@@ -10763,7 +10724,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       var vStr = c.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
                       html += '<tr><td>' + (c.data||"-") + '</td><td>' + escaparHTML(c.categoria) + '</td><td>' + escaparHTML(c.descricao) + '</td><td>' + escaparHTML(c.regiao||"-") + '</td>';
                       html += '<td>R$ ' + vStr + '</td>';
-                      html += '<td class="lanc-actions">' + (c._producao ? '<span style="font-size:0.75rem;color:#94a3b8;">Produção</span>' : '<button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button>' + '<button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button>') + '</td></tr>';
+                      html += '<td class="lanc-actions"><button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button><button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button></td></tr>';
                     });
                     var gTotalStr = gTotal.toLocaleString("pt-BR", {minimumFractionDigits:2});
                     html += '</tbody><tfoot><tr class="lanc-totals-row"><td colspan="4"><strong>Total</strong></td><td><strong>R$ ' + gTotalStr + '</strong></td><td></td></tr></tfoot></table></div>';

@@ -3810,32 +3810,12 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
     }
 
    async function carregarBancoDaNuvem() {
-    // 1. Backup de segurança no localStorage antes de qualquer tentativa
-    try {
-        const backupPreNuvem = localStorage.getItem('obrasDB_v8');
-        if (backupPreNuvem) {
-            localStorage.setItem('obrasDB_v8_pre_nuvem_backup', backupPreNuvem);
-        }
-    } catch (e) { console.warn('Erro ao fazer backup pré-nuvem:', e); }
-
     atualizarStatusNuvem('🔄 Conectando aos servidores...', 'normal');
 
-    let obrasCarregadas = null;
-    let fonteDados = '';
-    let revBanco = 1;
+    let bancoEncontrado = null;
+    let fonte = '';
 
-   async function carregarBancoDaNuvem() {
-    // 1. Backup de segurança no localStorage antes de qualquer tentativa
-    try {
-        const backupPreNuvem = localStorage.getItem('obrasDB_v8');
-        if (backupPreNuvem) {
-            localStorage.setItem('obrasDB_v8_pre_nuvem_backup', backupPreNuvem);
-        }
-    } catch (e) { console.warn('Erro ao fazer backup pré-nuvem:', e); }
-
-    atualizarStatusNuvem('🔄 Conectando aos servidores...', 'normal');
-
-    // 2. Tenta carregar do Supabase com verificação de segurança
+    // 1. Tenta carregar do Supabase
     try {
         if (typeof _supabase !== 'undefined' && _supabase) {
             const { data, error } = await _supabase
@@ -3845,39 +3825,52 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                 .single();
 
             if (!error && data && data.dados) {
-                const dadosNuvem = data.dados.db?.obras || data.dados.obras;
-                if (dadosNuvem && dadosNuvem.length > 0) {
-                    db.obras = dadosNuvem;
-                    window.obrasDB = dadosNuvem;
-                    console.log("⚡ Dados carregados com sucesso do Supabase!");
-                    atualizarStatusNuvem(`⚡ Supabase Online (${dadosNuvem.length} obras)`, 'ok');
-                    if (typeof render === 'function') render();
-                    return;
+                // Desempacota se estiver no formato { db: ... } ou pega o objeto direto
+                bancoEncontrado = data.dados.db ? data.dados.db : data.dados;
+                if (bancoEncontrado && bancoEncontrado.obras && bancoEncontrado.obras.length > 0) {
+                    fonte = 'Supabase Online';
                 }
             }
-        } else {
-            console.warn('⚠️ Cliente _supabase não inicializado. Usando dados locais...');
         }
     } catch (errSupabase) {
         console.warn('⚠️ Supabase indisponível no momento:', errSupabase);
     }
 
-    // 3. Fallback: Se o Supabase falhar ou estiver sem dados, recupera o backup local
-    try {
-        const backupLocal = localStorage.getItem('obrasDB_v8') || localStorage.getItem('obrasDB_v8_pre_nuvem_backup');
-        if (backupLocal) {
-            const dadosRestaurados = JSON.parse(backupLocal);
-            const listaObras = dadosRestaurados.obras || dadosRestaurados;
-            if (listaObras && listaObras.length > 0) {
-                db.obras = listaObras;
-                window.obrasDB = listaObras;
-                console.log(`📦 Dados recuperados do Backup Local (${listaObras.length} obras)`);
-                atualizarStatusNuvem(`📦 Backup Local (${listaObras.length} obras)`, 'normal');
-                if (typeof render === 'function') render();
+    // 2. Fallback: Lê EXCLUSIVAMENTE a chave principal 'obrasDB_v8' do localStorage
+    if (!bancoEncontrado || !bancoEncontrado.obras) {
+        try {
+            const backupLocal = localStorage.getItem('obrasDB_v8');
+            if (backupLocal) {
+                bancoEncontrado = JSON.parse(backupLocal);
+                if (bancoEncontrado && bancoEncontrado.obras) {
+                    fonte = 'Servidor Local (HD)';
+                }
             }
+        } catch (errLocal) {
+            console.error('Erro ao carregar do localStorage:', errLocal);
         }
-    } catch (errLocal) {
-        console.error('Erro ao carregar do localStorage:', errLocal);
+    }
+
+    // 3. Aplica os dados carregados globalmente
+    if (bancoEncontrado && bancoEncontrado.obras) {
+        db = bancoEncontrado;
+        window.db = db;
+        window.dbObras = db.obras;
+        window.obrasDB = db.obras;
+
+        // Atualiza a chave principal do localStorage com os dados corretos
+        localStorage.setItem('obrasDB_v8', JSON.stringify(db));
+
+        // Atualiza os componentes da interface
+        if (typeof popularSelectObras === 'function') popularSelectObras();
+        if (typeof preencherSelectObras === 'function') preencherSelectObras();
+        if (typeof render === 'function') render();
+
+        const totalObras = db.obras.length;
+        atualizarStatusNuvem(`⚡ ${fonte} (${totalObras} obras)`, 'ok');
+        console.log(`✅ ${totalObras} obras e dados carregados via ${fonte}!`);
+    } else {
+        atualizarStatusNuvem('⚠️ Erro ao carregar dados', 'erro');
     }
 }
     // 3. TENTATIVA 2 (FALLBACK HD): Se a nuvem falhar, lê do seu computador
@@ -3897,7 +3890,6 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
             console.error('Erro ao ler do HD local:', erroHD);
         }
     }
-
     // 4. APLICAÇÃO DOS DADOS NA TELA
     if (obrasCarregadas && obrasCarregadas.length > 0) {
         // Atualiza a memória global do painel
@@ -3926,7 +3918,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
         mostrarToastPainel('⚠️ Não foi possível ler da nuvem nem do HD. Exibindo dados em cache.', 'erro');
         return false;
     }
-}
+
 async function salvarNoServidorLocal() {
     try {
         // Busca as obras diretamente do objeto `db.obras` ou das variáveis globais

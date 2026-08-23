@@ -2,10 +2,16 @@
 <html lang="pt-BR">
 
 <head>
+    
     <link rel="icon" href="data:image/x-icon;base64,=">
     <!-- 1. Carrega o SDK do Supabase PRIMEIRO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script>
+        // Funções auxiliares para evitar erros de renderização/abas
+if (typeof window.initCustoTab !== 'function') window.initCustoTab = function() {};
+if (typeof window.popularCustoObraSelect !== 'function') window.popularCustoObraSelect = function() {};
+if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard = function() {};
         // 2. Inicializa a variável global _supabase imediatamente
         const SUPABASE_URL = 'https://hosvxzayiuklouhrqeuv.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvc3Z4emF5aXVrbG91aHJxZXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDIyMzYsImV4cCI6MjEwMzAxODIzNn0.sq3JsZyT7TKPQpQTsD9Ykn-V1FSWm2o8R4Eud-7yewQ';

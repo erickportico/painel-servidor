@@ -2,6 +2,19 @@
 <html lang="pt-BR">
 
 <head>
+    <!-- 1. Carrega o SDK do Supabase PRIMEIRO -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 2. Inicializa a variável global _supabase imediatamente
+        const SUPABASE_URL = 'https://hosvxzayiuklouhrqeuv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvc3Z4emF5aXVrbG91aHJxZXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDIyMzYsImV4cCI6MjEwMzAxODIzNn0.sq3JsZyT7TKPQpQTsD9Ykn-V1FSWm2o8R4Eud-7yewQ';
+
+        var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Funções auxiliares preventivas
+        if (typeof window.popularCustoObraSelect !== 'function') window.popularCustoObraSelect = function() {};
+        if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard = function() {};
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +27,8 @@
         window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>    <style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
         .settings-menu {
             position: relative;
             display: inline-block;
@@ -10427,20 +10441,6 @@ if (typeof window.popularCustoObraSelect !== 'function') {
     };
 }
 
-<!-- 1. Script CDN do Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-  // 2. Inicialização do Cliente Supabase
-  const SUPABASE_URL = 'https://hosvxzayiuklouhrqeuv.supabase.co/rest/v1/';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvc3Z4emF5aXVrbG91aHJxZXV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NDIyMzYsImV4cCI6MjEwMzAxODIzNn0.sq3JsZyT7TKPQpQTsD9Ykn-V1FSWm2o8R4Eud-7yewQ';
-
-  // Declaração da variável global esperada pelas funções
-  var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-
 </script>
-
 </body>
-
 </html>

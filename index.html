@@ -4059,19 +4059,35 @@ function iniciarAtualizacaoEmTempoReal() {
         try {
             const conteudo = JSON.parse(e.target.result);
             
-            // Unifica o formato do banco de dados
-            let dadosDesempacotados = conteudo.db ? conteudo.db : conteudo;
-            if (!dadosDesempacotados.obras && Array.isArray(dadosDesempacotados)) {
-                dadosDesempacotados = { obras: dadosDesempacotados };
+            // Busca dinâmica para encontrar o Array de obras em qualquer chave do JSON
+            let listaObras = null;
+
+            if (Array.isArray(conteudo)) {
+                listaObras = conteudo;
+            } else if (conteudo.obras && Array.isArray(conteudo.obras)) {
+                listaObras = conteudo.obras;
+            } else if (conteudo.db && conteudo.db.obras && Array.isArray(conteudo.db.obras)) {
+                listaObras = conteudo.db.obras;
+            } else {
+                // Procura a primeira chave interna do objeto que contenha um Array
+                for (const chave in conteudo) {
+                    if (Array.isArray(conteudo[chave])) {
+                        listaObras = conteudo[chave];
+                        break;
+                    } else if (conteudo[chave] && Array.isArray(conteudo[chave].obras)) {
+                        listaObras = conteudo[chave].obras;
+                        break;
+                    }
+                }
             }
 
-            if (!dadosDesempacotados.obras || !Array.isArray(dadosDesempacotados.obras)) {
-                alert("⚠️ Arquivo JSON inválido! Não foi possível encontrar a lista de obras.");
+            if (!listaObras || !Array.isArray(listaObras)) {
+                alert("⚠️ Não foi possível identificar a lista de obras dentro deste arquivo JSON.");
                 return;
             }
 
-            // Update da memória global
-            db = dadosDesempacotados;
+            // Monta a estrutura limpa
+            db = { obras: listaObras, rev: Date.now() };
             window.db = db;
             window.dbObras = db.obras;
             window.obrasDB = db.obras;
@@ -4082,9 +4098,11 @@ function iniciarAtualizacaoEmTempoReal() {
             localStorage.setItem('obrasDB_v8', JSON.stringify(payloadFinal));
             localStorage.setItem('painel_obras_dados', JSON.stringify(payloadFinal));
 
-            // 2. Grava no Supabase (sobrescrevendo o ID 1 com as 7 obras)
+            // 2. Grava diretamente no Supabase (sobrescrevendo o ID 1)
             if (typeof _supabase !== 'undefined' && _supabase) {
-                atualizarStatusNuvem('🔄 Enviando novo banco para a nuvem...', 'normal');
+                if (typeof atualizarStatusNuvem === 'function') {
+                    atualizarStatusNuvem('🔄 Enviando novo banco para a nuvem...', 'normal');
+                }
                 const { error } = await _supabase
                     .from('painel_dados')
                     .upsert({ id: 1, dados: payloadFinal, updated_at: new Date().toISOString() });
@@ -4096,13 +4114,15 @@ function iniciarAtualizacaoEmTempoReal() {
                 }
             }
 
-            // 3. Atualiza os selects e redesenha a tela sem recarregar a página
+            // 3. Atualiza a interface da página sem recarregar
             if (typeof popularSelectObras === 'function') popularSelectObras();
             if (typeof preencherSelectObras === 'function') preencherSelectObras();
             if (typeof render === 'function') render();
 
-            atualizarStatusNuvem(`⚡ Supabase Online (${db.obras.length} obras)`, 'ok');
-            alert(`🎉 Backup importado com sucesso! ${db.obras.length} obras salvas no HD e no Supabase!`);
+            if (typeof atualizarStatusNuvem === 'function') {
+                atualizarStatusNuvem(`⚡ Supabase Online (${db.obras.length} obras)`, 'ok');
+            }
+            alert(`🎉 Sucesso! Backup com ${db.obras.length} obras importado e salvo na nuvem!`);
 
         } catch (err) {
             console.error("Erro na leitura do arquivo:", err);

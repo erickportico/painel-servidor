@@ -2372,21 +2372,6 @@
         "colaboradoresPgto": [],
         "ctmLogs": [],
         "ctmExtraSpecs": []
-      },
-      {
-        "id": "obra_1787439065287",
-        "nome": "sdfsdfsdf",
-        "numContrato": "",
-        "valorContrato": 0,
-        "pctServico": 20,
-        "numMedicaoMax": 1,
-        "consideracoesPorMedicao": {},
-        "itens": [],
-        "recebimentos": [],
-        "lancamentosProducao": [],
-        "colaboradoresPgto": [],
-        "ctmLogs": [],
-        "ctmExtraSpecs": []
       }
     ]
   },

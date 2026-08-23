@@ -61,25 +61,7 @@
         },
         "ctmLogs": [],
         "ctmExtraSpecs": [],
-        "lancamentosProducao": [
-          {
-            "id": "lc_1787434346315_ar401n",
-            "obraId": "burj_lavie",
-            "obraNome": "BURJ LAVIE",
-            "data": "2026-08-22",
-            "mesAnoKey": "2026-08",
-            "instalacaoM2": 749.84,
-            "material": "Fachada Pele de Vidro Entre VãOs C/ 3 Modulos Em Parte Fixas e Moveis Lote 2",
-            "taxaProf": 6,
-            "taxaAjud": 4,
-            "profissionais": [],
-            "ajudantes": [],
-            "valorProf": 4499.04,
-            "valorAjud": 2999.36,
-            "importado": true,
-            "itemId": 1785890237040.6907
-          }
-        ],
+        "lancamentosProducao": [],
         "colaboradoresPgto": [],
         "cronogramaTasks": [],
         "cronogramaTitle": "CRONOGRAMA EQUIPES JOÃO PESSOA"

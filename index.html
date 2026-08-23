@@ -4255,11 +4255,19 @@ function iniciarAtualizacaoEmTempoReal() {
     }
 
     function salvarDB(reRender = true) {
-        salvarLocalComoBackup();
-        window.dbObras = db.obras;  // sincronizar referência global para módulos de pagamento
-        if (reRender) render();
-        sincronizarBancoNuvem();
-    }
+    salvarLocalComoBackup();
+    window.dbObras = db.obras; // Sincroniza referência global
+
+    // 1. Atualiza o menu do Select de Obras
+    if (typeof popularSelectObras === 'function') popularSelectObras();
+    if (typeof preencherSelectObras === 'function') preencherSelectObras();
+
+    // 2. Renderiza a interface
+    if (reRender && typeof render === 'function') render();
+
+    // 3. Envia para o Supabase
+    sincronizarBancoNuvem();
+}
 
     function debounceRender() {
         clearTimeout(renderTimer);

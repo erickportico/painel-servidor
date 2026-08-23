@@ -3897,15 +3897,17 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
 }
 async function salvarNoServidorLocal() {
     try {
-        // Tenta pegar a lista de obras de onde seu script armazena
-        const obrasParaSalvar = window.obrasDB || (typeof obrasDB !== 'undefined' ? obrasDB : []);
+        // Busca as obras diretamente do objeto `db.obras` ou das variáveis globais
+        const obrasParaSalvar = (typeof db !== 'undefined' && db.obras) 
+            ? db.obras 
+            : (window.obrasDB || (typeof obrasDB !== 'undefined' ? obrasDB : []));
 
-        if (obrasParaSalvar.length === 0) {
+        if (!obrasParaSalvar || obrasParaSalvar.length === 0) {
             alert("⚠️ Nenhuma obra encontrada na memória para salvar.");
             return;
         }
 
-        // Monta o pacote no formato esperado pelo servidor Python
+        // Monta o pacote no formato esperado pelo Supabase e servidor Python
         const pacote = {
             db: {
                 obras: obrasParaSalvar
@@ -3945,6 +3947,9 @@ async function salvarNoServidorLocal() {
         mostrarToastPainel('⚡ Salvo na Nuvem Supabase!', 'ok');
         atualizarStatusNuvem(`⚡ Supabase Online (${obrasParaSalvar.length} obras)`, 'ok');
     }
+} catch (erroGeral) {
+    console.error("Erro ao salvar:", erroGeral);
+}
 }
   function sincronizarBancoNuvem() {
         if (!sincronizacaoNuvemAtiva) return;

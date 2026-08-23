@@ -3809,7 +3809,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
         if (dbNuvem.versaoBanco && !db.versaoBanco) db.versaoBanco = dbNuvem.versaoBanco;
     }
 
-   async function carregarBancoDaNuvem() {
+  async function carregarBancoDaNuvem() {
     atualizarStatusNuvem('🔄 Conectando aos servidores...', 'normal');
 
     let bancoEncontrado = null;
@@ -3828,6 +3828,8 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                 bancoEncontrado = data.dados.db ? data.dados.db : data.dados;
                 if (bancoEncontrado && bancoEncontrado.obras && bancoEncontrado.obras.length > 0) {
                     fonte = '⚡ Supabase Online';
+                } else {
+                    bancoEncontrado = null;
                 }
             }
         }
@@ -3835,45 +3837,41 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
         console.warn('⚠️ Supabase indisponível no momento:', errSupabase);
     }
 
-    // 2. Fallback: Lê EXCLUSIVAMENTE a chave principal 'obrasDB_v8' do localStorage
-    if (!bancoEncontrado || !bancoEncontrado.obras) {
+    // 2. Se não encontrou na nuvem, busca do LocalStorage local como fallback
+    if (!bancoEncontrado) {
         try {
-            const backupLocal = localStorage.getItem('obrasDB_v8');
-            if (backupLocal) {
-                bancoEncontrado = JSON.parse(backupLocal);
-                if (bancoEncontrado && bancoEncontrado.obras) {
-                    fonte = '💾 Servidor Local (HD)';
+            const localData = localStorage.getItem('obrasDB_v8');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                bancoEncontrado = parsed.db ? parsed.db : parsed;
+                if (bancoEncontrado && bancoEncontrado.obras && bancoEncontrado.obras.length > 0) {
+                    fonte = '💾 Armazenamento Local';
+                } else {
+                    bancoEncontrado = null;
                 }
             }
         } catch (errLocal) {
-            console.error('Erro ao carregar do localStorage:', errLocal);
+            console.warn('⚠️ Erro ao carregar do LocalStorage:', errLocal);
         }
     }
 
-    // 3. Aplica os dados carregados globalmente na aplicação
+    // 3. Aplica os dados com segurança e inicializa a interface
     if (bancoEncontrado && bancoEncontrado.obras) {
         db = bancoEncontrado;
+        if (!db.config) {
+            db.config = { dimensoes: true, fem: true, fab: true, inst: true };
+        }
+        
         window.db = db;
         window.dbObras = db.obras;
-        window.obrasDB = db.obras;
 
-        // Atualiza o localStorage principal
-        localStorage.setItem('obrasDB_v8', JSON.stringify(db));
-
-        // Atualiza a interface do usuário
         if (typeof popularSelectObras === 'function') popularSelectObras();
-        if (typeof preencherSelectObras === 'function') preencherSelectObras();
         if (typeof render === 'function') render();
 
-        const totalObras = db.obras.length;
-        atualizarStatusNuvem(`${fonte} (${totalObras} obras)`, 'ok');
-        if (typeof mostrarToastPainel === 'function') {
-            mostrarToastPainel(`✅ ${totalObras} obras carregadas via ${fonte}!`, 'ok');
-        }
-        return true;
+        atualizarStatusNuvem(`${fonte} (${db.obras.length} obras)`, 'ok');
     } else {
-        atualizarStatusNuvem('⚠️ Erro ao carregar dados', 'erro');
-        return false;
+        atualizarStatusNuvem('⚠️ Nenhum dado encontrado. Importe um arquivo JSON.', 'normal');
+        if (typeof render === 'function') render();
     }
 }
 
@@ -5636,61 +5634,79 @@ const lowerWords = new Set([
         alert(`${totalLinhas} linha(s) importada(s). Materiais consolidados: ${totalConsolidado}. Materiais repetidos foram agrupados automaticamente na visão consolidada.`);
     }
 
-    function renderTabelaPrincipal(obra) {
-        const thead = document.getElementById('theadItens');
-        const tbody = document.getElementById('tbodyItens');
-        const cfg = db.config;
-        const termoSearch = document.getElementById('searchItens')?.value || '';
-        let colDados = cfg.dimensoes ? 9 : 7;
+   function renderTabelaPrincipal(obra) {
+    const thead = document.getElementById('theadItens');
+    const tbody = document.getElementById('tbodyItens');
+    if (!thead || !tbody) return;
 
-        let htmlThead1 = `<tr><th colspan="${colDados}" class="head-base"><div class="th-content">DADOS BÁSICOS</div></th>`;
-        if (cfg.fem) htmlThead1 += `<th colspan="3" class="head-fem"><div class="th-content">LIBERAÇÃO (FEM)</div></th>`;
-        if (cfg.fab) htmlThead1 += `<th colspan="3" class="head-fab"><div class="th-content">FABRICAÇÃO</div></th>`;
-        if (cfg.inst) htmlThead1 += `<th colspan="5" class="head-inst"><div class="th-content">INSTALAÇÃO</div></th>`;
-        htmlThead1 += `<th rowspan="2" class="head-base"><div class="th-content">Ações</div></th></tr>`;
-
-        let htmlThead2 = `<tr><th class="head-base"><div class="th-content" style="min-width:44px;">Vista</div></th><th class="head-base"><div class="th-content">Referência</div></th><th class="head-base"><div class="th-content" style="min-width: 220px;">Descrição da Tipologia</div></th><th class="head-base"><div class="th-content" style="min-width: 140px;">Localização</div></th><th class="head-base"><div class="th-content" style="min-width: 120px;">Vidros</div></th><th class="head-base"><div class="th-content">Qtd</div></th>`;
-        if (cfg.dimensoes) htmlThead2 += `<th class="head-base"><div class="th-content">Largura (m)</div></th><th class="head-base"><div class="th-content">Altura (m)</div></th>`;
-        htmlThead2 += `<th class="head-base"><div class="th-content">Área Total</div></th>`;
-        if (cfg.fem) htmlThead2 += `<th class="head-fem"><div class="th-content">FEM</div></th><th class="head-fem"><div class="th-content">Saldo</div></th><th class="head-fem"><div class="th-content">% FEM</div></th>`;
-        if (cfg.fab) htmlThead2 += `<th class="head-fab"><div class="th-content">Fabricado</div></th><th class="head-fab"><div class="th-content">Saldo</div></th><th class="head-fab"><div class="th-content">% Fab</div></th>`;
-        if (cfg.inst) htmlThead2 += `<th class="head-inst"><div class="th-content">Instalado</div></th><th class="head-inst"><div class="th-content">Data Inst.</div></th><th class="head-inst"><div class="th-content">M² Inst</div></th><th class="head-inst"><div class="th-content">M² Saldo</div></th><th class="head-inst"><div class="th-content">% Inst</div></th>`;
-        htmlThead2 += `</tr>`;
-
-        thead.innerHTML = htmlThead1 + htmlThead2;
-
-        const rows = [];
-        window._itemPreviewMap = {};
-        (obra.itens || []).filter(i => itemBateFiltro(i, termoSearch)).forEach(item => {
-            window._itemPreviewMap[item.id] = item;
-            const areaUnit = item.larg * item.alt;
-            const areaTotal = item.qtd * areaUnit;
-            const isCompleted = item.instalado && item.instalado >= item.qtd;
-
-            const miniatura = gerarMiniaturaEsquadria(item, 40);
-            let htmlRow = `<tr class="${isCompleted ? 'row-completed' : ''}">
-                    <td><div style="cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="_itemPreviewMap[${item.id}] && abrirPreviewEsquadria(_itemPreviewMap[${item.id}])"><img src="${miniatura}" style="height:36px;width:auto;border:1px solid #ccc;border-radius:3px;" title="Clique para ampliar"></div></td>
-                    <td><input type="text" class="text-left" value="${item.ref || ''}" onchange="editarItem(${item.id}, 'ref', this.value)"></td>
-                    <td><input type="text" class="text-left" value="${titleCase(item.tipo || '')}" onchange="editarItem(${item.id}, 'tipo', this.value)"></td>
-                    <td><input type="text" class="text-left" value="${titleCase(item.loc || '')}" onchange="editarItem(${item.id}, 'loc', this.value)"></td>
-                    <td><input type="text" class="text-left" value="${titleCase(item.vidro || '')}" onchange="editarItem(${item.id}, 'vidro', this.value)"></td>
-                    <td><input type="number" value="${item.qtd}" onchange="editarItem(${item.id}, 'qtd', this.value)"></td>`;
-
-            if (cfg.dimensoes) htmlRow += `
-                    <td><input type="number" step="0.001" value="${item.larg}" onchange="editarItem(${item.id}, 'larg', this.value)"></td>
-                    <td><input type="number" step="0.001" value="${item.alt}" onchange="editarItem(${item.id}, 'alt', this.value)"></td>`;
-
-            htmlRow += `<td><div class="td-content"><b>${areaTotal.toFixed(2)}</b></div></td>`;
-
-            if (cfg.fem) htmlRow += `<td><input type="number" value="${item.fem || 0}" onchange="editarItem(${item.id}, 'fem', this.value)"></td><td><div class="td-content">${item.qtd - (item.fem || 0)}</div></td><td><div class="td-content"><b>${(item.qtd > 0 ? ((item.fem || 0) / item.qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
-            if (cfg.fab) htmlRow += `<td><input type="number" value="${item.fabricado || 0}" onchange="editarItem(${item.id}, 'fabricado', this.value)"></td><td><div class="td-content">${item.qtd - (item.fabricado || 0)}</div></td><td><div class="td-content"><b>${(item.qtd > 0 ? ((item.fabricado || 0) / item.qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
-            if (cfg.inst) htmlRow += `<td><input type="number" value="${item.instalado || 0}" onchange="editarItem(${item.id}, 'instalado', this.value)"></td><td><input type="date" value="${item.dataInstalacao || ''}" onchange="editarItem(${item.id}, 'dataInstalacao', this.value)"></td><td><div class="td-content">${((item.instalado || 0) * areaUnit).toFixed(2)}</div></td><td><div class="td-content">${(areaTotal - ((item.instalado || 0) * areaUnit)).toFixed(2)}</div></td><td><div class="td-content"><b>${(areaTotal > 0 ? (((item.instalado || 0) * areaUnit) / areaTotal) * 100 : 0).toFixed(0)}%</b></div></td>`;
-
-            htmlRow += `<td><div class="actions-cell"><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
-            rows.push(htmlRow);
-        });
-        tbody.innerHTML = rows.join('');
+    // Proteção 1: Garante que 'obra' exista
+    if (!obra) {
+        tbody.innerHTML = '<tr><td colspan="15" style="text-align:center; padding:20px;">Nenhuma obra selecionada ou carregada.</td></tr>';
+        return;
     }
+
+    // Proteção 2: Garante que 'cfg' exista com valores padrão
+    const cfg = (db && db.config) ? db.config : { dimensoes: true, fem: true, fab: true, inst: true };
+    const termoSearch = document.getElementById('searchItens')?.value || '';
+    let colDados = cfg.dimensoes ? 9 : 7;
+
+    let htmlThead1 = `<tr><th colspan="${colDados}" class="head-base"><div class="th-content">DADOS BÁSICOS</div></th>`;
+    if (cfg.fem) htmlThead1 += `<th colspan="3" class="head-fem"><div class="th-content">LIBERAÇÃO (FEM)</div></th>`;
+    if (cfg.fab) htmlThead1 += `<th colspan="3" class="head-fab"><div class="th-content">FABRICAÇÃO</div></th>`;
+    if (cfg.inst) htmlThead1 += `<th colspan="5" class="head-inst"><div class="th-content">INSTALAÇÃO</div></th>`;
+    htmlThead1 += `<th rowspan="2" class="head-base"><div class="th-content">Ações</div></th></tr>`;
+
+    let htmlThead2 = `<tr><th class="head-base"><div class="th-content" style="min-width:44px;">Vista</div></th><th class="head-base"><div class="th-content">Referência</div></th><th class="head-base"><div class="th-content" style="min-width: 220px;">Descrição da Tipologia</div></th><th class="head-base"><div class="th-content" style="min-width: 140px;">Localização</div></th><th class="head-base"><div class="th-content" style="min-width: 120px;">Vidros</div></th><th class="head-base"><div class="th-content">Qtd</div></th>`;
+    if (cfg.dimensoes) htmlThead2 += `<th class="head-base"><div class="th-content">Largura (m)</div></th><th class="head-base"><div class="th-content">Altura (m)</div></th>`;
+    htmlThead2 += `<th class="head-base"><div class="th-content">Área Total</div></th>`;
+    if (cfg.fem) htmlThead2 += `<th class="head-fem"><div class="th-content">FEM</div></th><th class="head-fem"><div class="th-content">Saldo</div></th><th class="head-fem"><div class="th-content">% FEM</div></th>`;
+    if (cfg.fab) htmlThead2 += `<th class="head-fab"><div class="th-content">Fabricado</div></th><th class="head-fab"><div class="th-content">Saldo</div></th><th class="head-fab"><div class="th-content">% Fab</div></th>`;
+    if (cfg.inst) htmlThead2 += `<th class="head-inst"><div class="th-content">Instalado</div></th><th class="head-inst"><div class="th-content">Data Inst.</div></th><th class="head-inst"><div class="th-content">M² Inst</div></th><th class="head-inst"><div class="th-content">M² Saldo</div></th><th class="head-inst"><div class="th-content">% Inst</div></th>`;
+    htmlThead2 += `</tr>`;
+
+    thead.innerHTML = htmlThead1 + htmlThead2;
+
+    const rows = [];
+    window._itemPreviewMap = {};
+
+    // Proteção 3: Sanitiza e renderiza cada item sem quebrar por campos ausentes
+    (obra.itens || []).filter(i => i && typeof itemBateFiltro === 'function' ? itemBateFiltro(i, termoSearch) : true).forEach(item => {
+        window._itemPreviewMap[item.id] = item;
+        
+        const larg = Number(item.larg || item.largura || 0);
+        const alt = Number(item.alt || item.altura || 0);
+        const qtd = Number(item.qtd || item.quantidade || 1);
+        
+        const areaUnit = larg * alt;
+        const areaTotal = qtd * areaUnit;
+        const isCompleted = item.instalado && item.instalado >= qtd;
+
+        const miniatura = typeof gerarMiniaturaEsquadria === 'function' ? gerarMiniaturaEsquadria(item, 40) : '';
+        
+        let htmlRow = `<tr class="${isCompleted ? 'row-completed' : ''}">
+                <td><div style="cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="_itemPreviewMap[${item.id}] && abrirPreviewEsquadria(_itemPreviewMap[${item.id}])"><img src="${miniatura}" style="height:36px;width:auto;border:1px solid #ccc;border-radius:3px;" title="Clique para ampliar"></div></td>
+                <td><input type="text" class="text-left" value="${item.ref || ''}" onchange="editarItem(${item.id}, 'ref', this.value)"></td>
+                <td><input type="text" class="text-left" value="${typeof titleCase === 'function' ? titleCase(item.tipo || '') : (item.tipo || '')}" onchange="editarItem(${item.id}, 'tipo', this.value)"></td>
+                <td><input type="text" class="text-left" value="${typeof titleCase === 'function' ? titleCase(item.loc || '') : (item.loc || '')}" onchange="editarItem(${item.id}, 'loc', this.value)"></td>
+                <td><input type="text" class="text-left" value="${typeof titleCase === 'function' ? titleCase(item.vidro || '') : (item.vidro || '')}" onchange="editarItem(${item.id}, 'vidro', this.value)"></td>
+                <td><input type="number" value="${qtd}" onchange="editarItem(${item.id}, 'qtd', this.value)"></td>`;
+
+        if (cfg.dimensoes) htmlRow += `
+                <td><input type="number" step="0.001" value="${larg}" onchange="editarItem(${item.id}, 'larg', this.value)"></td>
+                <td><input type="number" step="0.001" value="${alt}" onchange="editarItem(${item.id}, 'alt', this.value)"></td>`;
+
+        htmlRow += `<td><div class="td-content"><b>${areaTotal.toFixed(2)}</b></div></td>`;
+
+        if (cfg.fem) htmlRow += `<td><input type="number" value="${item.fem || 0}" onchange="editarItem(${item.id}, 'fem', this.value)"></td><td><div class="td-content">${qtd - (item.fem || 0)}</div></td><td><div class="td-content"><b>${(qtd > 0 ? ((item.fem || 0) / qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
+        if (cfg.fab) htmlRow += `<td><input type="number" value="${item.fabricado || 0}" onchange="editarItem(${item.id}, 'fabricado', this.value)"></td><td><div class="td-content">${qtd - (item.fabricado || 0)}</div></td><td><div class="td-content"><b>${(qtd > 0 ? ((item.fabricado || 0) / qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
+        if (cfg.inst) htmlRow += `<td><input type="number" value="${item.instalado || 0}" onchange="editarItem(${item.id}, 'instalado', this.value)"></td><td><input type="date" value="${item.dataInstalacao || ''}" onchange="editarItem(${item.id}, 'dataInstalacao', this.value)"></td><td><div class="td-content">${((item.instalado || 0) * areaUnit).toFixed(2)}</div></td><td><div class="td-content">${(areaTotal - ((item.instalado || 0) * areaUnit)).toFixed(2)}</div></td><td><div class="td-content"><b>${(areaTotal > 0 ? (((item.instalado || 0) * areaUnit) / areaTotal) * 100 : 0).toFixed(0)}%</b></div></td>`;
+
+        htmlRow += `<td><div class="actions-cell"><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
+        rows.push(htmlRow);
+    });
+    
+    tbody.innerHTML = rows.length > 0 ? rows.join('') : '<tr><td colspan="15" style="text-align:center; padding:15px;">Nenhum item encontrado nesta obra.</td></tr>';
+}
 
 
     function renderTabelaLiberacao(obra) {

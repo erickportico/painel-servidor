@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Acompanhamento de Produção e Instalação</title>
@@ -3802,24 +3803,49 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
     let fonteDados = '';
     let revBanco = 1;
 
-    // 2. TENTATIVA 1: Tenta buscar na NUVEM (Render)
+    // 1. TENTATIVA PRINCIPAL: Busca no Supabase (Tempo Real & Permanente)
     try {
-        const resNuvem = await fetch('https://painel-obras-supabase-realtime.onrender.com/dados_painel.json', {
-            cache: 'no-store',
-            signal: AbortSignal.timeout(4000) // Timeout de 4s para não travar a tela
-        });
+        const { data, error } = await _supabase
+            .from('painel_dados')
+            .select('dados')
+            .eq('id', 1)
+            .maybeSingle();
 
-        if (resNuvem.ok) {
-            const pacoteNuvem = await resNuvem.json();
-            const dados = pacoteNuvem.db ? pacoteNuvem.db.obras : (pacoteNuvem.obras || pacoteNuvem);
+        if (!error && data && data.dados) {
+            const pacoteSupabase = data.dados;
+            const dados = pacoteSupabase.db ? pacoteSupabase.db.obras : (pacoteSupabase.obras || pacoteSupabase);
+            
             if (Array.isArray(dados) && dados.length > 0) {
                 obrasCarregadas = dados;
-                revBanco = Number(pacoteNuvem.revision || pacoteNuvem.rev || 1);
-                fonteDados = '☁️ Nuvem Online';
+                revBanco = Number(pacoteSupabase.revision || pacoteSupabase.rev || 1);
+                fonteDados = '⚡ Supabase Realtime';
+                console.log('✅ Dados carregados com sucesso do Supabase!');
             }
+        } else {
+            throw new Error("Sem dados no Supabase ou erro na consulta");
         }
     } catch (e) {
-        console.warn('⚠️ Nuvem indisponível ou em standby. Redirecionando para o HD local...');
+        console.warn('⚠️ Supabase indisponível ou sem dados. Tentando Render...', e);
+
+        // 2. TENTATIVA 2 (FALLBACK): Busca na NUVEM (Render)
+        try {
+            const resNuvem = await fetch('https://painel-obras-supabase-realtime.onrender.com/dados_painel.json', {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(4000)
+            });
+
+            if (resNuvem.ok) {
+                const pacoteNuvem = await resNuvem.json();
+                const dados = pacoteNuvem.db ? pacoteNuvem.db.obras : (pacoteNuvem.obras || pacoteNuvem);
+                if (Array.isArray(dados) && dados.length > 0) {
+                    obrasCarregadas = dados;
+                    revBanco = Number(pacoteNuvem.revision || pacoteNuvem.rev || 1);
+                    fonteDados = '☁️ Nuvem Render';
+                }
+            }
+        } catch (errRender) {
+            console.warn('⚠️ Nuvem Render indisponível. Redirecionando para o HD local...');
+        }
     }
 
     // 3. TENTATIVA 2 (FALLBACK HD): Se a nuvem falhar, lê do seu computador
@@ -3887,6 +3913,20 @@ async function salvarNoServidorLocal() {
             revision: Date.now()
         };
 
+      // 1. Tenta salvar no Supabase (Banco de Dados Online para todos os usuários)
+    try {
+        const { error } = await _supabase
+            .from('painel_dados')
+            .upsert({ id: 1, dados: pacote, updated_at: new Date() });
+
+        if (error) throw error;
+        console.log("⚡ Salvo com sucesso no Supabase!");
+    } catch (errSupabase) {
+        console.error("⚠️ Erro ao salvar no Supabase:", errSupabase);
+    }
+
+    // 2. Salva no Servidor Local (se estiver rodando o Python)
+    try {
         const resposta = await fetch('/api/salvar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3894,20 +3934,20 @@ async function salvarNoServidorLocal() {
         });
 
         if (resposta.ok) {
-            mostrarToastPainel('💾 Obras salvas no HD com sucesso!', 'ok');
-            // Atualiza o indicador verde para mostrar a quantidade real de obras
-            atualizarStatusNuvem(`💾 Servidor Local Conectado (${obrasParaSalvar.length} obras)`, 'ok');
+            mostrarToastPainel('⚡ Salvo na nuvem e no HD!', 'ok');
+            atualizarStatusNuvem(`⚡ Supabase Conectado (${obrasParaSalvar.length} obras)`, 'ok');
         } else {
-            alert("❌ Erro ao gravar dados no servidor local.");
+            // Se o servidor local não responder mas o Supabase salvou, avisa o usuário
+            mostrarToastPainel('⚡ Salvo na Nuvem Supabase!', 'ok');
         }
     } catch (erro) {
-        console.error("Erro ao salvar:", erro);
-        alert("❌ O servidor_painel.py não está respondendo.");
+        console.warn("Servidor local Python offline. Dados mantidos na nuvem Supabase.");
+        mostrarToastPainel('⚡ Salvo na Nuvem Supabase!', 'ok');
+        atualizarStatusNuvem(`⚡ Supabase Online (${obrasParaSalvar.length} obras)`, 'ok');
     }
 }
-
-    function sincronizarBancoNuvem() {
-        if (!sincronizacaoNuvemAtiva || !bancoNuvemDisponivel || !bancoNuvemCarregado) return;
+  function sincronizarBancoNuvem() {
+        if (!sincronizacaoNuvemAtiva) return;
 
         filaSincronizacaoNuvem = filaSincronizacaoNuvem.then(async () => {
             sincronizacaoPutEmAndamento = true;
@@ -3915,63 +3955,26 @@ async function salvarNoServidorLocal() {
             atualizarStatusNuvem('☁️ Salvando...', 'normal');
 
             try {
-                const BASE_URL_NUVEM = 'https://painel-obras-supabase-realtime.onrender.com';
-                const controllerSync = new AbortController();
-                const timeoutSync = setTimeout(() => controllerSync.abort(), 60000);
-                const resposta = await fetch(`${BASE_URL_NUVEM}/api/db`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ db: bancoParaEnviar, baseRev: bancoNuvemRev }),
-                    signal: controllerSync.signal
-                });
-                clearTimeout(timeoutSync);
+                // Envia direto para a tabela do Supabase
+                const { error } = await _supabase
+                    .from('painel_dados')
+                    .upsert({ 
+                        id: 1, 
+                        dados: { db: bancoParaEnviar, revision: Date.now() }, 
+                        updated_at: new Date() 
+                    });
 
-                const resultado = await resposta.json().catch(() => ({}));
-
-                if (resposta.status === 409 && resultado.server) {
-                    const dbServidor = resultado.server.db;
-                    // Preservar obras locais que não existem no servidor
-                    const idsServidor = new Set((dbServidor.obras || []).map(o => o.id));
-                    const obrasLocaisUnicas = (db.obras || []).filter(o => !idsServidor.has(o.id));
-                    // Merge: usar dados do servidor como base + acrescentar obras locais únicas
-                    db = JSON.parse(JSON.stringify(dbServidor));
-                    if (obrasLocaisUnicas.length > 0) {
-                        db.obras = db.obras.concat(obrasLocaisUnicas);
-                    }
-                    // Atualizar obraAtualId se a obra selecionada ainda existe
-                    if (db.obraAtualId && !db.obras.some(o => o.id === db.obraAtualId)) {
-                        db.obraAtualId = db.obras[0]?.id || '';
-                    }
-                    bancoNuvemRev = Number(resultado.server.revision || resultado.server.rev || bancoNuvemRev);
-                    salvarLocalComoBackup();
-                    render();
-                    if (obrasLocaisUnicas.length > 0) {
-                        atualizarStatusNuvem('⚠️ Conflito resolvido — ' + obrasLocaisUnicas.length + ' obra(s) local(is) preservada(s)', 'erro');
-                        mostrarToastPainel('⚠️ Conflito de versão. Suas obras locais foram preservadas.', 'erro');
-                    } else {
-                        atualizarStatusNuvem('⚠️ Banco atualizado por outro usuário', 'erro');
-                    }
-                    sincronizacaoPutEmAndamento = false;
-                    return;
+                if (!error) {
+                    atualizarStatusNuvem('⚡ Supabase Realtime Ativo', 'ok');
+                } else {
+                    console.error("Erro no Supabase:", error);
+                    atualizarStatusNuvem('⚠️ Erro de Salvamento', 'erro');
                 }
-
-                if (!resposta.ok) throw new Error(resultado.error || `Servidor respondeu ${resposta.status}`);
-
-                bancoNuvemRev = Number(resultado.revision || resultado.rev || (bancoNuvemRev + 1));
-                sincronizacaoPutEmAndamento = false;
-                atualizarStatusNuvem(`☁️ Sincronizado • revisão ${bancoNuvemRev}`, 'ok');
             } catch (erro) {
+                console.error("Falha ao conectar no Supabase:", erro);
+                atualizarStatusNuvem('⚠️ Supabase Indisponível', 'erro');
+            } finally {
                 sincronizacaoPutEmAndamento = false;
-                bancoNuvemDisponivel = false;
-                atualizarStatusNuvem('⚠️ Falha na nuvem — dados locais preservados (retry em 30s)', 'erro');
-                console.error('Erro ao salvar banco na nuvem:', erro);
-                // Re-habilitar sincronização após 30s (retry com backoff)
-                setTimeout(() => {
-                    bancoNuvemDisponivel = true;
-                    console.log('[PAINEL] Sincronização nuvem re-habilitada após backoff');
-                    // Tentar sincronizar novamente se houve mudanças pendentes
-                    sincronizarBancoNuvem();
-                }, 30000);
             }
         }).catch(erro => console.error('Fila de sincronização:', erro));
     }

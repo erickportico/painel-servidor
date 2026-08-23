@@ -6564,12 +6564,16 @@ const lowerWords = new Set([
         const modais = document.querySelectorAll('.modal-bg');
         modais.forEach(m => m.style.display = 'none');
     }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        carregarTemaPreferido();
-        trocarAba('itens');
-        inicializarBancoNuvem();
-    });
+window.addEventListener('DOMContentLoaded', async () => {
+    carregarTemaPreferido();
+    trocarAba('itens');
+    
+    // Puxa os dados atualizados do Supabase e depois inicializa a escuta
+    if (typeof carregarBancoDaNuvem === 'function') {
+        await carregarBancoDaNuvem();
+    }
+    inicializarBancoNuvem();
+});
     function trocarSubAbaFEM(aba) {
         document.querySelectorAll('.sub-tab-content').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));

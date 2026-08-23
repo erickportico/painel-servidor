@@ -1,6 +1,6 @@
 """
 Servidor Híbrido (Local HD + Nuvem Render) para o Painel de Acompanhamento
-Cria e gerencia automaticamente o arquivo dados_painel.json.
+Cria e gerencia automaticamente o arquivo dados_painel.json com Auto-Sync via Git.
 """
 
 import http.server
@@ -9,11 +9,32 @@ import os
 import sys
 import json
 import webbrowser
+import subprocess
+import threading
 
 # Lê a porta enviada pelo Render (PORT) ou usa 8000 se rodar no HD local
 PORT = int(os.environ.get("PORT", sys.argv[1] if len(sys.argv) > 1 else 8000))
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO_DADOS = os.path.join(DIRECTORY, 'dados_painel.json')
+
+
+def sincronizar_github():
+    """Envia as alterações para o GitHub/Render apenas se estiver rodando no HD local."""
+    if "PORT" in os.environ:
+        return  # Não executa se estiver rodando no próprio Render
+
+    def push():
+        try:
+            subprocess.run(["git", "add", "dados_painel.json"], cwd=DIRECTORY, check=True)
+            subprocess.run(["git", "commit", "-m", "Auto-sync: atualização automática do painel"], cwd=DIRECTORY, check=True)
+            subprocess.run(["git", "push", "origin", "master"], cwd=DIRECTORY, check=True)
+            print("☁️ [Auto-Sync] Alterações enviadas ao GitHub/Render com sucesso!")
+        except Exception as e:
+            print(f"⚠️ [Auto-Sync] Erro ou nada para sincronizar: {e}")
+
+    # Executa em uma thread separada para não travar a resposta da tela
+    threading.Thread(target=push).start()
+
 
 def garantir_arquivo_dados():
     if not os.path.exists(ARQUIVO_DADOS):
@@ -26,6 +47,7 @@ def garantir_arquivo_dados():
         with open(ARQUIVO_DADOS, 'w', encoding='utf-8') as f:
             json.dump(estrutura_inicial, f, ensure_ascii=False, indent=2)
         print(f"✨ Arquivo de dados criado em: {ARQUIVO_DADOS}")
+
 
 class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Servidor HTTP com suporte a gravação (POST) e CORS liberado para o Render."""
@@ -62,6 +84,9 @@ class CORSRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "sucesso", "mensagem": "Salvo com sucesso!"}).encode('utf-8'))
                 print("💾 [SERVIDOR] Dados gravados no 'dados_painel.json'!")
+
+                # Dispara o Auto-Sync para a nuvem
+                sincronizar_github()
 
             except Exception as e:
                 self.send_response(500)

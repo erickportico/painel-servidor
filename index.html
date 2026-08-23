@@ -4050,58 +4050,68 @@ function iniciarAtualizacaoEmTempoReal() {
         alert('Banco exportado com sucesso. Você pode levar este arquivo para outro navegador ou computador.');
     }
 
-    function importarBancoMultiBrowser(event) {
-        const arquivo = event.target.files && event.target.files[0];
-        if (!arquivo) return;
+    async function importarBancoMultiBrowser(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-        const leitor = new FileReader();
-        leitor.onload = function () {
-            try {
-                const pacote = JSON.parse(leitor.result);
-                const novoBanco = pacote && pacote.banco ? pacote.banco : pacote;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const conteudo = JSON.parse(e.target.result);
+            
+            // Unifica o formato do banco de dados
+            let dadosDesempacotados = conteudo.db ? conteudo.db : conteudo;
+            if (!dadosDesempacotados.obras && Array.isArray(dadosDesempacotados)) {
+                dadosDesempacotados = { obras: dadosDesempacotados };
+            }
 
-                if (!novoBanco || !Array.isArray(novoBanco.obras)) {
-                    throw new Error('Arquivo não contém um banco de obras válido.');
-                }
+            if (!dadosDesempacotados.obras || !Array.isArray(dadosDesempacotados.obras)) {
+                alert("⚠️ Arquivo JSON inválido! Não foi possível encontrar a lista de obras.");
+                return;
+            }
 
-                const itensNovos = novoBanco.obras.reduce((s, o) => s + (Array.isArray(o.itens) ? o.itens.length : 0), 0);
-                const recNovos = novoBanco.obras.reduce((s, o) => s + (Array.isArray(o.recebimentos) ? o.recebimentos.length : 0), 0);
+            // Update da memória global
+            db = dadosDesempacotados;
+            window.db = db;
+            window.dbObras = db.obras;
+            window.obrasDB = db.obras;
 
-                if (!confirm(
-                    `Importar este banco?\n\n` +
-                    `Obras: ${novoBanco.obras.length}\n` +
-                    `Itens de produção: ${itensNovos}\n` +
-                    `Recebimentos: ${recNovos}\n\n` +
-                    `O banco atual será preservado em uma cópia de segurança antes da troca.`
-                )) {
-                    event.target.value = '';
+            const payloadFinal = { db: db };
+
+            // 1. Grava no LocalStorage local
+            localStorage.setItem('obrasDB_v8', JSON.stringify(payloadFinal));
+            localStorage.setItem('painel_obras_dados', JSON.stringify(payloadFinal));
+
+            // 2. Grava no Supabase (sobrescrevendo o ID 1 com as 7 obras)
+            if (typeof _supabase !== 'undefined' && _supabase) {
+                atualizarStatusNuvem('🔄 Enviando novo banco para a nuvem...', 'normal');
+                const { error } = await _supabase
+                    .from('painel_dados')
+                    .upsert({ id: 1, dados: payloadFinal, updated_at: new Date().toISOString() });
+
+                if (error) {
+                    console.error("❌ Erro ao enviar para o Supabase:", error);
+                    alert("Erro ao salvar na nuvem: " + error.message);
                     return;
                 }
-
-                const chaveBackup = 'obrasDB_pre_importacao_' + new Date().toISOString().replace(/[:.]/g, '-');
-                localStorage.setItem(chaveBackup, localStorage.getItem('obrasDB_v8') || JSON.stringify(db));
-
-                const bancoImportado = JSON.parse(JSON.stringify(novoBanco));
-
-                bancoImportado.obras.forEach(o => {
-                    o.itens = Array.isArray(o.itens) ? o.itens : [];
-                    o.recebimentos = Array.isArray(o.recebimentos) ? o.recebimentos : [];
-                    o.consideracoesPorMedicao = o.consideracoesPorMedicao || {};
-                });
-
-                localStorage.setItem('obrasDB_v8', JSON.stringify(bancoImportado));
-
-                alert('Banco importado com sucesso. O painel será reiniciado.');
-                location.reload();
-            } catch (erro) {
-                console.error(erro);
-                alert('Não foi possível importar o banco: ' + erro.message);
-            } finally {
-                event.target.value = '';
             }
-        };
-        leitor.readAsText(arquivo, 'UTF-8');
-    }
+
+            // 3. Atualiza os selects e redesenha a tela sem recarregar a página
+            if (typeof popularSelectObras === 'function') popularSelectObras();
+            if (typeof preencherSelectObras === 'function') preencherSelectObras();
+            if (typeof render === 'function') render();
+
+            atualizarStatusNuvem(`⚡ Supabase Online (${db.obras.length} obras)`, 'ok');
+            alert(`🎉 Backup importado com sucesso! ${db.obras.length} obras salvas no HD e no Supabase!`);
+
+        } catch (err) {
+            console.error("Erro na leitura do arquivo:", err);
+            alert("⚠️ Erro ao processar o arquivo de backup.");
+        }
+    };
+
+    reader.readAsText(file);
+}
 
     function lerBancoLocalStorageSeguro(chave) {
         const raw = localStorage.getItem(chave);

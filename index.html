@@ -4017,10 +4017,22 @@ async function salvarNoServidorLocal() {
         if (window.__painelRealtimeAtivo) return;
         window.__painelRealtimeAtivo = true;
 
-    // DESATIVADO: Para rodar 100% local no HD sem depender do Render.com
+    // DESATIVADO: A sincronização em tempo real agora é mantida nativamente pelo Supabase
         const BASE_URL_NUVEM = 'https://painel-obras-supabase-realtime.onrender.com';
 
         const conectar = () => {
+            console.log('[PAINEL] WebSocket antigo desativado. O Supabase Realtime assumiu o controle.');
+            return;
+        };
+        conectar();
+    }
+
+    function criarPacoteBancoMultiBrowser() {
+        return {
+            formato: 'PAINEL_CONTROLE_OBRAS',
+            versaoBanco: 'multi-browser-1',
+            dataExportacao: new Date().toISOString(),
+            origem: 'Painel de Controle de Obras',
             try {
                 /* FIX 23: WebSocket deve apontar para o servidor de nuvem (render.com)... */
                 // const wsUrl = 'wss://' + BASE_URL_NUVEM.replace(/^https?:\/\//, '') + '/ws';

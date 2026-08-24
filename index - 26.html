@@ -2532,7 +2532,6 @@ div:empty,
                             <button class="btn-primary" onclick="abrirModalListaCorte()" style="background: #4a5568; color: #fff;">Inserir Listas de Corte</button>
                             <button class="warning" style="color:#000" onclick="abrirModalConfig()">Ocultar/Mostrar Colunas</button>
                             <button class="success" onclick="abrirModalItem()">Adicionar Item</button>
-                            <button class="secondary" onclick="duplicarItem()">📋 Duplicar Item</button>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -5728,42 +5727,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     a.click();
                     URL.revokeObjectURL(url);
                 }
-
-                function duplicarItem() {
-                    const obra = getObraAtual();
-                    if (!obra.itens || !obra.itens.length) {
-                        alert("Nenhum item para duplicar.");
-                        return;
-                    }
-                    // Find last selected/edited item, or prompt user
-                    const tbody = document.querySelector("#tabelaItens tbody");
-                    if (!tbody) { alert("Tabela de itens nao encontrada."); return; }
-                    // Get selected item from active row or first item
-                    const activeRow = tbody.querySelector("tr.selected, tr.highlighted, tr.active");
-                    let itemId = null;
-                    if (activeRow) {
-                        const inp = activeRow.querySelector("input[onchange*=editarItem]");
-                        if (inp) {
-                          const m = inp.getAttribute("onchange").match(/editarItem\((\d[^,]*)/);
-                          if (m) itemId = Number(m[1]);
-                        }
-                    }
-                    if (!itemId && obra.itens.length > 0) {
-                        if (!confirm("Nenhum item selecionado. Duplicar o ultimo item da lista?")) return;
-                        itemId = obra.itens[obra.itens.length - 1].id;
-                    }
-                    const item = obra.itens.find(i => i.id === itemId);
-                    if (!item) { alert("Item nao encontrado."); return; }
-                    // Pre-fill modal with item data
-                    document.getElementById("itemRef").value = item.ref || "";
-                    document.getElementById("itemTipo").value = item.tipo || "";
-                    document.getElementById("itemLoc").value = item.loc || "";
-                    document.getElementById("itemVidro").value = item.vidro || "";
-                    document.getElementById("itemQtd").value = item.qtd || 1;
-                    document.getElementById("itemLarg").value = item.larg || 1.0;
-                    document.getElementById("itemAlt").value = item.alt || 1.0;
-                    document.getElementById("modalItem").style.display = "flex";
-                }
             
                 function renderRecebimentos(obra) {
                     const tbody = document.getElementById('tbodyRecebimento');
@@ -6119,7 +6082,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     if (cfg.fab) htmlRow += `<td><input type="number" value="${item.fabricado || 0}" onchange="editarItem(${item.id}, 'fabricado', this.value)"></td><td><div class="td-content">${qtd - (item.fabricado || 0)}</div></td><td><div class="td-content"><b>${(qtd > 0 ? ((item.fabricado || 0) / qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
                     if (cfg.inst) htmlRow += `<td><input type="number" value="${item.instalado || 0}" onchange="editarItem(${item.id}, 'instalado', this.value)"></td><td><input type="date" value="${item.dataInstalacao || ''}" onchange="editarItem(${item.id}, 'dataInstalacao', this.value)"></td><td><div class="td-content">${((item.instalado || 0) * areaUnit).toFixed(2)}</div></td><td><div class="td-content">${(areaTotal - ((item.instalado || 0) * areaUnit)).toFixed(2)}</div></td><td><div class="td-content"><b>${(areaTotal > 0 ? (((item.instalado || 0) * areaUnit) / areaTotal) * 100 : 0).toFixed(0)}%</b></div></td>`;
             
-                    htmlRow += `<td><div class="actions-cell"><button class="warning" onclick="duplicarItemFromTable(${item.id})">📋</button><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
+                    htmlRow += `<td><div class="actions-cell"><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
                     rows.push(htmlRow);
                 });
                 
@@ -6993,38 +6956,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         obra.itens = (obra.itens || []).filter(i => i.id !== id);
                         salvarDB();
                     }
-                }
-
-                function duplicarItemFromTable(id) {
-                    const obra = getObraAtual();
-                    if (!obra.itens) obra.itens = [];
-                    const item = obra.itens.find(i => i.id === id);
-                    if (!item) { alert("Item nao encontrado."); return; }
-                    if (!confirm("Duplicar este item?")) return;
-                    const clone = {
-                        id: Date.now() + Math.random(),
-                        ref: item.ref || "",
-                        tipo: item.tipo || "",
-                        loc: item.loc || "",
-                        vidro: item.vidro || "",
-                        qtd: item.qtd || 1,
-                        larg: item.larg || 1.0,
-                        alt: item.alt || 1.0,
-                        fem: 0,
-                        fabricado: 0,
-                        instalado: 0,
-                        dataInstalacao: null,
-                        historicoMedicoes: {},
-                        hasBottom: item.hasBottom !== undefined ? item.hasBottom : true,
-                        ctmProfile: item.ctmProfile || "largo"
-                    };
-                    obra.itens.push(clone);
-                    salvarDB();
-                    // Re-render the active tab
-                    const obraAtual = getObraAtual();
-                    renderTabelaLiberacao(obraAtual);
-                    renderTabelaFabricacao(obraAtual);
-                    renderTabelaInstalacao(obraAtual);
                 }
             
                 function salvarHeaderMedicao() {

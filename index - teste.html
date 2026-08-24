@@ -2532,7 +2532,7 @@ div:empty,
                             <button class="btn-primary" onclick="abrirModalListaCorte()" style="background: #4a5568; color: #fff;">Inserir Listas de Corte</button>
                             <button class="warning" style="color:#000" onclick="abrirModalConfig()">Ocultar/Mostrar Colunas</button>
                             <button class="success" onclick="abrirModalItem()">Adicionar Item</button>
-                            <button class="secondary" onclick="duplicarItem()">📋 Duplicar Item</button>
+                            <button class="info" onclick="duplicarItem()" style="margin-left:8px;">📋 Duplicar Item</button>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -3540,7 +3540,7 @@ div:empty,
             <!-- ===== TAB: CENTRO DE CUSTOS ===== -->
             <div id="tab-custo" class="card" style="display:none;">
                 <h3 style="margin-top:0;color:var(--text,#fff);">📊 Centro de Custos</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
                     <div>
                         <label style="font-size:0.8rem;font-weight:600;">Obra</label>
                         <select id="custoFilterObra" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;"></select>
@@ -3552,14 +3552,6 @@ div:empty,
                     <div>
                         <label style="font-size:0.8rem;font-weight:600;">Mês</label>
                         <input type="month" id="custoFilterMes" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:600;">Período De</label>
-                        <input type="date" id="custoFilterPeriodoDe" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.8rem;font-weight:600;">Período Até</label>
-                        <input type="date" id="custoFilterPeriodoAte" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -4661,6 +4653,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
             
                 function trocarObra(id) {
                     db.obraAtualId = id;
+                    localStorage.setItem("esq_activeObra", id);
                     cronogramaInitialized = false;
                     salvarDB();
                     render();
@@ -4686,6 +4679,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         initCustoTab();
                     }
                     render();
+                    localStorage.setItem("esq_activeTab", aba);
                 }
             
                 
@@ -5729,41 +5723,35 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     URL.revokeObjectURL(url);
                 }
 
-                function duplicarItem() {
-                    const obra = getObraAtual();
-                    if (!obra.itens || !obra.itens.length) {
-                        alert("Nenhum item para duplicar.");
-                        return;
-                    }
-                    // Find last selected/edited item, or prompt user
-                    const tbody = document.querySelector("#tabelaItens tbody");
-                    if (!tbody) { alert("Tabela de itens nao encontrada."); return; }
-                    // Get selected item from active row or first item
-                    const activeRow = tbody.querySelector("tr.selected, tr.highlighted, tr.active");
-                    let itemId = null;
-                    if (activeRow) {
-                        const inp = activeRow.querySelector("input[onchange*=editarItem]");
-                        if (inp) {
-                          const m = inp.getAttribute("onchange").match(/editarItem\((\d[^,]*)/);
-                          if (m) itemId = Number(m[1]);
-                        }
-                    }
-                    if (!itemId && obra.itens.length > 0) {
-                        if (!confirm("Nenhum item selecionado. Duplicar o ultimo item da lista?")) return;
-                        itemId = obra.itens[obra.itens.length - 1].id;
-                    }
-                    const item = obra.itens.find(i => i.id === itemId);
-                    if (!item) { alert("Item nao encontrado."); return; }
-                    // Pre-fill modal with item data
-                    document.getElementById("itemRef").value = item.ref || "";
-                    document.getElementById("itemTipo").value = item.tipo || "";
-                    document.getElementById("itemLoc").value = item.loc || "";
-                    document.getElementById("itemVidro").value = item.vidro || "";
-                    document.getElementById("itemQtd").value = item.qtd || 1;
-                    document.getElementById("itemLarg").value = item.larg || 1.0;
-                    document.getElementById("itemAlt").value = item.alt || 1.0;
-                    document.getElementById("modalItem").style.display = "flex";
-                }
+            function duplicarItem() {
+              var obra = db.obras.find(function(o){ return o.id === db.obraAtualId; });
+              if(!obra || !obra.itens || obra.itens.length === 0) {
+                alert("Nenhum item para duplicar.");
+                return;
+              }
+              var lista = obra.itens.map(function(it, idx) {
+                return (idx + 1) + ". " + (it.ref || "(sem ref)") + " - " + (it.tipo || "(sem tipo)");
+              }).join("\n");
+              var escolha = prompt("Digite o NUMERO do item que deseja duplicar:\n\n" + lista);
+              if(escolha === null) return;
+              var idx = parseInt(escolha, 10) - 1;
+              if(isNaN(idx) || idx < 0 || idx >= obra.itens.length) {
+                alert("Numero invalido.");
+                return;
+              }
+              var orig = obra.itens[idx];
+              var novaRef = prompt("Ref do novo item:", orig.ref + " (copia)");
+              if(novaRef === null) return;
+              var clone = Object.assign({}, orig);
+              clone.id = "item_" + Date.now();
+              clone.ref = novaRef || (orig.ref + " (copia)");
+              clone.instalado = false;
+              clone.dataInstalacao = "";
+              clone.historicoMedicoes = [];
+              obra.itens.push(clone);
+              salvarDB();
+              render();
+            }
             
                 function renderRecebimentos(obra) {
                     const tbody = document.getElementById('tbodyRecebimento');
@@ -6119,7 +6107,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     if (cfg.fab) htmlRow += `<td><input type="number" value="${item.fabricado || 0}" onchange="editarItem(${item.id}, 'fabricado', this.value)"></td><td><div class="td-content">${qtd - (item.fabricado || 0)}</div></td><td><div class="td-content"><b>${(qtd > 0 ? ((item.fabricado || 0) / qtd) * 100 : 0).toFixed(0)}%</b></div></td>`;
                     if (cfg.inst) htmlRow += `<td><input type="number" value="${item.instalado || 0}" onchange="editarItem(${item.id}, 'instalado', this.value)"></td><td><input type="date" value="${item.dataInstalacao || ''}" onchange="editarItem(${item.id}, 'dataInstalacao', this.value)"></td><td><div class="td-content">${((item.instalado || 0) * areaUnit).toFixed(2)}</div></td><td><div class="td-content">${(areaTotal - ((item.instalado || 0) * areaUnit)).toFixed(2)}</div></td><td><div class="td-content"><b>${(areaTotal > 0 ? (((item.instalado || 0) * areaUnit) / areaTotal) * 100 : 0).toFixed(0)}%</b></div></td>`;
             
-                    htmlRow += `<td><div class="actions-cell"><button class="warning" onclick="duplicarItemFromTable(${item.id})">📋</button><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
+                    htmlRow += `<td><div class="actions-cell"><button class="danger" onclick="excluirItem(${item.id})">❌</button></div></td></tr>`;
                     rows.push(htmlRow);
                 });
                 
@@ -6994,38 +6982,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         salvarDB();
                     }
                 }
-
-                function duplicarItemFromTable(id) {
-                    const obra = getObraAtual();
-                    if (!obra.itens) obra.itens = [];
-                    const item = obra.itens.find(i => i.id === id);
-                    if (!item) { alert("Item nao encontrado."); return; }
-                    if (!confirm("Duplicar este item?")) return;
-                    const clone = {
-                        id: Date.now() + Math.random(),
-                        ref: item.ref || "",
-                        tipo: item.tipo || "",
-                        loc: item.loc || "",
-                        vidro: item.vidro || "",
-                        qtd: item.qtd || 1,
-                        larg: item.larg || 1.0,
-                        alt: item.alt || 1.0,
-                        fem: 0,
-                        fabricado: 0,
-                        instalado: 0,
-                        dataInstalacao: null,
-                        historicoMedicoes: {},
-                        hasBottom: item.hasBottom !== undefined ? item.hasBottom : true,
-                        ctmProfile: item.ctmProfile || "largo"
-                    };
-                    obra.itens.push(clone);
-                    salvarDB();
-                    // Re-render the active tab
-                    const obraAtual = getObraAtual();
-                    renderTabelaLiberacao(obraAtual);
-                    renderTabelaFabricacao(obraAtual);
-                    renderTabelaInstalacao(obraAtual);
-                }
             
                 function salvarHeaderMedicao() {
                     const obra = getObraAtual();
@@ -7040,7 +6996,20 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
             window.addEventListener('DOMContentLoaded', async () => {
                 carregarTemaPreferido();
-                trocarAba('itens');
+                const savedObra = localStorage.getItem("esq_activeObra");
+                if (savedObra && db.obras.find(o => o.id === savedObra)) {
+                  trocarObra(savedObra);
+                }
+                const savedTab = localStorage.getItem("esq_activeTab");
+                if (savedTab) {
+                  trocarAba(savedTab);
+                } else {
+                  trocarAba('itens');
+                }
+                const savedPgtoSubTab = localStorage.getItem("esq_pgtoSubTab");
+                if (savedPgtoSubTab) {
+                  trocarSubTabPgtoNovo(savedPgtoSubTab);
+                }
                 
                 // Puxa os dados atualizados do Supabase e depois inicializa a escuta
                 if (typeof carregarBancoDaNuvem === 'function') {
@@ -8561,6 +8530,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
             }
             
             function trocarSubTabPgtoNovo(tab) {
+              localStorage.setItem("esq_pgtoSubTab", tab);
               pgtoSubTab = tab;
               document.getElementById('subTabPgtoLancamentos').classList.toggle('active', tab === 'lancamentos');
               document.getElementById('subTabPgtoResumo').classList.toggle('active', tab === 'resumo');
@@ -10714,18 +10684,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   var mesKey = getChaveMesPgto();
                   var mesInput = document.getElementById("custoFilterMes");
                   if(mesInput && mesKey) mesInput.value = mesKey;
-                  // Sincronizar periodo com mes selecionado
-                  var mesInput2 = document.getElementById("custoFilterMes");
-                  var deInput = document.getElementById("custoFilterPeriodoDe");
-                  var ateInput = document.getElementById("custoFilterPeriodoAte");
-                  if(mesInput2 && mesInput2.value && deInput && ateInput){
-                    deInput.value = mesInput2.value + "-01";
-                    var parts = mesInput2.value.split("-");
-                    var yr = parseInt(parts[0],10);
-                    var mo = parseInt(parts[1],10);
-                    var lastDay = new Date(yr, mo, 0).getDate();
-                    ateInput.value = mesInput2.value + "-" + (lastDay < 10 ? "0" : "") + lastDay;
-                  }
                 }
                 
                 function popularCustoObraSelect(){
@@ -10742,8 +10700,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   var obraId = document.getElementById("custoFilterObra").value;
                   var regiao = document.getElementById("custoFilterRegiao").value.trim().toLowerCase();
                   var mes = document.getElementById("custoFilterMes").value;
-                  var periodoDe = document.getElementById("custoFilterPeriodoDe") ? document.getElementById("custoFilterPeriodoDe").value : "";
-                  var periodoAte = document.getElementById("custoFilterPeriodoAte") ? document.getElementById("custoFilterPeriodoAte").value : "";
                   var result = [];
                   db.obras.forEach(function(o){
                     (o.centrosCusto || []).forEach(function(c){
@@ -10753,14 +10709,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         var d = c.data || "";
                         var cMes = d.substring(0, 7);
                         if(cMes !== mes) return;
-                      }
-                      if(periodoDe){
-                        var d = c.data || "";
-                        if(d < periodoDe) return;
-                      }
-                      if(periodoAte){
-                        var d2 = c.data || "";
-                        if(d2 > periodoAte) return;
                       }
                       result.push(c);
                     });
@@ -10838,29 +10786,16 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 };
 
                 window.duplicarCusto = function(id){
-                  var entry = null, parentObra = null;
-                  db.obras.forEach(function(o){
-                    if(o.centrosCusto){
-                      o.centrosCusto.forEach(function(c){
-                        if(c.id === id){ entry = c; parentObra = o; }
-                      });
-                    }
-                  });
-                  if(!entry || !parentObra){ alert("Despesa nao encontrada."); return; }
-                  if(!confirm("Duplicar esta despesa?")) return;
-                  var clone = {
-                    id: "custo_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-                    obraId: entry.obraId,
-                    data: entry.data || new Date().toISOString().split("T")[0],
-                    categoria: entry.categoria,
-                    descricao: entry.descricao + " (copia)",
-                    valor: entry.valor,
-                    regiao: entry.regiao
-                  };
-                  if(!parentObra.centrosCusto) parentObra.centrosCusto = [];
-                  parentObra.centrosCusto.push(clone);
+                  var c = db.custosExtras.find(function(x){ return x.id===id; });
+                  if(!c) return;
+                  var novaDesc = prompt("Descricao do novo custo:", c.descricao);
+                  if(novaDesc === null) return;
+                  var clone = Object.assign({}, c);
+                  clone.id = "custo_" + Date.now();
+                  clone.descricao = novaDesc || c.descricao;
+                  db.custosExtras.push(clone);
                   salvarDB();
-                  renderCustoDashboard();
+                  renderCustosExtras();
                 };
                 
                 window.renderCustoDashboard = function(){
@@ -10893,8 +10828,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     groups[obraNome].forEach(function(c){
                       gTotal += c.valor;
                       var vStr = c.valor.toLocaleString("pt-BR", {minimumFractionDigits:2});
-                      var dataFmt = c.data ? c.data.split("-").reverse().join("/") : "-";
-                      html += '<tr><td>' + dataFmt + '</td><td>' + escaparHTML(c.categoria) + '</td><td>' + escaparHTML(c.descricao) + '</td><td>' + escaparHTML(c.regiao||"-") + '</td>';
+                      html += '<tr><td>' + (c.data||"-") + '</td><td>' + escaparHTML(c.categoria) + '</td><td>' + escaparHTML(c.descricao) + '</td><td>' + escaparHTML(c.regiao||"-") + '</td>';
                       html += '<td>R$ ' + vStr + '</td>';
                       html += '<td class="lanc-actions"><button class="btn-icon-sm" onclick="editarCusto(\'' + c.id + '\')" title="Editar">✏️</button><button class="btn-icon-sm" onclick="duplicarCusto(\'' + c.id + '\')" title="Duplicar">📋</button><button class="btn-icon-sm" onclick="excluirCusto(\'' + c.id + '\')" title="Excluir">🗑️</button></td></tr>';
                     });

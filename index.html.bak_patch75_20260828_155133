@@ -32579,5 +32579,4038 @@ body #modalPreviewEsquadria.p64-off,
 }
 </style>
 
+
+<script>
+/* PATCH 68: COMPRESSAO AUTOMATICA DAS IMAGENS DA VISTA */
+(function () {
+  if (window.P68 && window.P68.__v68) return;
+  var P68 = window.P68 = window.P68 || {};
+  P68.__v68 = true;
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES BASICOS                                                  */
+  /* ------------------------------------------------------------------ */
+  var LSREG = 'p68_regras_v1';
+
+  var MODOS = {
+    economia: { nome: 'Maxima economia', lado: 380, q: 0.55, tetoKb: 45, minLado: 200, minQ: 0.38 },
+    equilibrado: { nome: 'Equilibrado', lado: 520, q: 0.68, tetoKb: 90, minLado: 260, minQ: 0.45 },
+    nitidez: { nome: 'Mais nitidez', lado: 760, q: 0.82, tetoKb: 190, minLado: 420, minQ: 0.6 }
+  };
+  var MODO_PADRAO = 'equilibrado';
+
+  function porId(id) { return document.getElementById(id); }
+
+  function seguro(txt) {
+    return String(txt == null ? '' : txt)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function depois(fn, ms) {
+    try { return window.setTimeout(fn, ms || 0); } catch (e) { return 0; }
+  }
+
+  function agora() { return Date.now(); }
+
+  function ehImagem(url) {
+    return typeof url === 'string' && /^data:image\//.test(url);
+  }
+
+  /* peso aproximado de uma imagem guardada em texto (base64) */
+  function kb(txt) {
+    var n = String(txt || '').length;
+    if (!n) return 0;
+    return Math.max(1, Math.round(n * 0.75 / 1024));
+  }
+
+  function bonito(n) {
+    n = Number(n) || 0;
+    if (n >= 1024) return (Math.round(n / 102.4) / 10) + ' MB';
+    return n + ' KB';
+  }
+
+  function log(txt) {
+    try { console.log('[P68] ' + txt); } catch (e) { /* ignora */ }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 1 - REGRAS AJUSTAVEIS                                        */
+  /* ------------------------------------------------------------------ */
+  var regras = {
+    modo: MODO_PADRAO,
+    auto: true,          /* comprimir na hora em que a imagem e anexada */
+    antigas: true        /* cuidar sozinho das imagens antigas pesadas  */
+  };
+
+  function lerRegras() {
+    try {
+      var txt = window.localStorage.getItem(LSREG);
+      if (!txt) return;
+      var o = JSON.parse(txt);
+      if (!o) return;
+      if (o.modo && MODOS[o.modo]) regras.modo = o.modo;
+      if (typeof o.auto === 'boolean') regras.auto = o.auto;
+      if (typeof o.antigas === 'boolean') regras.antigas = o.antigas;
+      if (Number(o.lado) > 0) regras.lado = Math.min(2000, Math.round(Number(o.lado)));
+      if (Number(o.q) > 0) regras.q = Math.min(0.95, Math.max(0.3, Number(o.q)));
+      if (Number(o.tetoKb) > 0) regras.tetoKb = Math.min(4000, Math.round(Number(o.tetoKb)));
+    } catch (e) { /* ignora */ }
+  }
+
+  function gravarRegras() {
+    try { window.localStorage.setItem(LSREG, JSON.stringify(regras)); } catch (e) { /* ignora */ }
+  }
+
+  /* junta o modo escolhido com os ajustes finos, se houver */
+  function alvo() {
+    var base = MODOS[regras.modo] || MODOS[MODO_PADRAO];
+    var a = {
+      nome: base.nome,
+      lado: base.lado,
+      q: base.q,
+      tetoKb: base.tetoKb,
+      minLado: base.minLado,
+      minQ: base.minQ
+    };
+    if (Number(regras.lado) > 0) a.lado = Number(regras.lado);
+    if (Number(regras.q) > 0) a.q = Number(regras.q);
+    if (Number(regras.tetoKb) > 0) a.tetoKb = Number(regras.tetoKb);
+    if (a.minLado > a.lado) a.minLado = Math.max(120, Math.round(a.lado * 0.6));
+    if (a.minQ > a.q) a.minQ = Math.max(0.3, a.q - 0.1);
+    return a;
+  }
+  P68.alvo = alvo;
+
+  P68.definirRegras = function (novo) {
+    if (typeof novo === 'string') novo = { modo: novo };
+    novo = novo || {};
+    if (novo.modo && MODOS[novo.modo]) {
+      regras.modo = novo.modo;
+      delete regras.lado;
+      delete regras.q;
+      delete regras.tetoKb;
+    }
+    if (typeof novo.auto === 'boolean') regras.auto = novo.auto;
+    if (typeof novo.antigas === 'boolean') regras.antigas = novo.antigas;
+    if (Number(novo.lado) > 0) regras.lado = Math.min(2000, Math.round(Number(novo.lado)));
+    if (Number(novo.q) > 0) regras.q = Math.min(0.95, Math.max(0.3, Number(novo.q)));
+    if (Number(novo.tetoKb) > 0) regras.tetoKb = Math.min(4000, Math.round(Number(novo.tetoKb)));
+    gravarRegras();
+    pintarCartao();
+    return alvo();
+  };
+
+  P68.padrao = function () {
+    regras = { modo: MODO_PADRAO, auto: true, antigas: true };
+    gravarRegras();
+    pintarCartao();
+    recado('Voltei para o modo Equilibrado, o padrao de fabrica.');
+    return alvo();
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 2 - A COMPRESSAO EM SI                                       */
+  /* ------------------------------------------------------------------ */
+  var ultimo = null;      /* ultimo resultado, para mostrar no cartao */
+  var jaVistas = {};      /* imagens que ja passaram pela compressao  */
+
+  function selo(url) {
+    var s = String(url || '');
+    return s.length + ':' + s.slice(30, 70);
+  }
+
+  function marcarVista(url) {
+    if (!url) return;
+    jaVistas[selo(url)] = 1;
+  }
+
+  function foiVista(url) {
+    return !!jaVistas[selo(url)];
+  }
+
+  /* desenha a imagem num canvas do tamanho pedido e devolve o texto */
+  function render(img, lado, q) {
+    try {
+      var iw = img.naturalWidth || img.width || 1;
+      var ih = img.naturalHeight || img.height || 1;
+      var esc = Math.min(1, lado / Math.max(iw, ih));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(iw * esc));
+      c.height = Math.max(1, Math.round(ih * esc));
+      var cx = c.getContext('2d');
+      if (!cx) return '';
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(0, 0, c.width, c.height);
+      try {
+        if (cx.imageSmoothingQuality) cx.imageSmoothingQuality = 'high';
+        cx.imageSmoothingEnabled = true;
+      } catch (e0) { /* ignora */ }
+      cx.drawImage(img, 0, 0, c.width, c.height);
+      var saida = '';
+      try { saida = c.toDataURL('image/jpeg', q); } catch (e1) {
+        try { saida = c.toDataURL(); } catch (e2) { saida = ''; }
+      }
+      return { url: saida || '', largura: c.width, altura: c.height };
+    } catch (e3) { return ''; }
+  }
+
+  /* comprime um texto de imagem obedecendo as regras; devolve um relato */
+  function comprimir(origem, pronto) {
+    var a = alvo();
+    var antesKb = kb(origem);
+    function terminar(saida) {
+      try { pronto(saida); } catch (e) { /* ignora */ }
+    }
+    if (!ehImagem(origem)) { terminar(null); return; }
+    var img = new Image();
+    img.onload = function () {
+      var lado = a.lado, q = a.q, passos = 0, res = render(img, lado, q);
+      while (res && res.url && kb(res.url) > a.tetoKb && passos < 6 &&
+             (lado > a.minLado || q > a.minQ)) {
+        lado = Math.max(a.minLado, Math.round(lado * 0.8));
+        q = Math.max(a.minQ, Math.round((q - 0.07) * 100) / 100);
+        res = render(img, lado, q);
+        passos++;
+      }
+      if (!res || !res.url) { terminar(null); return; }
+      var depoisKb = kb(res.url);
+      terminar({
+        url: res.url,
+        antesKb: antesKb,
+        depoisKb: depoisKb,
+        largura: res.largura,
+        altura: res.altura,
+        passos: passos,
+        lado: lado,
+        q: q,
+        ganhou: res.url.length < String(origem).length
+      });
+    };
+    img.onerror = function () { terminar(null); };
+    try { img.src = origem; } catch (e) { terminar(null); }
+  }
+  P68.comprimir = comprimir;
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 3 - ONDE ESTAO OS ITENS                                      */
+  /* ------------------------------------------------------------------ */
+  function listaObras() {
+    var saida = [], vistos = {};
+    function juntar(lista) {
+      if (!lista || !lista.length) return;
+      for (var i = 0; i < lista.length; i++) {
+        var o = lista[i];
+        if (!o || o.id == null) continue;
+        var k = String(o.id);
+        if (vistos[k]) continue;
+        vistos[k] = 1;
+        saida.push(o);
+      }
+    }
+    try { if (window.db && window.db.obras) juntar(window.db.obras); } catch (e) { /* ignora */ }
+    try {
+      if (typeof window.getObraAtual === 'function') {
+        var atual = window.getObraAtual();
+        if (atual) juntar([atual]);
+      }
+    } catch (e2) { /* ignora */ }
+    return saida;
+  }
+
+  function todosItens() {
+    var obras = listaObras(), saida = [];
+    for (var i = 0; i < obras.length; i++) {
+      var itens = obras[i].itens || [];
+      for (var j = 0; j < itens.length; j++) {
+        if (itens[j]) saida.push(itens[j]);
+      }
+    }
+    return saida;
+  }
+
+  function itemPorId(id) {
+    var itens = todosItens();
+    for (var i = 0; i < itens.length; i++) {
+      if (String(itens[i].id) === String(id)) return itens[i];
+    }
+    return null;
+  }
+
+  function comImagem() {
+    var itens = todosItens(), n = 0;
+    for (var i = 0; i < itens.length; i++) {
+      if (ehImagem(itens[i].p66img)) n++;
+    }
+    return n;
+  }
+
+  function pesoTotalKb() {
+    var itens = todosItens(), t = 0;
+    for (var i = 0; i < itens.length; i++) {
+      if (ehImagem(itens[i].p66img)) t += kb(itens[i].p66img);
+    }
+    return t;
+  }
+
+  function pesadas() {
+    var a = alvo(), itens = todosItens(), saida = [];
+    for (var i = 0; i < itens.length; i++) {
+      var it = itens[i];
+      if (!ehImagem(it.p66img)) continue;
+      if (kb(it.p66img) <= a.tetoKb) continue;
+      if (foiVista(it.p66img)) continue;
+      saida.push(it);
+    }
+    return saida;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 4 - GRAVACAO DA IMAGEM JA LEVE                               */
+  /* ------------------------------------------------------------------ */
+  var dentro = false;     /* evita que a nossa propria gravacao volte aqui */
+
+  function guardar(item, url) {
+    if (!item || !url) return false;
+    var antigo = item.p66img;
+    dentro = true;
+    try {
+      if (typeof window.editarItem === 'function' && item.id != null) {
+        window.editarItem(item.id, 'p66img', url);
+      }
+    } catch (e) { /* ignora */ }
+    dentro = false;
+    if (item.p66img !== url) {
+      try { item.p66img = url; } catch (e2) { /* ignora */ }
+    }
+    marcarVista(url);
+    try {
+      if (window.P66 && window.P66.cache) {
+        if (antigo) delete window.P66.cache[antigo];
+        delete window.P66.cache[url];
+      }
+    } catch (e3) { /* ignora */ }
+    return item.p66img === url;
+  }
+
+  function salvarPainel() {
+    try { if (typeof window.salvarDB === 'function') window.salvarDB(false); } catch (e) { /* ignora */ }
+  }
+
+  /* avisa o Patch 67 para regravar a vista no banco e no aparelho */
+  function avisarP67() {
+    var p = window.P67;
+    if (!p) { salvarPainel(); return; }
+    try { if (typeof p.capturar === 'function') p.capturar(); } catch (e) { /* ignora */ }
+    salvarPainel();
+    try { if (typeof p.salvarAgora === 'function') p.salvarAgora(); } catch (e2) { /* ignora */ }
+  }
+
+  function redesenhar(item, url) {
+    try { if (typeof window.render === 'function') window.render(); } catch (e) { /* ignora */ }
+    try {
+      var mini = document.querySelector('.p66-mini img');
+      if (mini && url) mini.src = url;
+    } catch (e2) { /* ignora */ }
+    try {
+      if (window.P66 && typeof window.P66.pintar === 'function') window.P66.pintar();
+    } catch (e3) { /* ignora */ }
+    if (item) { /* nada mais a fazer */ }
+  }
+
+  function anotar(res, origem) {
+    if (!res) return;
+    ultimo = {
+      antesKb: res.antesKb,
+      depoisKb: res.depoisKb,
+      largura: res.largura,
+      altura: res.altura,
+      origem: origem || 'anexo',
+      quando: agora()
+    };
+  }
+
+  function frase(res) {
+    if (!res) return '';
+    var corte = res.antesKb > 0 ? Math.max(0, Math.round((1 - res.depoisKb / res.antesKb) * 100)) : 0;
+    return bonito(res.antesKb) + ' -> ' + bonito(res.depoisKb) +
+      (corte > 0 ? ' (' + corte + '% mais leve)' : ' (ja estava leve)') +
+      (res.largura ? ', ' + res.largura + 'x' + res.altura + ' px' : '');
+  }
+
+  /* aplica o resultado no item e cuida de tudo em volta */
+  function aplicar(item, res, origem, quieto) {
+    if (!item || !res || !res.url) return false;
+    if (!res.ganhou && kb(item.p66img) <= alvo().tetoKb) {
+      marcarVista(item.p66img);
+      return false;
+    }
+    if (String(res.url).length >= String(item.p66img || '').length && item.p66img) {
+      marcarVista(item.p66img);
+      return false;
+    }
+    if (!guardar(item, res.url)) return false;
+    anotar(res, origem);
+    avisarP67();
+    redesenhar(item, res.url);
+    if (!quieto) {
+      recado('Imagem da Vista comprimida: ' + frase(res));
+      avisoP66('Imagem guardada e comprimida: ' + frase(res));
+    }
+    pintarCartao();
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 5 - PEGANDO O ARQUIVO ORIGINAL (MELHOR QUALIDADE)            */
+  /* ------------------------------------------------------------------ */
+  var bruto = null;       /* { url, antesKb, ts, ... } vindo do arquivo  */
+  var lendoBruto = 0;     /* quantas leituras estao em andamento         */
+
+  function pegarArquivo(arq) {
+    if (!arq || !/^image\//.test(arq.type || '')) return;
+    if (!regras.auto) return;
+    var pesoOriginal = Math.max(1, Math.round((Number(arq.size) || 0) / 1024));
+    lendoBruto++;
+    var pronto = false;
+    function acabar() {
+      if (pronto) return;
+      pronto = true;
+      lendoBruto = Math.max(0, lendoBruto - 1);
+    }
+    try {
+      var fr = new FileReader();
+      fr.onload = function () {
+        comprimir(String(fr.result || ''), function (res) {
+          if (res && res.url) {
+            if (pesoOriginal > 0) res.antesKb = pesoOriginal;
+            res.ganhou = true;
+            bruto = { res: res, ts: agora() };
+            recado('Reduzindo a imagem: ' + frase(res));
+          }
+          acabar();
+        });
+      };
+      fr.onerror = function () { acabar(); };
+      fr.readAsDataURL(arq);
+    } catch (e) { acabar(); }
+  }
+
+  function pegarDoEvento(ev) {
+    try {
+      var t = ev && ev.target;
+      var arq = null;
+      if (t && t.files && t.files.length) arq = t.files[0];
+      if (!arq && ev && ev.dataTransfer && ev.dataTransfer.files &&
+          ev.dataTransfer.files.length) arq = ev.dataTransfer.files[0];
+      if (!arq && ev && ev.clipboardData && ev.clipboardData.items) {
+        var its = ev.clipboardData.items;
+        for (var i = 0; i < its.length; i++) {
+          if (its[i] && its[i].kind === 'file') {
+            var f = its[i].getAsFile();
+            if (f && /^image\//.test(f.type || '')) { arq = f; break; }
+          }
+        }
+      }
+      if (arq) pegarArquivo(arq);
+    } catch (e) { /* ignora */ }
+  }
+
+  function ligarEscuta() {
+    if (P68.__escuta) return;
+    P68.__escuta = true;
+    try {
+      document.addEventListener('change', pegarDoEvento, true);
+      document.addEventListener('drop', pegarDoEvento, true);
+      document.addEventListener('paste', pegarDoEvento, true);
+    } catch (e) { /* ignora */ }
+  }
+
+  function brutoUtil(valor) {
+    if (!bruto || !bruto.res || !bruto.res.url) return null;
+    if (agora() - bruto.ts > 30000) { bruto = null; return null; }
+    var r = bruto.res;
+    if (valor && String(r.url).length >= String(valor).length) return null;
+    return r;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 6 - ENTRANDO NA HORA EM QUE A IMAGEM E GRAVADA               */
+  /* ------------------------------------------------------------------ */
+  function cuidarDoValor(id, valor) {
+    var espera = 0;
+    function tentar() {
+      var item = itemPorId(id);
+      if (!item || item.p66img !== valor) return;    /* mudou no meio do caminho */
+      var r = brutoUtil(valor);
+      if (r) {
+        bruto = null;
+        aplicar(item, r, 'anexo');
+        return;
+      }
+      if (lendoBruto > 0 && espera < 4000) {
+        espera += 250;
+        depois(tentar, 250);
+        return;
+      }
+      if (kb(valor) <= alvo().tetoKb) { marcarVista(valor); return; }
+      comprimir(valor, function (res) {
+        var vivo = itemPorId(id);
+        if (!vivo || vivo.p66img !== valor) return;
+        if (res) aplicar(vivo, res, 'anexo');
+        else marcarVista(valor);
+      });
+    }
+    depois(tentar, 60);
+  }
+
+  function ligarGravacao() {
+    if (P68.__ligado) return;
+    var original = window.editarItem;
+    if (typeof original !== 'function') return;
+    P68.__ligado = true;
+    P68.__editarOriginal = original;
+    window.editarItem = function (id, campo, valor) {
+      if (dentro || campo !== 'p66img' || !regras.auto || !ehImagem(valor)) {
+        return original.apply(this, arguments);
+      }
+      var r = brutoUtil(valor);
+      if (r) {
+        bruto = null;
+        var saida = original.call(this, id, campo, r.url);
+        marcarVista(r.url);
+        anotar(r, 'anexo');
+        depois(function () {
+          var item = itemPorId(id);
+          avisarP67();
+          redesenhar(item, r.url);
+          recado('Imagem comprimida ao anexar: ' + frase(r));
+          avisoP66('Imagem guardada e comprimida: ' + frase(r));
+          pintarCartao();
+        }, 10);
+        return saida;
+      }
+      var res0 = original.apply(this, arguments);
+      cuidarDoValor(id, valor);
+      return res0;
+    };
+  }
+
+  /* tambem cobre quem chamar P66.definirImagem direto (console, outros) */
+  function ligarDefinir() {
+    if (P68.__ligadoDefinir) return;
+    var p66 = window.P66;
+    if (!p66 || typeof p66.definirImagem !== 'function') return;
+    P68.__ligadoDefinir = true;
+    var original = p66.definirImagem;
+    P68.__definirOriginal = original;
+    p66.definirImagem = function (item, url) {
+      if (dentro || !regras.auto || !ehImagem(url)) {
+        return original.apply(this, arguments);
+      }
+      var r = brutoUtil(url);
+      if (r) {
+        bruto = null;
+        marcarVista(r.url);
+        anotar(r, 'anexo');
+        var saida = original.call(this, item, r.url);
+        depois(function () {
+          avisarP67();
+          recado('Imagem comprimida ao anexar: ' + frase(r));
+          pintarCartao();
+        }, 10);
+        return saida;
+      }
+      if (kb(url) <= alvo().tetoKb) {
+        marcarVista(url);
+        return original.apply(this, arguments);
+      }
+      var esse = this;
+      var args = arguments;
+      comprimir(url, function (res) {
+        if (res && res.url) {
+          marcarVista(res.url);
+          anotar(res, 'anexo');
+          dentro = true;
+          try { original.call(esse, item, res.url); } catch (e) { /* ignora */ }
+          dentro = false;
+          depois(function () {
+            avisarP67();
+            recado('Imagem comprimida ao anexar: ' + frase(res));
+            pintarCartao();
+          }, 10);
+        } else {
+          original.apply(esse, args);
+        }
+      });
+      return true;
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 7 - CUIDANDO DAS IMAGENS ANTIGAS                             */
+  /* ------------------------------------------------------------------ */
+  var ocupado = false;
+
+  function comprimirTodas(quieto, pronto) {
+    if (ocupado) {
+      if (!quieto) recado('Ja estou comprimindo. Um instante.', true);
+      if (typeof pronto === 'function') pronto(0);
+      return;
+    }
+    var alvos = pesadas();
+    if (!alvos.length) {
+      if (!quieto) recado('Todas as imagens da Vista ja estao dentro do alvo de ' +
+        bonito(alvo().tetoKb) + ' por imagem.');
+      if (typeof pronto === 'function') pronto(0);
+      return;
+    }
+    ocupado = true;
+    var antes = pesoTotalKb(), feitos = 0;
+    if (!quieto) recado('Comprimindo ' + alvos.length + ' imagem(ns) antiga(s)...');
+    function passo(k) {
+      if (k >= alvos.length) {
+        ocupado = false;
+        if (feitos) {
+          avisarP67();
+          redesenhar(null, '');
+        }
+        if (!quieto) {
+          recado('Pronto: ' + feitos + ' imagem(ns) comprimida(s). Peso das vistas de ' +
+            bonito(antes) + ' para ' + bonito(pesoTotalKb()) + '.');
+        } else if (feitos) {
+          log(feitos + ' imagem(ns) antiga(s) comprimida(s) sozinho.');
+        }
+        pintarCartao();
+        if (typeof pronto === 'function') pronto(feitos);
+        return;
+      }
+      var item = alvos[k];
+      if (!ehImagem(item.p66img) || foiVista(item.p66img)) { passo(k + 1); return; }
+      var antigo = item.p66img;
+      comprimir(antigo, function (res) {
+        if (res && res.url && res.url.length < antigo.length && item.p66img === antigo) {
+          if (guardar(item, res.url)) {
+            feitos++;
+            anotar(res, 'antiga');
+          }
+        } else {
+          marcarVista(antigo);
+        }
+        if (!quieto && (k % 3) === 0) {
+          recado('Comprimindo... ' + (k + 1) + ' de ' + alvos.length);
+          pintarCartao();
+        }
+        depois(function () { passo(k + 1); }, 12);
+      });
+    }
+    passo(0);
+  }
+  P68.comprimirTodas = function () { comprimirTodas(false); return true; };
+
+  function ligarVigia() {
+    if (P68.__vigia) return;
+    P68.__vigia = true;
+    try {
+      window.setInterval(function () {
+        if (!regras.antigas || ocupado) return;
+        if (!pesadas().length) return;
+        comprimirTodas(true);
+      }, 20000);
+    } catch (e) { /* ignora */ }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTE 8 - CARTAO DENTRO DA PRE-VISUALIZACAO                        */
+  /* ------------------------------------------------------------------ */
+  function recado(txt, ruim) {
+    var alv = porId('p68Recado');
+    if (alv) {
+      alv.textContent = txt || '';
+      alv.className = 'p68-recado' + (ruim ? ' p68-recado-ruim' : (txt ? ' p68-recado-bom' : ''));
+    }
+    if (txt) log(txt);
+  }
+
+  function avisoP66(txt) {
+    try {
+      var a = porId('p66Aviso');
+      if (a) {
+        a.textContent = txt;
+        a.className = 'p66-aviso p66-aviso-bom';
+      }
+    } catch (e) { /* ignora */ }
+  }
+
+  function botaoModo(chave) {
+    var m = MODOS[chave];
+    var ativo = regras.modo === chave ? ' p68-ativo' : '';
+    return '<button type="button" class="p68-passo' + ativo + '" data-p68modo="' + chave + '">' +
+      seguro(m.nome) + '<span>ate ' + m.tetoKb + ' KB / ' + m.lado + ' px</span></button>';
+  }
+
+  function corpoCartao() {
+    var a = alvo();
+    var n = comImagem();
+    var acima = pesadas().length;
+    var html = '<div class="p68-topo">' +
+      '<div class="p68-titulo">Compressao automatica das imagens da Vista</div>' +
+      '<div class="p68-sub">Toda foto anexada e reduzida na hora, antes de ser guardada. ' +
+      'As imagens antigas pesadas tambem sao acertadas sozinhas.</div>' +
+      '</div>';
+
+    html += '<div class="p68-linhas">' +
+      '<div class="p68-item"><b>' + n + '</b><span>vista(s) com imagem</span></div>' +
+      '<div class="p68-item"><b>' + bonito(pesoTotalKb()) + '</b><span>peso somado</span></div>' +
+      '<div class="p68-item"><b>' + acima + '</b><span>acima do alvo</span></div>' +
+      '<div class="p68-item"><b>' + bonito(a.tetoKb) + '</b><span>alvo por imagem</span></div>' +
+      '</div>';
+
+    html += '<div class="p68-rot">Qualidade guardada</div><div class="p68-passos">' +
+      botaoModo('economia') + botaoModo('equilibrado') + botaoModo('nitidez') + '</div>';
+
+    html += '<div class="p68-chaves">' +
+      '<button type="button" class="p68-chave' + (regras.auto ? ' p68-on' : '') +
+      '" data-p68acao="auto">' + (regras.auto ? 'Comprimindo ao anexar' : 'Sem comprimir ao anexar') +
+      '</button>' +
+      '<button type="button" class="p68-chave' + (regras.antigas ? ' p68-on' : '') +
+      '" data-p68acao="antigas">' + (regras.antigas ? 'Cuidando das antigas' : 'Antigas so no botao') +
+      '</button>' +
+      '</div>';
+
+    if (ultimo) {
+      var corte = ultimo.antesKb > 0 ?
+        Math.max(0, Math.round((1 - ultimo.depoisKb / ultimo.antesKb) * 100)) : 0;
+      html += '<div class="p68-antes">' +
+        '<div class="p68-antes-t">Ultima imagem tratada</div>' +
+        '<div class="p68-antes-v"><span class="p68-de">' + bonito(ultimo.antesKb) + '</span>' +
+        '<span class="p68-fl">para</span>' +
+        '<span class="p68-para">' + bonito(ultimo.depoisKb) + '</span>' +
+        '<span class="p68-corte">' + corte + '% mais leve</span></div>' +
+        (ultimo.largura ? '<div class="p68-antes-p">Tamanho final: ' + ultimo.largura + 'x' +
+          ultimo.altura + ' px</div>' : '') +
+        '</div>';
+    }
+
+    html += '<div class="p68-bts">' +
+      '<button type="button" class="p68-btn p68-btn-forte" data-p68acao="todas">' +
+      'Comprimir imagens antigas agora</button>' +
+      '<button type="button" class="p68-btn" data-p68acao="padrao">Voltar ao padrao</button>' +
+      '</div>';
+
+    html += '<div class="p68-recado" id="p68Recado"></div>';
+    return html;
+  }
+
+  function pintarCartao() {
+    var cartao = porId('p68Cartao');
+    if (!cartao) return;
+    var guardado = '';
+    var rec = porId('p68Recado');
+    if (rec) guardado = rec.textContent || '';
+    cartao.innerHTML = corpoCartao();
+    if (guardado) {
+      var novo = porId('p68Recado');
+      if (novo) {
+        novo.textContent = guardado;
+        novo.className = 'p68-recado p68-recado-bom';
+      }
+    }
+  }
+  P68.pintarCartao = pintarCartao;
+
+  function ligarCartao(cartao) {
+    if (cartao.getAttribute('data-p68pronto')) return;
+    cartao.setAttribute('data-p68pronto', '1');
+    cartao.addEventListener('click', function (ev) {
+      var t = ev.target, acao = '', modo = '';
+      while (t && t !== cartao) {
+        if (t.getAttribute) {
+          acao = t.getAttribute('data-p68acao');
+          modo = t.getAttribute('data-p68modo');
+        }
+        if (acao || modo) break;
+        t = t.parentNode;
+      }
+      if (!acao && !modo) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (modo) {
+        P68.definirRegras({ modo: modo });
+        recado('Qualidade agora: ' + (MODOS[modo] ? MODOS[modo].nome : modo) +
+          ' (alvo de ' + bonito(alvo().tetoKb) + ' por imagem).');
+        return;
+      }
+      if (acao === 'auto') {
+        P68.definirRegras({ auto: !regras.auto });
+        recado(regras.auto ? 'Vou comprimir cada imagem no momento em que for anexada.' :
+          'Compressao ao anexar desligada. Nada muda nas imagens ja guardadas.');
+      } else if (acao === 'antigas') {
+        P68.definirRegras({ antigas: !regras.antigas });
+        recado(regras.antigas ? 'Vou acertar sozinho as imagens antigas pesadas.' :
+          'As antigas ficam como estao. Use o botao quando quiser.');
+      } else if (acao === 'todas') {
+        comprimirTodas(false);
+      } else if (acao === 'padrao') {
+        P68.padrao();
+      }
+    });
+  }
+
+  function injetarCartao() {
+    var destino = document.querySelector('.p66-editor');
+    if (!destino) return;
+    var velho = porId('p68Cartao');
+    if (velho && velho.parentNode === destino) { pintarCartao(); return; }
+    if (velho && velho.parentNode) {
+      try { velho.parentNode.removeChild(velho); } catch (e) { /* ignora */ }
+    }
+    var cartao = document.createElement('div');
+    cartao.id = 'p68Cartao';
+    cartao.className = 'p68-cartao';
+    cartao.innerHTML = corpoCartao();
+    try { destino.appendChild(cartao); } catch (e2) { return; }
+    ligarCartao(cartao);
+  }
+  P68.injetarCartao = injetarCartao;
+
+  function ligarPreview() {
+    if (P68.__ligadoPreview) return;
+    P68.__ligadoPreview = true;
+    var original = window.abrirPreviewEsquadria;
+    if (typeof original === 'function') {
+      window.abrirPreviewEsquadria = function () {
+        var saida = original.apply(this, arguments);
+        depois(function () { try { injetarCartao(); } catch (e) { /* ignora */ } }, 120);
+        depois(function () { try { injetarCartao(); } catch (e2) { /* ignora */ } }, 500);
+        return saida;
+      };
+    }
+    try {
+      window.setInterval(function () {
+        try {
+          if (document.querySelector('.p66-editor') && !porId('p68Cartao')) injetarCartao();
+        } catch (e) { /* ignora */ }
+      }, 900);
+    } catch (e3) { /* ignora */ }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDA E SITUACAO                                                   */
+  /* ------------------------------------------------------------------ */
+  P68.ajuda = function () {
+    var linhas = [
+      'PATCH 68 - compressao automatica das imagens da Vista',
+      'Cada foto anexada na coluna Vista e reduzida na hora, antes de ser',
+      'guardada, e o painel mostra o antes e o depois. As imagens antigas',
+      'pesadas sao acertadas sozinhas, aos poucos.',
+      'P68.situacao()                mostra os numeros atuais',
+      'P68.comprimirTodas()          trata agora as imagens pesadas',
+      'P68.definirRegras("economia")   guarda o minimo de peso',
+      'P68.definirRegras("equilibrado") padrao de fabrica',
+      'P68.definirRegras("nitidez")     guarda com mais detalhe',
+      'P68.definirRegras({tetoKb:70})  escolhe o alvo de peso na mao',
+      'P68.definirRegras({auto:false}) desliga a compressao ao anexar',
+      'P68.padrao()                  volta tudo ao padrao'
+    ];
+    try { console.log(linhas.join('\n')); } catch (e) { /* ignora */ }
+    return linhas.length;
+  };
+
+  P68.situacao = function () {
+    var a = alvo();
+    var s = {
+      modo: regras.modo,
+      alvoKb: a.tetoKb,
+      ladoMaior: a.lado,
+      qualidade: a.q,
+      comprimeAoAnexar: !!regras.auto,
+      cuidaDasAntigas: !!regras.antigas,
+      vistasComImagem: comImagem(),
+      pesoKb: pesoTotalKb(),
+      acimaDoAlvo: pesadas().length,
+      ultimo: ultimo
+    };
+    try { console.log('[P68] ' + JSON.stringify(s)); } catch (e) { /* ignora */ }
+    return s;
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* PARTIDA                                                            */
+  /* ------------------------------------------------------------------ */
+  function iniciar() {
+    lerRegras();
+    ligarEscuta();
+    ligarGravacao();
+    ligarDefinir();
+    ligarPreview();
+    ligarVigia();
+    P68.__pronto = true;
+    depois(function () {
+      try { if (regras.antigas && pesadas().length) comprimirTodas(true); } catch (e) { /* ignora */ }
+    }, 8000);
+  }
+
+  function partir() {
+    try { iniciar(); } catch (e) { log('nao consegui iniciar: ' + e); }
+    /* o P66 pode entrar depois; tentamos ligar de novo algumas vezes */
+    var voltas = 0;
+    try {
+      var t = window.setInterval(function () {
+        voltas++;
+        try { ligarGravacao(); ligarDefinir(); } catch (e) { /* ignora */ }
+        if (voltas > 40 || (P68.__ligado && P68.__ligadoDefinir)) window.clearInterval(t);
+      }, 700);
+    } catch (e2) { /* ignora */ }
+    log('Patch 68 ativo: as imagens da Vista sao comprimidas ao anexar. Use P68.ajuda().');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { depois(partir, 700); });
+  } else {
+    depois(partir, 700);
+  }
+}());
+</script>
+
+<style>
+/* PATCH 68: CARTAO DA COMPRESSAO AUTOMATICA DAS IMAGENS DA VISTA */
+.p68-cartao {
+  margin: 12px 0 4px;
+  padding: 11px 12px 10px;
+  border: 1px solid #d6e2d9;
+  border-left: 4px solid #157347;
+  border-radius: 10px;
+  background: #f6fbf7;
+  text-align: left;
+  font-family: inherit;
+  font-size: 12px;
+  color: #1f2a37;
+}
+
+.p68-topo { margin-bottom: 8px; }
+
+.p68-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.p68-sub {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.p68-linhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.p68-item {
+  flex: 1 1 96px;
+  min-width: 92px;
+  padding: 6px 8px;
+  border: 1px solid #dbe6de;
+  border-radius: 8px;
+  background: #ffffff;
+  line-height: 1.25;
+}
+
+.p68-item b {
+  display: block;
+  font-size: 13px;
+  color: #14532d;
+}
+
+.p68-item span {
+  font-size: 10.5px;
+  color: #6b7280;
+}
+
+.p68-rot {
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+  margin: 6px 0 4px;
+}
+
+.p68-passos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.p68-passo {
+  flex: 1 1 110px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #14314f;
+  background: #ffffff;
+  border: 1px solid #c9dacf;
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.p68-passo span {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.p68-passo:hover { background: #eefaf1; border-color: #8fc9a6; }
+
+.p68-passo.p68-ativo {
+  color: #ffffff;
+  background: #157347;
+  border-color: #157347;
+}
+
+.p68-passo.p68-ativo span { color: #dcf3e5; }
+
+.p68-chaves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.p68-chave {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #d7dbe0;
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.p68-chave.p68-on {
+  color: #14532d;
+  background: #e6f6ea;
+  border-color: #a9dcbc;
+}
+
+.p68-antes {
+  margin: 2px 0 8px;
+  padding: 7px 9px;
+  border: 1px solid #dbe6de;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.p68-antes-t {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.p68-antes-v {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.p68-de {
+  font-size: 12px;
+  color: #8a1c1c;
+  text-decoration: line-through;
+}
+
+.p68-fl { font-size: 10.5px; color: #9ca3af; }
+
+.p68-para {
+  font-size: 13px;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.p68-corte {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #14532d;
+  background: #e6f6ea;
+  border: 1px solid #bde5c8;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.p68-antes-p {
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: #6b7280;
+}
+
+.p68-bts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.p68-btn {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #14314f;
+  background: #ffffff;
+  border: 1px solid #c9dacf;
+  border-radius: 7px;
+  padding: 5px 10px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.p68-btn:hover { background: #eefaf1; border-color: #8fc9a6; }
+
+.p68-btn-forte {
+  color: #ffffff;
+  background: #157347;
+  border-color: #157347;
+}
+
+.p68-btn-forte:hover { background: #11603b; border-color: #11603b; }
+
+.p68-recado {
+  margin-top: 7px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #475569;
+  min-height: 1px;
+}
+
+.p68-recado-bom { color: #14532d; }
+.p68-recado-ruim { color: #8a1c1c; }
+
+@media (max-width: 620px) {
+  .p68-passo { flex: 1 1 100%; }
+  .p68-bts { flex-direction: column; align-items: stretch; }
+  .p68-btn { text-align: center; }
+}
+</style>
+
+
+
+<script>
+/* PATCH 70: VALOR PAGO CERTO E NA IMPRESSAO (Pagamento > Resumo do Mes) */
+(function () {
+  if (window.P70 && window.P70.__v70) return;
+  var P70 = window.P70 = window.P70 || {};
+  P70.__v70 = true;
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES                                                          */
+  /* ------------------------------------------------------------------ */
+  function ehLista(x) { return Object.prototype.toString.call(x) === '[object Array]'; }
+
+  function listaObras() {
+    try {
+      if (window.db && ehLista(window.db.obras)) return window.db.obras;
+    } catch (e) { /* ignora */ }
+    try {
+      /* eslint-disable no-undef */
+      if (typeof db !== 'undefined' && db && ehLista(db.obras)) return db.obras;
+    } catch (e2) { /* ignora */ }
+    try {
+      if (ehLista(window.dbObras)) return window.dbObras;
+    } catch (e3) { /* ignora */ }
+    return [];
+  }
+
+  function mesAtual() {
+    try {
+      if (typeof window.getChaveMesPgto === 'function') return window.getChaveMesPgto();
+    } catch (e) { /* ignora */ }
+    return '';
+  }
+
+  function fichaColab(obra, colabId) {
+    var lista = (obra && obra.colaboradoresPgto) || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i] && String(lista[i].id) === String(colabId)) return lista[i];
+    }
+    return null;
+  }
+
+  /* a obra que fica responsavel por guardar o valor pago do colaborador:
+     sempre a primeira da lista que tem ficha dele (escolha estavel) */
+  function obraDona(colabId) {
+    var obras = listaObras();
+    for (var i = 0; i < obras.length; i++) {
+      if (fichaColab(obras[i], colabId)) return obras[i].id;
+    }
+    return '';
+  }
+
+  function paraNumero(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v == null ? '' : v).replace(/\s/g, '').replace(/R\$/gi, '');
+    if (s.indexOf(',') > -1) {
+      if (s.indexOf('.') > -1) s = s.replace(/\./g, '');
+      s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function dinheiro(n) {
+    var v = paraNumero(n);
+    try {
+      return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return 'R$ ' + v.toFixed(2);
+    }
+  }
+
+  /* valor unico do colaborador no mes: o maior valor guardado entre as
+     obras (as copias repetidas nascem sempre iguais ao digitado, por isso
+     o maior e exatamente o que a pessoa escreveu; nunca a soma) */
+  function valorUnico(colabId, mesKey) {
+    var obras = listaObras();
+    var achou = false;
+    var maior = 0;
+    for (var i = 0; i < obras.length; i++) {
+      var f = fichaColab(obras[i], colabId);
+      if (!f || !f.valorPagoManual) continue;
+      if (!(mesKey in f.valorPagoManual)) continue;
+      var n = paraNumero(f.valorPagoManual[mesKey]);
+      if (!achou || n > maior) { maior = n; achou = true; }
+    }
+    return achou ? maior : 0;
+  }
+
+  /* deixa o valor gravado em UMA obra so e zera as repeticoes */
+  function guardarEmUmLugar(colabId, mesKey, donaId, valor) {
+    var obras = listaObras();
+    var mudou = false;
+    for (var i = 0; i < obras.length; i++) {
+      var obra = obras[i];
+      var f = fichaColab(obra, colabId);
+      if (!f) continue;
+      if (!f.valorPagoManual) f.valorPagoManual = {};
+      var alvo = (String(obra.id) === String(donaId)) ? paraNumero(valor) : 0;
+      if (paraNumero(f.valorPagoManual[mesKey]) !== alvo) {
+        f.valorPagoManual[mesKey] = alvo;
+        mudou = true;
+      }
+    }
+    return mudou;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 1) GRAVACAO: guarda o que foi digitado, sem repetir em outras obras */
+  /* ------------------------------------------------------------------ */
+  function ligarGravacao() {
+    var original = window.atualizarValorPagoPgto;
+    if (typeof original !== 'function' || original.__p70) return false;
+
+    var novo = function (colabId, obraId, valor) {
+      var mesKey = mesAtual();
+      var dona = obraDona(colabId) || obraId;
+      var num = paraNumero(valor);
+      try { guardarEmUmLugar(colabId, mesKey, dona, num); } catch (e) { /* ignora */ }
+      return original.call(this, colabId, dona, num);
+    };
+    novo.__p70 = true;
+    window.atualizarValorPagoPgto = novo;
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 2) TELA E PAPEL: valor certo no campo, eco para a impressao        */
+  /* ------------------------------------------------------------------ */
+  function dadosDoCampo(campo) {
+    var attr = campo.getAttribute('onchange') || campo.getAttribute('data-p70-alvo') || '';
+    var m = /atualizarValorPagoPgto\(\s*'([^']*)'\s*,\s*'([^']*)'/.exec(attr);
+    if (!m) return null;
+    return { colabId: m[1], obraId: m[2] };
+  }
+
+  function arrumarCampo(campo, mesKey) {
+    var d = dadosDoCampo(campo);
+    if (!d) return 0;
+
+    var valor = valorUnico(d.colabId, mesKey);
+    var dona = obraDona(d.colabId) || d.obraId;
+
+    /* o campo passa a apontar para a obra dona, sem HTML montado na mao */
+    campo.setAttribute('data-p70-alvo', "atualizarValorPagoPgto('" + d.colabId + "','" + dona + "')");
+    campo.removeAttribute('onchange');
+    if (!campo.__p70ligado) {
+      campo.__p70ligado = true;
+      campo.addEventListener('change', function () {
+        if (typeof window.atualizarValorPagoPgto === 'function') {
+          window.atualizarValorPagoPgto(d.colabId, dona, this.value);
+        }
+      });
+    }
+
+    /* mostra no campo exatamente o valor guardado */
+    var texto = valor ? String(valor) : '0';
+    if (String(campo.value) !== texto) campo.value = texto;
+
+    /* eco que some na tela e aparece no papel (mesmo estilo do resumo
+       impresso ja existente, para nao duplicar o numero) */
+    campo.setAttribute('data-p63eco', '1');
+    var pai = campo.parentNode;
+    if (pai) {
+      var eco = pai.querySelector('.p70-eco-papel');
+      if (!eco) {
+        eco = document.createElement('span');
+        eco.className = 'p63-eco-papel p70-eco-papel';
+        pai.appendChild(eco);
+      }
+      eco.textContent = dinheiro(valor);
+    }
+    return valor;
+  }
+
+  function acharItemTotais(caixa, rotulo) {
+    var itens = caixa ? caixa.querySelectorAll('.totais-item') : [];
+    for (var i = 0; i < itens.length; i++) {
+      var t = (itens[i].textContent || '').toLowerCase();
+      if (t.indexOf(rotulo) > -1) return itens[i];
+    }
+    return null;
+  }
+
+  function valorDoItem(item) {
+    if (!item) return 0;
+    var v = item.querySelector('.totais-value');
+    return v ? paraNumero(v.textContent) : 0;
+  }
+
+  function arrumarTotais(totalPago) {
+    var caixa = document.getElementById('containerTotaisPgto');
+    if (!caixa) return;
+
+    var itemPago = acharItemTotais(caixa, 'valor pago');
+    if (itemPago) {
+      var alvo = itemPago.querySelector('.totais-value');
+      if (alvo) alvo.textContent = dinheiro(totalPago);
+    }
+
+    var itemCusto = acharItemTotais(caixa, 'custo total');
+    var itemSaldo = acharItemTotais(caixa, 'saldo');
+    if (itemCusto && itemSaldo) {
+      var saldo = valorDoItem(itemCusto) - totalPago;
+      var alvoS = itemSaldo.querySelector('.totais-value');
+      if (alvoS) {
+        alvoS.textContent = dinheiro(saldo);
+        if (saldo > 0) {
+          if (alvoS.className.indexOf('totais-red') < 0) alvoS.className += ' totais-red';
+        } else {
+          alvoS.className = alvoS.className.replace(/\s*totais-red/g, '');
+        }
+      }
+    }
+  }
+
+  function arrumarResumo() {
+    var caixa = document.getElementById('containerResumoPgto');
+    if (!caixa) return;
+    var mesKey = mesAtual();
+    var campos = caixa.querySelectorAll('.valor-pago-cell input, td:last-child input[type="number"]');
+    var total = 0;
+    var vistos = {};
+    for (var i = 0; i < campos.length; i++) {
+      var campo = campos[i];
+      var d = dadosDoCampo(campo);
+      var v = arrumarCampo(campo, mesKey);
+      var chave = d ? String(d.colabId) : ('_' + i);
+      if (!vistos[chave]) { vistos[chave] = true; total += v; }
+      /* marca a celula para a impressao encontrar */
+      var cel = campo.parentNode;
+      if (cel && cel.tagName === 'TD' && cel.className.indexOf('valor-pago-cell') < 0) {
+        cel.className += ' valor-pago-cell';
+      }
+      if (cel && cel.tagName === 'TD') cel.setAttribute('data-p70', '1');
+    }
+    arrumarTotais(total);
+  }
+  P70.arrumar = arrumarResumo;
+
+  /* ------------------------------------------------------------------ */
+  /* 3) O RESUMO ABRE SEMPRE NO MES DE HOJE                             */
+  /* ------------------------------------------------------------------ */
+  function numeroDoMes(chave) {
+    var m = /^(\d{4})-(\d{1,2})$/.exec(String(chave || ''));
+    if (!m) return null;
+    return parseInt(m[1], 10) * 12 + (parseInt(m[2], 10) - 1);
+  }
+
+  function irParaMesVigente() {
+    if (typeof window.mudarMesPgto !== 'function') return false;
+    var hoje = new Date();
+    var alvo = hoje.getFullYear() * 12 + hoje.getMonth();
+    for (var passos = 0; passos < 240; passos++) {
+      var atual = numeroDoMes(mesAtual());
+      if (atual === null) return false;
+      if (atual === alvo) return true;
+      window.mudarMesPgto(atual < alvo ? 1 : -1);
+    }
+    return false;
+  }
+  P70.mesDeHoje = irParaMesVigente;
+
+  function ligarSubAba() {
+    var original = window.trocarSubTabPgtoNovo;
+    if (typeof original !== 'function' || original.__p70) return false;
+    var novo = function (tab) {
+      var r = original.apply(this, arguments);
+      if (tab === 'resumo') {
+        try { irParaMesVigente(); } catch (e) { /* ignora */ }
+        /* redesenha o mes de hoje com os lancamentos dele */
+        try {
+          if (typeof window.renderPagamento === 'function') window.renderPagamento();
+        } catch (e) { /* ignora */ }
+        try { arrumarResumo(); } catch (e) { /* ignora */ }
+      }
+      return r;
+    };
+    novo.__p70 = true;
+    window.trocarSubTabPgtoNovo = novo;
+    return true;
+  }
+
+  function ligarDesenho() {
+    var original = window.renderResumoPgto;
+    if (typeof original !== 'function' || original.__p70) return false;
+    var novo = function () {
+      var r = original.apply(this, arguments);
+      try { arrumarResumo(); } catch (e) { /* ignora */ }
+      return r;
+    };
+    novo.__p70 = true;
+    window.renderResumoPgto = novo;
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTIDA                                                            */
+  /* ------------------------------------------------------------------ */
+  function comecar() {
+    ligarGravacao();
+    ligarDesenho();
+    ligarSubAba();
+    try { arrumarResumo(); } catch (e) { /* ignora */ }
+  }
+
+  P70.situacao = function () {
+    var mesKey = mesAtual();
+    console.log('Patch 70 ativo. Mes em uso: ' + (mesKey || '(nao identificado)'));
+    console.log('Gravacao protegida: ' +
+      (window.atualizarValorPagoPgto && window.atualizarValorPagoPgto.__p70 ? 'sim' : 'nao'));
+    console.log('Resumo ajustado: ' +
+      (window.renderResumoPgto && window.renderResumoPgto.__p70 ? 'sim' : 'nao'));
+    console.log('Abre no mes de hoje: ' +
+      (window.trocarSubTabPgtoNovo && window.trocarSubTabPgtoNovo.__p70 ? 'sim' : 'nao'));
+    return true;
+  };
+
+  function esperar(vezes) {
+    if (typeof window.renderResumoPgto === 'function' &&
+        typeof window.atualizarValorPagoPgto === 'function') {
+      comecar();
+      return;
+    }
+    if (vezes <= 0) return;
+    setTimeout(function () { esperar(vezes - 1); }, 300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { esperar(40); });
+  } else {
+    esperar(40);
+  }
+})();
+</script>
+<style>
+/* PATCH 70: a coluna VALOR PAGO tambem vai para o papel */
+
+/* o numero escrito no lugar do campo: some na tela, aparece na impressao */
+.p70-eco-papel { display: none; }
+
+@media print {
+  /* cabecalho e celulas da coluna Valor Pago voltam a aparecer */
+  #containerResumoPgto table th:last-child,
+  #containerResumoPgto table td:last-child,
+  #containerResumoPgto .valor-pago-cell,
+  #containerResumoPgto td[data-p70],
+  #p63ResumoTabela table th:last-child,
+  #p63ResumoTabela table td:last-child,
+  #p63ResumoTabela .valor-pago-cell,
+  #p63ResumoTabela td[data-p70] {
+    display: table-cell !important;
+  }
+
+  /* o campo digitavel continua fora do papel, o valor dele fica */
+  #containerResumoPgto .valor-pago-cell input,
+  #p63ResumoTabela .valor-pago-cell input {
+    display: none !important;
+  }
+
+  .p70-eco-papel,
+  #containerResumoPgto .p70-eco-papel,
+  #p63ResumoTabela .p70-eco-papel,
+  body.p63-print-all .p70-eco-papel {
+    display: inline !important;
+    font-weight: 700;
+    color: black !important;
+  }
+}
+
+/* impressao feita pelo botao do painel (usa a marca print-active) */
+body.print-active #containerResumoPgto table th:last-child,
+body.print-active #containerResumoPgto table td:last-child,
+body.print-active #containerResumoPgto .valor-pago-cell,
+body.print-active #containerResumoPgto td[data-p70],
+#tab-pagamento.print-active #containerResumoPgto table th:last-child,
+#tab-pagamento.print-active #containerResumoPgto table td:last-child,
+#tab-pagamento.print-active #containerResumoPgto .valor-pago-cell,
+#tab-pagamento.print-active #containerResumoPgto td[data-p70] {
+  display: table-cell !important;
+}
+
+body.print-active #containerResumoPgto .valor-pago-cell input,
+#tab-pagamento.print-active #containerResumoPgto .valor-pago-cell input {
+  display: none !important;
+}
+
+body.print-active #containerResumoPgto .p70-eco-papel,
+#tab-pagamento.print-active #containerResumoPgto .p70-eco-papel {
+  display: inline !important;
+  font-weight: 700;
+}
+</style>
+
+
+<script>
+/* PATCH 71: PAGAMENTO EDITAVEL NOS DOIS LADOS E IMPRESSAO POR SECAO */
+(function () {
+  if (window.P71 && window.P71.__v71) return;
+  var P71 = window.P71 = window.P71 || {};
+  P71.__v71 = true;
+  P71.ultimaSecao = '';
+
+  var MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES                                                          */
+  /* ------------------------------------------------------------------ */
+  function porId(id) { return document.getElementById(id); }
+
+  function paraNumero(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v == null ? '' : v).replace(/\s/g, '').replace(/R\$/gi, '');
+    if (s.indexOf(',') > -1) {
+      if (s.indexOf('.') > -1) s = s.replace(/\./g, '');
+      s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function dinheiro(n) {
+    var v = paraNumero(n);
+    try {
+      return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return 'R$ ' + v.toFixed(2);
+    }
+  }
+
+  function ehLista(x) { return Object.prototype.toString.call(x) === '[object Array]'; }
+
+  function listaObras() {
+    try { if (window.db && ehLista(window.db.obras)) return window.db.obras; } catch (e) { /* ignora */ }
+    try {
+      /* eslint-disable no-undef */
+      if (typeof db !== 'undefined' && db && ehLista(db.obras)) return db.obras;
+    } catch (e2) { /* ignora */ }
+    return [];
+  }
+
+  function chaveMes() {
+    try {
+      if (typeof window.getChaveMesPgto === 'function') return window.getChaveMesPgto();
+    } catch (e) { /* ignora */ }
+    return '';
+  }
+
+  function mesEscrito() {
+    var m = /^(\d{4})-(\d{1,2})$/.exec(String(chaveMes() || ''));
+    if (m) {
+      var i = parseInt(m[2], 10) - 1;
+      if (i >= 0 && i < 12) return MESES[i] + '/' + m[1];
+    }
+    var rot = porId('pgtoMesAnoLabel');
+    return rot ? (rot.textContent || '') : '';
+  }
+
+  function numeroDoMes(ch) {
+    var m = /^(\d{4})-(\d{1,2})$/.exec(String(ch || ''));
+    if (!m) return null;
+    return parseInt(m[1], 10) * 12 + (parseInt(m[2], 10) - 1);
+  }
+
+  /* valor guardado do colaborador no mes: o maior entre as obras
+     (o Patch 70 mantem o numero em um lugar so, entao o maior e
+     exatamente o que foi digitado - nunca a soma) */
+  function fichaColab(obra, colabId) {
+    var lista = (obra && obra.colaboradoresPgto) || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i] && String(lista[i].id) === String(colabId)) return lista[i];
+    }
+    return null;
+  }
+
+  function valorGuardado(colabId) {
+    var mes = chaveMes();
+    var obras = listaObras();
+    var achou = false, maior = 0;
+    for (var i = 0; i < obras.length; i++) {
+      var f = fichaColab(obras[i], colabId);
+      if (!f || !f.valorPagoManual) continue;
+      if (!(mes in f.valorPagoManual)) continue;
+      var n = paraNumero(f.valorPagoManual[mes]);
+      if (!achou || n > maior) { maior = n; achou = true; }
+    }
+    return achou ? maior : 0;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 1) TITULO E MES DO MOMENTO NAS DUAS SUB-ABAS                       */
+  /* ------------------------------------------------------------------ */
+  function garantirTitulo(painelId, tituloId, texto) {
+    var painel = porId(painelId);
+    if (!painel) return null;
+    var t = porId(tituloId);
+    if (!t) {
+      t = document.createElement('div');
+      t.id = tituloId;
+      t.className = 'p71-titulo';
+    }
+    if (t.parentNode !== painel || painel.firstElementChild !== t) {
+      painel.insertBefore(t, painel.firstChild);
+    }
+    if (t.textContent !== texto) t.textContent = texto;
+    return t;
+  }
+
+  function atualizarTitulos() {
+    var mes = mesEscrito();
+    garantirTitulo('panelPgtoLancamentos', 'p71TituloLancamentos',
+      'Lan\u00e7amentos de Pagamento \u2014 ' + mes);
+    garantirTitulo('panelPgtoResumo', 'p71TituloResumo',
+      'Resumo de Pagamento do M\u00eas \u2014 ' + mes);
+  }
+  P71.titulos = atualizarTitulos;
+
+  function irParaMesVigente() {
+    if (typeof window.mudarMesPgto !== 'function') return false;
+    var hoje = new Date();
+    var alvo = hoje.getFullYear() * 12 + hoje.getMonth();
+    for (var passos = 0; passos < 400; passos++) {
+      var atual = numeroDoMes(chaveMes());
+      if (atual === null) return false;
+      if (atual === alvo) return true;
+      window.mudarMesPgto(atual < alvo ? 1 : -1);
+    }
+    return false;
+  }
+  P71.mesDeHoje = irParaMesVigente;
+
+  /* ------------------------------------------------------------------ */
+  /* 2) RESUMO EDITAVEL NOS DOIS LADOS                                  */
+  /* ------------------------------------------------------------------ */
+  function dadosDoCampo(campo) {
+    var colab = campo.getAttribute('data-p71-colab');
+    var obra = campo.getAttribute('data-p71-obra');
+    if (colab) return { colabId: colab, obraId: obra || '' };
+    var attr = campo.getAttribute('onchange') || campo.getAttribute('data-p70-alvo') || '';
+    var m = /atualizarValorPagoPgto\(\s*'([^']*)'\s*,\s*'([^']*)'/.exec(attr);
+    if (!m) return null;
+    return { colabId: m[1], obraId: m[2] };
+  }
+
+  function camposDe(raiz) {
+    if (!raiz) return [];
+    return raiz.querySelectorAll(
+      '.valor-pago-cell input, input[data-p71], input[data-p70-alvo], td:last-child input[type="number"]');
+  }
+
+  function prepararCampo(campo) {
+    var d = dadosDoCampo(campo);
+    if (!d) return null;
+
+    campo.setAttribute('data-p71', '1');
+    campo.setAttribute('data-p71-colab', d.colabId);
+    if (d.obraId) campo.setAttribute('data-p71-obra', d.obraId);
+
+    /* o campo do resumo de baixo era so para olhar: agora aceita digitacao */
+    if (campo.disabled) campo.disabled = false;
+    if (campo.readOnly) campo.readOnly = false;
+    campo.removeAttribute('disabled');
+    campo.removeAttribute('readonly');
+
+    /* aceita virgula: campo de texto com teclado numerico no celular */
+    if (String(campo.getAttribute('type') || '').toLowerCase() !== 'text') {
+      campo.setAttribute('type', 'text');
+      try { campo.type = 'text'; } catch (e) { /* ignora */ }
+    }
+    if (!campo.getAttribute('inputmode')) campo.setAttribute('inputmode', 'decimal');
+
+    var valor = valorGuardado(d.colabId);
+    var texto = String(valor || 0);
+    if (String(campo.value) !== texto && document.activeElement !== campo) campo.value = texto;
+
+    /* eco que some na tela e aparece no papel */
+    var cel = campo.parentNode;
+    if (cel && cel.tagName === 'TD') {
+      if ((cel.className || '').indexOf('valor-pago-cell') < 0) cel.className += ' valor-pago-cell';
+      cel.setAttribute('data-p70', '1');
+      var eco = cel.querySelector('.p70-eco-papel, .p63-eco-papel');
+      if (!eco) {
+        eco = document.createElement('span');
+        eco.className = 'p63-eco-papel p70-eco-papel';
+        cel.appendChild(eco);
+      }
+      eco.textContent = dinheiro(valor);
+    }
+    return { colabId: d.colabId, valor: valor };
+  }
+
+  function acharItem(caixa, rotulo) {
+    var itens = caixa ? caixa.querySelectorAll('.totais-item') : [];
+    for (var i = 0; i < itens.length; i++) {
+      if ((itens[i].textContent || '').toLowerCase().indexOf(rotulo) > -1) return itens[i];
+    }
+    return null;
+  }
+
+  function valorDoItem(item) {
+    if (!item) return 0;
+    var v = item.querySelector('.totais-value');
+    return v ? paraNumero(v.textContent) : 0;
+  }
+
+  function ajustarTotais(caixaId, totalPago) {
+    var caixa = porId(caixaId);
+    if (!caixa) return;
+
+    var itemPago = acharItem(caixa, 'valor pago');
+    if (itemPago) {
+      var alvo = itemPago.querySelector('.totais-value');
+      if (alvo) alvo.textContent = dinheiro(totalPago);
+    }
+
+    var itemCusto = acharItem(caixa, 'custo total');
+    var itemSaldo = acharItem(caixa, 'saldo');
+    if (itemCusto && itemSaldo) {
+      var saldo = valorDoItem(itemCusto) - totalPago;
+      var alvoS = itemSaldo.querySelector('.totais-value');
+      if (alvoS) {
+        alvoS.textContent = dinheiro(saldo);
+        if (saldo > 0) {
+          if ((alvoS.className || '').indexOf('totais-red') < 0) alvoS.className += ' totais-red';
+        } else {
+          alvoS.className = String(alvoS.className || '').replace(/\s*totais-red/g, '');
+        }
+      }
+    }
+  }
+
+  function arrumarLado(raizId, totaisId) {
+    var raiz = porId(raizId);
+    if (!raiz) return 0;
+    var campos = camposDe(raiz);
+    var total = 0, vistos = {};
+    for (var i = 0; i < campos.length; i++) {
+      var r = prepararCampo(campos[i]);
+      if (!r) continue;
+      if (!vistos[r.colabId]) { vistos[r.colabId] = true; total += r.valor; }
+    }
+    if (totaisId) ajustarTotais(totaisId, total);
+    return total;
+  }
+
+  /* o bloco de resumo que fica no fim dos Lancamentos */
+  function garantirBloco() {
+    var painel = porId('panelPgtoLancamentos');
+    if (!painel) return null;
+    var bloco = porId('p63BlocoResumo');
+    if (bloco) return bloco;
+    bloco = porId('p71BlocoResumo');
+    if (!bloco) {
+      bloco = document.createElement('div');
+      bloco.id = 'p71BlocoResumo';
+      bloco.className = 'p63-resumo-bloco p71-resumo-bloco';
+      bloco.innerHTML =
+        '<h3 class="p63-resumo-titulo">Resumo de Pagamento do M&ecirc;s</h3>' +
+        '<div class="p63-resumo-flex">' +
+        '<div class="p63-resumo-tabela" id="p63ResumoTabela"></div>' +
+        '<div class="totais-panel p63-totais">' +
+        '<h3>Totais Gerais do M&ecirc;s</h3>' +
+        '<div id="p63ResumoTotais"></div>' +
+        '</div></div>';
+      painel.appendChild(bloco);
+    } else if (bloco.parentNode !== painel) {
+      painel.appendChild(bloco);
+    }
+    return bloco;
+  }
+
+  function copiarParaLancamentos() {
+    garantirBloco();
+    var origem = porId('containerResumoPgto');
+    var origemTot = porId('containerTotaisPgto');
+    var destino = porId('p63ResumoTabela');
+    var destinoTot = porId('p63ResumoTotais');
+    if (destino && origem) destino.innerHTML = origem.innerHTML;
+    if (destinoTot && origemTot) destinoTot.innerHTML = origemTot.innerHTML;
+  }
+
+  var trabalhando = false;
+
+  function arrumar() {
+    if (trabalhando) return false;
+    trabalhando = true;
+    try {
+      /* refaz a conta do mes que esta na tela */
+      try {
+        if (typeof window.renderResumoPgto === 'function') window.renderResumoPgto();
+      } catch (e) { /* ignora */ }
+
+      arrumarLado('containerResumoPgto', 'containerTotaisPgto');
+      copiarParaLancamentos();
+      arrumarLado('p63ResumoTabela', 'p63ResumoTotais');
+      atualizarTitulos();
+    } finally {
+      trabalhando = false;
+    }
+    return true;
+  }
+  P71.arrumar = arrumar;
+
+  /* digitar no resumo de baixo grava do mesmo jeito que no Resumo:
+     o campo copiado nao tem ligacao propria, entao a pagina toda escuta */
+  function ligarDigitacao() {
+    if (P71.__digitacao) return;
+    P71.__digitacao = true;
+
+    function tratar(ev) {
+      var campo = ev.target;
+      if (!campo || campo.tagName !== 'INPUT') return;
+      if (!campo.getAttribute('data-p71')) return;
+      var bloco = porId('p63ResumoTabela');
+      if (!bloco || !bloco.contains(campo)) return; /* o lado do Resumo ja tem a sua ligacao */
+      var d = dadosDoCampo(campo);
+      if (!d) return;
+      if (typeof window.atualizarValorPagoPgto !== 'function') return;
+      try {
+        window.atualizarValorPagoPgto(d.colabId, d.obraId, paraNumero(campo.value));
+      } catch (e) { /* ignora */ }
+      try { arrumar(); } catch (e2) { /* ignora */ }
+    }
+
+    document.addEventListener('change', tratar, false);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 3) CADA BOTAO IMPRIME SOMENTE A SUA SECAO                          */
+  /* ------------------------------------------------------------------ */
+  var SECOES = ['panelPgtoLancamentos', 'panelPgtoResumo', 'panelPgtoColaboradores'];
+
+  function ehSecao(el) {
+    if (!el || el.nodeType !== 1 || !el.id) return false;
+    for (var i = 0; i < SECOES.length; i++) if (el.id === SECOES[i]) return true;
+    if (el.id.indexOf('tab-') === 0) return true;
+    return false;
+  }
+
+  function secaoDoBotao(btn) {
+    var el = btn;
+    while (el && el.nodeType === 1) {
+      if (ehSecao(el)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  var desfazer = [];
+
+  function guardarEstilo(el) {
+    desfazer.push([el, el.getAttribute('style'), el.className]);
+  }
+
+  function corVale(c) {
+    if (!c) return false;
+    if (c === 'transparent') return false;
+    if (String(c).indexOf('rgba(0, 0, 0, 0)') >= 0) return false;
+    return true;
+  }
+
+  function fixarCores(raiz) {
+    var lista = raiz.querySelectorAll('*');
+    var total = Math.min(lista.length, 4000);
+    for (var i = 0; i < total; i++) {
+      var el = lista[i];
+      if (!el || !el.style) continue;
+      var nome = el.tagName;
+      if (nome === 'SCRIPT' || nome === 'STYLE' || nome === 'CANVAS') continue;
+      var cs;
+      try { cs = window.getComputedStyle(el); } catch (e) { continue; }
+      if (!cs || cs.display === 'none') continue;
+      var fundo = cs.backgroundColor, texto = cs.color, borda = cs.borderTopColor;
+      var temBorda = (corVale(borda) && cs.borderTopWidth !== '0px');
+      if (!corVale(fundo) && !corVale(texto) && !temBorda) continue;
+      guardarEstilo(el);
+      if (corVale(fundo)) el.style.setProperty('background-color', fundo, 'important');
+      if (corVale(texto)) el.style.setProperty('color', texto, 'important');
+      if (temBorda) el.style.setProperty('border-color', borda, 'important');
+    }
+  }
+
+  function marcarCaminho(alvo) {
+    guardarEstilo(alvo);
+    alvo.setAttribute('data-p71-alvo', '1');
+    if ((alvo.className || '').indexOf('p71-secao-alvo') < 0) alvo.className += ' p71-secao-alvo';
+    alvo.style.setProperty('display', 'block', 'important');
+
+    var filho = alvo;
+    var pai = alvo.parentNode;
+    while (pai && pai.nodeType === 1) {
+      guardarEstilo(pai);
+      if ((pai.className || '').indexOf('p71-caminho') < 0) pai.className += ' p71-caminho';
+      if (pai !== document.body && pai !== document.documentElement) {
+        pai.style.setProperty('display', 'block', 'important');
+      }
+      var irmaos = pai.children || [];
+      for (var i = 0; i < irmaos.length; i++) {
+        var irmao = irmaos[i];
+        if (irmao === filho) continue;
+        if (irmao.tagName === 'SCRIPT' || irmao.tagName === 'STYLE') continue;
+        guardarEstilo(irmao);
+        if ((irmao.className || '').indexOf('p71-fora') < 0) irmao.className += ' p71-fora';
+      }
+      if (pai === document.body) break;
+      filho = pai;
+      pai = pai.parentNode;
+    }
+  }
+
+  function limparMarcas() {
+    for (var i = desfazer.length - 1; i >= 0; i--) {
+      var el = desfazer[i][0], estilo = desfazer[i][1], classe = desfazer[i][2];
+      if (!el) continue;
+      if (estilo === null) el.removeAttribute('style');
+      else el.setAttribute('style', estilo);
+      el.className = classe;
+    }
+    desfazer = [];
+    var marcados = document.querySelectorAll('[data-p71-alvo]');
+    for (var k = 0; k < marcados.length; k++) marcados[k].removeAttribute('data-p71-alvo');
+  }
+
+  function imprimirSecao(secao) {
+    var alvo = (typeof secao === 'string') ? porId(secao) : secao;
+    if (!alvo) return false;
+    P71.ultimaSecao = alvo.id || '';
+
+    /* fecha menus e caixas abertas para nao sujarem o papel */
+    try {
+      if (window.ORMENU && typeof window.ORMENU.fechar === 'function') window.ORMENU.fechar();
+      if (typeof window.p37FecharMenuAbas === 'function') window.p37FecharMenuAbas();
+      var menu = porId('meu-menu-abas');
+      if (menu) menu.removeAttribute('open');
+    } catch (e) { /* ignora */ }
+
+    if (alvo.id === 'panelPgtoLancamentos' || alvo.id === 'panelPgtoResumo') {
+      try { arrumar(); } catch (e) { /* ignora */ }
+    }
+
+    document.body.classList.add('p71-imprimindo');
+    marcarCaminho(alvo);
+    try { fixarCores(alvo); } catch (e) { /* ignora */ }
+
+    try {
+      window.print();
+    } finally {
+      limparMarcas();
+      document.body.classList.remove('p71-imprimindo');
+    }
+    return true;
+  }
+  P71.imprimirSecao = imprimirSecao;
+
+  function marcarBotoes() {
+    var botoes = document.querySelectorAll('button[onclick*="imprimirPagina"], a[onclick*="imprimirPagina"]');
+    for (var i = 0; i < botoes.length; i++) {
+      if (secaoDoBotao(botoes[i])) botoes[i].setAttribute('data-p71-botao', '1');
+    }
+  }
+  P71.marcarBotoes = marcarBotoes;
+
+  function ligarBotoes() {
+    if (P71.__cliques) return;
+    P71.__cliques = true;
+
+    document.addEventListener('click', function (ev) {
+      var el = ev.target;
+      var btn = null;
+      while (el && el.nodeType === 1) {
+        if (el.tagName === 'BUTTON' || el.tagName === 'A') { btn = el; break; }
+        el = el.parentNode;
+      }
+      if (!btn) return;
+      var oc = btn.getAttribute('onclick') || '';
+      if (oc.indexOf('imprimirPagina') < 0 && !btn.getAttribute('data-p71-botao')) return;
+      var secao = secaoDoBotao(btn);
+      if (!secao) return; /* botao geral do painel: continua imprimindo tudo */
+      if (ev.preventDefault) ev.preventDefault();
+      if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      if (ev.stopPropagation) ev.stopPropagation();
+      try { imprimirSecao(secao); } catch (e) { /* ignora */ }
+    }, true);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* LIGACOES NAS FUNCOES DO PAINEL                                     */
+  /* ------------------------------------------------------------------ */
+  function ligarLancamentos() {
+    var original = window.renderLancamentosPgto;
+    if (typeof original !== 'function' || original.__p71) return false;
+    var novo = function () {
+      var r = original.apply(this, arguments);
+      try { arrumar(); } catch (e) { /* ignora */ }
+      try { marcarBotoes(); } catch (e2) { /* ignora */ }
+      return r;
+    };
+    novo.__p71 = true;
+    novo.__p70 = true;
+    novo.__p63 = true;
+    window.renderLancamentosPgto = novo;
+    return true;
+  }
+
+  function ligarResumo() {
+    var original = window.renderResumoPgto;
+    if (typeof original !== 'function' || original.__p71) return false;
+    var novo = function () {
+      var r = original.apply(this, arguments);
+      try { arrumar(); } catch (e) { /* ignora */ }
+      return r;
+    };
+    novo.__p71 = true;
+    novo.__p70 = true;
+    novo.__p63 = true;
+    window.renderResumoPgto = novo;
+    return true;
+  }
+
+  function ligarPagamento() {
+    var original = window.renderPagamento;
+    if (typeof original !== 'function' || original.__p71) return false;
+    var novo = function () {
+      var r = original.apply(this, arguments);
+      try { atualizarTitulos(); } catch (e) { /* ignora */ }
+      return r;
+    };
+    novo.__p71 = true;
+    novo.__p70 = true;
+    novo.__p63 = true;
+    window.renderPagamento = novo;
+    return true;
+  }
+
+  function ligarSubAbas() {
+    var original = window.trocarSubTabPgtoNovo;
+    if (typeof original !== 'function' || original.__p71) return false;
+    var novo = function (tab) {
+      var r = original.apply(this, arguments);
+      try { irParaMesVigente(); } catch (e) { /* ignora */ }
+      try {
+        if (typeof window.renderPagamento === 'function') window.renderPagamento();
+      } catch (e2) { /* ignora */ }
+      try { arrumar(); } catch (e3) { /* ignora */ }
+      try { atualizarTitulos(); } catch (e4) { /* ignora */ }
+      try { marcarBotoes(); } catch (e5) { /* ignora */ }
+      return r;
+    };
+    novo.__p71 = true;
+    novo.__p70 = true;
+    novo.__p63 = true;
+    window.trocarSubTabPgtoNovo = novo;
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* PARTIDA                                                            */
+  /* ------------------------------------------------------------------ */
+  function comecar() {
+    ligarLancamentos();
+    ligarResumo();
+    ligarPagamento();
+    ligarSubAbas();
+    ligarDigitacao();
+    ligarBotoes();
+    try { marcarBotoes(); } catch (e) { /* ignora */ }
+    try { atualizarTitulos(); } catch (e2) { /* ignora */ }
+    try { arrumar(); } catch (e3) { /* ignora */ }
+  }
+
+  P71.situacao = function () {
+    console.log('Patch 71 ativo. Mes na tela: ' + (mesEscrito() || '(nao identificado)'));
+    console.log('Resumo editavel nos Lancamentos: ' +
+      (document.querySelector('#p63ResumoTabela input[data-p71]') ? 'sim' : 'ainda sem linhas'));
+    console.log('Titulos nas sub-abas: ' +
+      (porId('p71TituloLancamentos') && porId('p71TituloResumo') ? 'sim' : 'nao'));
+    console.log('Impressao por secao: ' +
+      (P71.__cliques ? 'sim' : 'nao') + '. Ultima secao impressa: ' + (P71.ultimaSecao || '(nenhuma)'));
+    return true;
+  };
+
+  function esperar(vezes) {
+    if (typeof window.renderResumoPgto === 'function' &&
+        typeof window.renderLancamentosPgto === 'function' &&
+        typeof window.trocarSubTabPgtoNovo === 'function') {
+      comecar();
+      return;
+    }
+    if (vezes <= 0) return;
+    setTimeout(function () { esperar(vezes - 1); }, 300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { esperar(60); });
+  } else {
+    esperar(60);
+  }
+  /* os patches antigos re-embrulham as funcoes do painel depois de uns
+     segundos; a nossa camada volta por cima nessas horas */
+  var HORAS = [1200, 2500, 3000, 4500];
+  for (var h = 0; h < HORAS.length; h++) {
+    (function (t) {
+      setTimeout(function () { try { comecar(); } catch (e) { /* ignora */ } }, t);
+    }(HORAS[h]));
+  }
+})();
+</script>
+<style>
+/* PATCH 71: TITULOS, RESUMO EDITAVEL E IMPRESSAO POR SECAO */
+
+.p71-titulo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+  padding: 8px 12px;
+  border-left: 4px solid #22c55e;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.p71-resumo-bloco {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 2px dashed #cbd5e1;
+}
+
+.p71-resumo-bloco .p63-resumo-titulo {
+  margin: 0 0 12px 0;
+}
+
+/* eco do valor digitado: nao aparece na tela, aparece no papel */
+.p63-eco-papel,
+.p70-eco-papel {
+  display: none;
+}
+
+/* PATCH 71: regras de impressao por secao */
+@media print {
+  /* ---- impressao de uma secao so ---- */
+  body.p71-imprimindo .p71-fora {
+    display: none !important;
+  }
+
+  body.p71-imprimindo .p71-caminho {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.p71-imprimindo .p71-secao-alvo {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    page-break-before: avoid !important;
+  }
+
+  body.p71-imprimindo .p71-secao-alvo * {
+    visibility: visible !important;
+  }
+
+  body.p71-imprimindo {
+    background: #ffffff !important;
+  }
+
+  /* no papel: mostra o numero escrito, esconde a caixinha */
+  body.p71-imprimindo .valor-pago-cell input,
+  body.p71-imprimindo td[data-p70] input {
+    display: none !important;
+  }
+
+  body.p71-imprimindo .p63-eco-papel,
+  body.p71-imprimindo .p70-eco-papel {
+    display: inline !important;
+    font-weight: 700;
+  }
+
+  body.p71-imprimindo .p71-secao-alvo table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+  }
+
+  body.p71-imprimindo .p71-secao-alvo tr,
+  body.p71-imprimindo .p71-secao-alvo .totais-panel,
+  body.p71-imprimindo .p71-secao-alvo .p63-resumo-bloco {
+    page-break-inside: avoid !important;
+  }
+
+  body.p71-imprimindo .p71-titulo {
+    background: #f1f5f9 !important;
+    border-left: 4px solid #22c55e !important;
+    page-break-after: avoid !important;
+  }
+
+  /* botoes nao vao para o papel */
+  body.p71-imprimindo button,
+  body.p71-imprimindo .btn-imprimir,
+  body.p71-imprimindo .lanc-form-grid button {
+    display: none !important;
+  }
+}
+</style>
+
+
+<script>
+/* PATCH 72: ARRASTAR COLUNAS COM O BOTAO ESQUERDO E LEMBRAR ONDE PAROU */
+(function () {
+  if (window.P72 && window.P72.__v72) return;
+  var P72 = window.P72 = window.P72 || {};
+  P72.__v72 = true;
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES                                                          */
+  /* ------------------------------------------------------------------ */
+  function porId(id) { return document.getElementById(id); }
+
+  function paraNumero(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v == null ? '' : v).replace(/\s/g, '').replace(/R\$/gi, '');
+    if (s.indexOf(',') > -1) {
+      if (s.indexOf('.') > -1) s = s.replace(/\./g, '');
+      s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function dinheiro(n) {
+    var v = paraNumero(n);
+    try {
+      return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return 'R$ ' + v.toFixed(2);
+    }
+  }
+
+  function ehLista(x) { return Object.prototype.toString.call(x) === '[object Array]'; }
+
+  function banco() {
+    try { if (window.db) return window.db; } catch (e) { /* ignora */ }
+    try {
+      /* eslint-disable no-undef */
+      if (typeof db !== 'undefined') return db;
+    } catch (e2) { /* ignora */ }
+    return null;
+  }
+
+  function listaObras() {
+    var b = banco();
+    return (b && ehLista(b.obras)) ? b.obras : [];
+  }
+
+  function copiarMarcas(de, para) {
+    if (!de || !para) return;
+    for (var k in de) {
+      if (Object.prototype.hasOwnProperty.call(de, k) && !(k in para)) {
+        try { para[k] = de[k]; } catch (e) { /* ignora */ }
+      }
+    }
+  }
+
+  /* ================================================================== */
+  /* PARTE 1 - ARRASTAR E REORDENAR COLUNAS COM O BOTAO ESQUERDO        */
+  /* ================================================================== */
+
+  /* as mesmas chaves de gravacao ja usadas pelo painel, para a ordem
+     escolhida continuar valendo depois do F5 */
+  var PREFIXO = 'painelColunas_';
+
+  /* tabelas atendidas: as tres que ja tinham arraste e as que ficaram de
+     fora antes. Tabelas de cabecalho agrupado (com colspan/rowspan) ou
+     com linha de totais de celulas unidas sao descartadas na
+     conferencia, para nenhum layout sair do lugar. */
+  var TABELAS = [
+    'tbodyLiberacao',
+    'tbodyFabricacao',
+    'tbodyInstalacao',
+    'tbodyMedicaoBoletim',
+    'tbodyRecebimento',
+    'tbodyMateriaisConsolidados',
+    'specTableBodyCTM',
+    'historyTableBodyCTM',
+    'reportTableBodyCrono'
+  ];
+
+  P72.tabelasLigadas = [];
+  var estados = {};
+  var arraste = null;
+
+  function lerCfg(chave) {
+    try {
+      var raw = localStorage.getItem(PREFIXO + chave);
+      if (!raw) return { ordem: null, larguras: {} };
+      var o = JSON.parse(raw) || {};
+      return {
+        ordem: (o.ordem && o.ordem.length) ? o.ordem : null,
+        larguras: o.larguras || {}
+      };
+    } catch (e) {
+      return { ordem: null, larguras: {} };
+    }
+  }
+
+  function gravarCfg(chave, cfg) {
+    try { localStorage.setItem(PREFIXO + chave, JSON.stringify(cfg)); }
+    catch (e) { /* navegador sem espaco: segue sem guardar */ }
+  }
+
+  /* devolve a linha de cabecalho SE a tabela for simples (uma linha de
+     titulos, sem celulas agrupadas). Caso contrario devolve nulo. */
+  function linhaCabecalho(chave) {
+    var tbody = porId(chave);
+    if (!tbody) return null;
+    var tabela = tbody.closest ? tbody.closest('table') : null;
+    if (!tabela) return null;
+    var thead = tabela.querySelector('thead');
+    if (!thead) return null;
+    var linhas = thead.querySelectorAll('tr');
+    if (linhas.length !== 1) return null;
+    /* rodape com celulas unidas (linha de totais) nao acompanha troca de
+       coluna: tabela assim fica de fora para nada desalinhar */
+    if (tabela.querySelector('tfoot [colspan], tfoot [rowspan]')) return null;
+    var tr = linhas[0];
+    var ths = tr.children;
+    if (!ths || ths.length < 2) return null;
+    for (var i = 0; i < ths.length; i++) {
+      var th = ths[i];
+      if (String(th.tagName).toLowerCase() !== 'th') return null;
+      var cs = parseInt(th.getAttribute('colspan') || '1', 10);
+      var rs = parseInt(th.getAttribute('rowspan') || '1', 10);
+      if (cs > 1 || rs > 1) return null;
+    }
+    return tr;
+  }
+
+  function ordemAtual(tr) {
+    return Array.prototype.map.call(tr.children, function (th) {
+      return parseInt(th.getAttribute('data-col-orig'), 10) || 0;
+    });
+  }
+
+  /* reordena as celulas do corpo seguindo a ordem do cabecalho.
+     Nao mexe no conteudo das celulas: apenas troca de lugar. */
+  function aplicarCorpo(chave) {
+    var tbody = porId(chave);
+    var tr = linhaCabecalho(chave);
+    if (!tbody || !tr) return;
+    var ordem = ordemAtual(tr);
+    Array.prototype.forEach.call(tbody.rows, function (linha) {
+      if (linha.cells.length !== ordem.length) return;
+      if (linha.getAttribute('data-col-mapeada') !== '1') {
+        Array.prototype.forEach.call(linha.cells, function (td, i) {
+          td.setAttribute('data-col-orig', String(i));
+        });
+        linha.setAttribute('data-col-mapeada', '1');
+      }
+      var mapa = {};
+      Array.prototype.forEach.call(linha.cells, function (td) {
+        mapa[td.getAttribute('data-col-orig')] = td;
+      });
+      for (var i = 0; i < ordem.length; i++) {
+        var td = mapa[String(ordem[i])];
+        if (td) linha.appendChild(td);
+      }
+    });
+  }
+
+  function aplicarCabecalho(chave) {
+    var tr = linhaCabecalho(chave);
+    if (!tr) return;
+    var cfg = lerCfg(chave);
+    if (!cfg.ordem) return;
+    var ths = Array.prototype.slice.call(tr.children);
+    for (var i = 0; i < cfg.ordem.length; i++) {
+      for (var j = 0; j < ths.length; j++) {
+        if (parseInt(ths[j].getAttribute('data-col-orig'), 10) === cfg.ordem[i]) {
+          tr.appendChild(ths[j]);
+          break;
+        }
+      }
+    }
+  }
+
+  function aplicarTudo(chave) {
+    var est = estados[chave] = estados[chave] || {};
+    est.aplicando = true;
+    try {
+      aplicarCabecalho(chave);
+      aplicarCorpo(chave);
+    } catch (e) { /* ignora */ }
+    setTimeout(function () { est.aplicando = false; }, 0);
+  }
+
+  function limparAlvos(tr) {
+    if (!tr) return;
+    Array.prototype.forEach.call(tr.children, function (th) {
+      th.classList.remove('p72-alvo-esq');
+      th.classList.remove('p72-alvo-dir');
+    });
+  }
+
+  function tirarFantasma() {
+    var f = porId('p72Fantasma');
+    if (f && f.parentNode) f.parentNode.removeChild(f);
+  }
+
+  function porFantasma(texto, x, y) {
+    var f = porId('p72Fantasma');
+    if (!f) {
+      f = document.createElement('div');
+      f.id = 'p72Fantasma';
+      f.className = 'p72-fantasma';
+      document.body.appendChild(f);
+    }
+    f.textContent = texto;
+    f.style.left = (x + 14) + 'px';
+    f.style.top = (y + 12) + 'px';
+  }
+
+  function tituloDoTh(th) {
+    var c = th.querySelector('.th-content');
+    var t = (c ? c.textContent : th.textContent) || '';
+    t = t.replace(/\s+/g, ' ').trim();
+    return t || 'coluna';
+  }
+
+  function ladoDoAlvo(th, x) {
+    var r = th.getBoundingClientRect ? th.getBoundingClientRect() : null;
+    if (!r || !r.width) return 'dir';
+    return (x < r.left + r.width / 2) ? 'esq' : 'dir';
+  }
+
+  function terminarArraste(cancelar) {
+    if (!arraste) return;
+    var a = arraste;
+    arraste = null;
+    document.removeEventListener('mousemove', aoMover, true);
+    document.removeEventListener('mouseup', aoSoltar, true);
+    tirarFantasma();
+    if (document.body) document.body.classList.remove('p72-sem-selecao');
+    a.th.classList.remove('p72-arrastando');
+    limparAlvos(a.tr);
+    /* devolve o arraste antigo do navegador como estava */
+    try { a.th.setAttribute('draggable', a.draggableAntigo == null ? 'true' : a.draggableAntigo); }
+    catch (e) { /* ignora */ }
+
+    if (cancelar || !a.moveu || !a.alvo || a.alvo === a.th) return;
+    if (a.alvo.parentNode !== a.tr || a.th.parentNode !== a.tr) return;
+
+    var ths = Array.prototype.slice.call(a.tr.children);
+    var de = ths.indexOf(a.th);
+    var para = ths.indexOf(a.alvo);
+    if (de < 0 || para < 0) return;
+
+    if (a.lado === 'esq') a.tr.insertBefore(a.th, a.alvo);
+    else a.tr.insertBefore(a.th, a.alvo.nextSibling);
+
+    var cfg = lerCfg(a.chave);
+    cfg.ordem = ordemAtual(a.tr);
+    gravarCfg(a.chave, cfg);
+    aplicarCorpo(a.chave);
+    P72.ultimoMovimento = { tabela: a.chave, coluna: tituloDoTh(a.th) };
+  }
+
+  function aoMover(e) {
+    if (!arraste) return;
+    var dx = Math.abs(e.clientX - arraste.xIni);
+    var dy = Math.abs(e.clientY - arraste.yIni);
+    if (!arraste.moveu && dx < 4 && dy < 4) return;
+
+    if (!arraste.moveu) {
+      arraste.moveu = true;
+      arraste.th.classList.add('p72-arrastando');
+      if (document.body) document.body.classList.add('p72-sem-selecao');
+    }
+    if (e.preventDefault) e.preventDefault();
+    porFantasma(arraste.titulo, e.clientX, e.clientY);
+
+    var alvo = e.target && e.target.closest ? e.target.closest('th') : null;
+    if (!alvo || alvo.parentNode !== arraste.tr || alvo === arraste.th) return;
+    var lado = ladoDoAlvo(alvo, e.clientX);
+    limparAlvos(arraste.tr);
+    alvo.classList.add(lado === 'esq' ? 'p72-alvo-esq' : 'p72-alvo-dir');
+    arraste.alvo = alvo;
+    arraste.lado = lado;
+  }
+
+  function aoSoltar() { terminarArraste(false); }
+
+  function comecarArraste(e, th, chave) {
+    if (e.button !== 0) return;                    /* somente botao esquerdo */
+    if (arraste) return;
+    var alvoClique = e.target;
+    if (alvoClique && alvoClique.closest) {
+      /* a alca de largura e os controles dentro do titulo continuam iguais */
+      if (alvoClique.closest('.col-resizer')) return;
+      if (alvoClique.closest('input, select, textarea, button, a, label')) return;
+    }
+    var tr = th.parentNode;
+    if (!tr) return;
+
+    arraste = {
+      chave: chave,
+      th: th,
+      tr: tr,
+      xIni: e.clientX,
+      yIni: e.clientY,
+      moveu: false,
+      alvo: null,
+      lado: 'dir',
+      titulo: tituloDoTh(th),
+      draggableAntigo: th.getAttribute('draggable')
+    };
+    /* desliga o arraste antigo do navegador enquanto o nosso acontece */
+    try { th.setAttribute('draggable', 'false'); } catch (err) { /* ignora */ }
+    if (e.preventDefault) e.preventDefault();
+
+    document.addEventListener('mousemove', aoMover, true);
+    document.addEventListener('mouseup', aoSoltar, true);
+  }
+
+  function prepararTh(th, chave, indice) {
+    if (th.getAttribute('data-col-orig') === null) {
+      th.setAttribute('data-col-orig', String(indice));
+      th.setAttribute('data-estilo-orig', th.getAttribute('style') || '');
+      var conteudo = th.querySelector('.th-content');
+      if (conteudo) conteudo.setAttribute('data-estilo-orig', conteudo.getAttribute('style') || '');
+    }
+    if (th.getAttribute('data-p72-pronta') === '1') return;
+    th.setAttribute('data-p72-pronta', '1');
+    th.classList.add('p72-movivel');
+    if (!th.getAttribute('title')) {
+      th.setAttribute('title', 'Segure o botao esquerdo do mouse no titulo e arraste '
+        + 'para mudar a coluna de lugar. A ordem fica guardada.');
+    }
+    th.addEventListener('mousedown', function (e) { comecarArraste(e, th, chave); });
+    /* nada de arrastar texto solto no meio do caminho */
+    th.addEventListener('dragstart', function (e) {
+      if (arraste) { if (e.preventDefault) e.preventDefault(); }
+    });
+  }
+
+  function iniciarTabela(chave) {
+    var tbody = porId(chave);
+    var tr = linhaCabecalho(chave);
+    if (!tbody || !tr) return false;
+
+    Array.prototype.forEach.call(tr.children, function (th, i) {
+      prepararTh(th, chave, i);
+    });
+
+    var est = estados[chave] = estados[chave] || { aplicando: false };
+    if (!est.observador && window.MutationObserver) {
+      est.observador = new MutationObserver(function () {
+        if (est.aplicando) return;
+        est.aplicando = true;
+        try { aplicarCorpo(chave); } catch (e) { /* ignora */ }
+        setTimeout(function () { est.aplicando = false; }, 0);
+      });
+      try { est.observador.observe(tbody, { childList: true }); } catch (e) { /* ignora */ }
+    }
+
+    aplicarTudo(chave);
+    if (P72.tabelasLigadas.indexOf(chave) < 0) P72.tabelasLigadas.push(chave);
+    return true;
+  }
+
+  function ligarColunas() {
+    for (var i = 0; i < TABELAS.length; i++) {
+      try { iniciarTabela(TABELAS[i]); } catch (e) { /* ignora */ }
+    }
+  }
+
+  /* volta uma tabela para a ordem original de fabrica */
+  function resetarTabela(chave) {
+    try { localStorage.removeItem(PREFIXO + chave); } catch (e) { /* ignora */ }
+    var tr = linhaCabecalho(chave);
+    if (!tr) return false;
+    var ths = Array.prototype.slice.call(tr.children);
+    ths.sort(function (a, b) {
+      return (parseInt(a.getAttribute('data-col-orig'), 10) || 0) -
+             (parseInt(b.getAttribute('data-col-orig'), 10) || 0);
+    });
+    for (var i = 0; i < ths.length; i++) {
+      ths[i].setAttribute('style', ths[i].getAttribute('data-estilo-orig') || '');
+      tr.appendChild(ths[i]);
+    }
+    aplicarCorpo(chave);
+    return true;
+  }
+
+  /* o botao "Colunas" que ja existia continua funcionando; agora ele
+     tambem atende as tabelas novas */
+  function ligarResetGeral() {
+    var antigo = window.resetarColunasTabela;
+    if (typeof antigo === 'function' && antigo.__v72) return;
+    var novo = function (chave) {
+      var feito = false;
+      if (typeof antigo === 'function') {
+        try { antigo.apply(this, arguments); feito = true; } catch (e) { /* ignora */ }
+      }
+      try { resetarTabela(chave); feito = true; } catch (e2) { /* ignora */ }
+      return feito;
+    };
+    novo.__v72 = true;
+    copiarMarcas(antigo, novo);
+    window.resetarColunasTabela = novo;
+  }
+
+  /* ================================================================== */
+  /* PARTE 2 - LEMBRAR ABA, SUB-ABA E OBRA DEPOIS DO F5                 */
+  /* ================================================================== */
+
+  var CHAVE_LUGAR = 'painelLugar_v72';
+
+  function lerLugar() {
+    try {
+      var raw = localStorage.getItem(CHAVE_LUGAR);
+      if (!raw) return {};
+      return JSON.parse(raw) || {};
+    } catch (e) { return {}; }
+  }
+
+  function gravarLugar(mudanca) {
+    var atual = lerLugar();
+    for (var k in mudanca) {
+      if (Object.prototype.hasOwnProperty.call(mudanca, k)) atual[k] = mudanca[k];
+    }
+    atual.quando = new Date().getTime();
+    try { localStorage.setItem(CHAVE_LUGAR, JSON.stringify(atual)); }
+    catch (e) { /* ignora */ }
+    P72.lugar = atual;
+    return atual;
+  }
+
+  /* le uma vez, logo no comeco: a pagina chama trocarAba('itens') ao
+     abrir e isso nao pode apagar o lugar que estava guardado */
+  P72.alvo = lerLugar();
+  P72.lugar = P72.alvo;
+  P72.__anotando = false;    /* so anota depois de restaurar */
+  P72.__restaurado = false;
+  P72.__abaFeita = false;
+  P72.__obraFeita = false;
+  var restaurando = false;   /* enquanto voltamos, nao anotamos nada */
+
+  /* a tela de login (patch 69) fica na frente de tudo; enquanto ela esta
+     aberta nao vale anotar nada nem tentar voltar */
+  function loginNaFrente() {
+    try {
+      var t = porId('p69Tela');
+      if (t && t.classList && t.classList.contains('p69-visivel')) return true;
+      var h = document.documentElement;
+      if (h && h.classList && h.classList.contains('p69-parado')) return true;
+    } catch (e) { /* ignora */ }
+    return false;
+  }
+
+  function anotar(mudanca) {
+    if (!P72.__anotando || restaurando) return;
+    if (!P72.__restaurado && loginNaFrente()) return;
+    gravarLugar(mudanca);
+  }
+
+  function obraAtualId() {
+    var b = banco();
+    return b ? (b.obraAtualId || '') : '';
+  }
+
+  function existeObra(id) {
+    var obras = listaObras();
+    for (var i = 0; i < obras.length; i++) {
+      if (String(obras[i].id) === String(id)) return true;
+    }
+    return false;
+  }
+
+  function abaVisivel() {
+    var abas = ['itens', 'liberacao', 'medicoes', 'graficos', 'recebimento',
+                'cronograma', 'pagamento', 'ctm', 'custo'];
+    for (var i = 0; i < abas.length; i++) {
+      var bt = porId('btn-tab-' + abas[i]);
+      if (bt && bt.classList.contains('active')) return abas[i];
+    }
+    for (var j = 0; j < abas.length; j++) {
+      var el = porId('tab-' + abas[j]);
+      if (el && el.style.display !== 'none') return abas[j];
+    }
+    return '';
+  }
+
+  function ligarMemoria() {
+    /* aba principal */
+    var abaAntiga = window.trocarAba;
+    if (typeof abaAntiga === 'function' && !abaAntiga.__v72) {
+      var novaAba = function (aba) {
+        var r = abaAntiga.apply(this, arguments);
+        try {
+          /* a aba especial que abre janela em cima nao e guardada */
+          if (abaValida(aba)) anotar({ aba: String(aba), obraId: obraAtualId() });
+        } catch (e) { /* ignora */ }
+        return r;
+      };
+      novaAba.__v72 = true;
+      copiarMarcas(abaAntiga, novaAba);
+      window.trocarAba = novaAba;
+      try { trocarAba = novaAba; } catch (e) { /* ignora */ }
+    }
+
+    /* sub-abas de Liberacao (FEM / Fabricacao / Instalacao) */
+    var femAntiga = window.trocarSubAbaFEM;
+    if (typeof femAntiga === 'function' && !femAntiga.__v72) {
+      var novaFem = function (sub) {
+        var r = femAntiga.apply(this, arguments);
+        try { anotar({ subFEM: String(sub || '') }); } catch (e) { /* ignora */ }
+        return r;
+      };
+      novaFem.__v72 = true;
+      copiarMarcas(femAntiga, novaFem);
+      window.trocarSubAbaFEM = novaFem;
+      try { trocarSubAbaFEM = novaFem; } catch (e) { /* ignora */ }
+    }
+
+    /* sub-abas de Pagamento */
+    var pgtoAntiga = window.trocarSubTabPgtoNovo;
+    if (typeof pgtoAntiga === 'function' && !pgtoAntiga.__v72) {
+      var novaPgto = function (sub) {
+        var r = pgtoAntiga.apply(this, arguments);
+        try { anotar({ subPgto: String(sub || '') }); } catch (e) { /* ignora */ }
+        return r;
+      };
+      novaPgto.__v72 = true;
+      /* mantem as marcas dos patches anteriores (__p63/__p70/__p71) */
+      copiarMarcas(pgtoAntiga, novaPgto);
+      window.trocarSubTabPgtoNovo = novaPgto;
+      try { trocarSubTabPgtoNovo = novaPgto; } catch (e) { /* ignora */ }
+    }
+
+    /* obra escolhida */
+    var obraAntiga = window.trocarObra;
+    if (typeof obraAntiga === 'function' && !obraAntiga.__v72) {
+      var novaObra = function (id) {
+        var r = obraAntiga.apply(this, arguments);
+        try { anotar({ obraId: String(id == null ? '' : id) }); } catch (e) { /* ignora */ }
+        return r;
+      };
+      novaObra.__v72 = true;
+      copiarMarcas(obraAntiga, novaObra);
+      window.trocarObra = novaObra;
+      try { trocarObra = novaObra; } catch (e) { /* ignora */ }
+    }
+  }
+
+  /* volta a tela para onde o usuario estava antes de recarregar */
+  /* a aba 'obraflow' abre uma janela em cima da tela: nunca voltamos nela */
+  function abaValida(aba) {
+    return !!aba && aba !== 'obraflow';
+  }
+
+  function voltarObra(l) {
+    if (!l.obraId) return false;
+    if (!existeObra(l.obraId)) return false;
+    var mexeu = false;
+    if (String(obraAtualId()) !== String(l.obraId) && typeof window.trocarObra === 'function') {
+      try { window.trocarObra(l.obraId); mexeu = true; } catch (e) { /* ignora */ }
+    }
+    var sel = porId('selectObra');
+    if (sel && String(sel.value) !== String(l.obraId)) {
+      try { sel.value = String(l.obraId); mexeu = true; } catch (e2) { /* ignora */ }
+    }
+    return mexeu || String(obraAtualId()) === String(l.obraId);
+  }
+
+  function voltarAba(l, forcado) {
+    if (!abaValida(l.aba) || typeof window.trocarAba !== 'function') return false;
+    if (abaVisivel() !== l.aba || forcado) {
+      try { window.trocarAba(l.aba); } catch (e) { return false; }
+    }
+    /* sub-aba de dentro da aba que voltou */
+    if (l.aba === 'liberacao' && l.subFEM && typeof window.trocarSubAbaFEM === 'function') {
+      try { window.trocarSubAbaFEM(l.subFEM); } catch (e2) { /* ignora */ }
+    }
+    if (l.aba === 'pagamento' && l.subPgto && typeof window.trocarSubTabPgtoNovo === 'function') {
+      try { window.trocarSubTabPgtoNovo(l.subPgto); } catch (e3) { /* ignora */ }
+    }
+    return true;
+  }
+
+  function voltarAoLugar(forcado) {
+    var l = forcado ? lerLugar() : (P72.alvo || {});
+    if (forcado) P72.alvo = l;
+    restaurando = true;
+    var fezAlgo = false;
+    try {
+      /* 1) obra: o banco ja guarda a obra; aqui so garantimos a tela nela */
+      if (voltarObra(l)) { fezAlgo = true; P72.__obraFeita = true; }
+      /* 2) aba e sub-aba */
+      if (voltarAba(l, forcado)) { fezAlgo = true; P72.__abaFeita = true; }
+    } catch (e) { /* ignora */ }
+    restaurando = false;
+    return fezAlgo;
+  }
+  P72.voltarAoLugar = function () { return voltarAoLugar(true); };
+
+  /* quando o usuario mexe na tela de verdade, paramos de insistir */
+  var usuarioMexeu = false;
+  function marcarMexida() { usuarioMexeu = true; }
+  try {
+    document.addEventListener('mousedown', marcarMexida, true);
+    document.addEventListener('keydown', marcarMexida, true);
+    document.addEventListener('touchstart', marcarMexida, true);
+  } catch (e) { /* ignora */ }
+
+  function noLugar(l) {
+    var abaOk = !abaValida(l.aba) || abaVisivel() === l.aba;
+    var obraOk = !l.obraId || !existeObra(l.obraId) || String(obraAtualId()) === String(l.obraId);
+    return abaOk && obraOk;
+  }
+
+  function paginaPronta() {
+    try { return document.readyState === 'complete'; } catch (e) { return true; }
+  }
+
+  /* ainda pode aparecer um "voltar para a primeira aba" depois; por isso
+     nunca damos a restauracao por encerrada antes da pagina assentar */
+  function tentarRestaurar() {
+    if (P72.__restaurado) return;
+    var l = P72.alvo || {};
+    var querAba = abaValida(l.aba);
+    var querObra = !!l.obraId;
+    if (!querAba && !querObra) {
+      P72.__restaurado = true;
+      P72.__anotando = true;
+      return;
+    }
+    if (!loginNaFrente()) { voltarAoLugar(false); }
+    vigiar();
+  }
+
+  /* a pagina volta para a primeira aba sozinha (ao abrir e depois do login);
+     por isso conferimos varias vezes se a tela ficou no lugar guardado */
+  var vigiaLigada = false;
+  function vigiar() {
+    if (vigiaLigada || P72.__restaurado) return;
+    vigiaLigada = true;
+    var vezes = 0;
+    var certas = 0;
+    var relogio = setInterval(function () {
+      vezes++;
+      var l = P72.alvo || {};
+      /* desiste depois de uns 25 segundos, ou se o usuario tomou a frente */
+      if (vezes > 85 || (usuarioMexeu && certas > 0)) { encerrar(); return; }
+      if (loginNaFrente()) { certas = 0; return; }
+      try { ligarColunas(); ligarMemoria(); } catch (e) { /* ignora */ }
+      if (noLugar(l) && paginaPronta()) {
+        certas++;
+        /* tres conferidas seguidas no lugar certo: a tela assentou */
+        if (certas >= 3) { encerrar(); }
+        return;
+      }
+      certas = 0;
+      if (usuarioMexeu) return;
+      try { voltarAoLugar(true); } catch (e2) { /* ignora */ }
+    }, 300);
+
+    function encerrar() {
+      clearInterval(relogio);
+      vigiaLigada = false;
+      P72.__restaurado = true;
+      P72.__anotando = true;
+    }
+  }
+
+  /* ================================================================== */
+  /* LIGAR TUDO                                                         */
+  /* ================================================================== */
+
+  function comecar() {
+    ligarColunas();
+    ligarResetGeral();
+    ligarMemoria();
+    tentarRestaurar();
+  }
+  P72.arrumar = comecar;
+
+  P72.esquecerLugar = function () {
+    try { localStorage.removeItem(CHAVE_LUGAR); } catch (e) { /* ignora */ }
+    P72.alvo = {};
+    P72.lugar = {};
+    return true;
+  };
+
+  P72.resetarColunas = function (chave) {
+    if (chave) return resetarTabela(chave);
+    var n = 0;
+    for (var i = 0; i < TABELAS.length; i++) {
+      try { if (resetarTabela(TABELAS[i])) n++; } catch (e) { /* ignora */ }
+    }
+    return n;
+  };
+
+  P72.situacao = function () {
+    var l = lerLugar();
+    console.log('Patch 72 ativo. Tabelas com coluna arrastavel pelo botao esquerdo: '
+      + (P72.tabelasLigadas.join(', ') || '(nenhuma na tela)'));
+    console.log('Ultimo lugar guardado -> aba: ' + (l.aba || '(nenhuma)')
+      + ' | sub-aba Liberacao: ' + (l.subFEM || '-')
+      + ' | sub-aba Pagamento: ' + (l.subPgto || '-')
+      + ' | obra: ' + (l.obraId || '-'));
+    console.log('Restauracao feita: ' + (P72.__restaurado ? 'sim' : 'ainda nao')
+      + ' | anotando trocas: ' + (P72.__anotando ? 'sim' : 'nao'));
+    return true;
+  };
+
+  function esperar(vezes) {
+    if (typeof window.trocarAba === 'function') {
+      comecar();
+      if (P72.__restaurado || vezes <= 0) return;
+    }
+    if (vezes <= 0) {
+      if (loginNaFrente()) { vigiar(); return; }
+      P72.__anotando = true;
+      return;
+    }
+    setTimeout(function () { esperar(vezes - 1); }, 300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { esperar(60); });
+  } else {
+    esperar(60);
+  }
+  /* os patches antigos re-embrulham funcoes e redesenham tabelas depois de
+     alguns segundos; a nossa camada volta por cima nessas horas */
+  var HORAS = [1200, 2500, 3000, 4500];
+  for (var h = 0; h < HORAS.length; h++) {
+    (function (t) {
+      setTimeout(function () { try { comecar(); } catch (e) { /* ignora */ } }, t);
+    }(HORAS[h]));
+  }
+  /* passados uns segundos, mesmo sem nada guardado, comeca a anotar
+     (menos se a tela de login ainda estiver na frente) */
+  setTimeout(function () {
+    if (loginNaFrente()) { vigiar(); return; }
+    P72.__anotando = true;
+  }, 5000);
+})();
+</script>
+<style>
+/* PATCH 72: colunas arrastaveis pelo botao esquerdo e memoria de lugar */
+
+/* o titulo mostra que da para pegar e arrastar */
+th.p72-movivel {
+  cursor: grab;
+}
+
+th.p72-movivel:active {
+  cursor: grabbing;
+}
+
+/* coluna que esta sendo levada */
+th.p72-arrastando {
+  opacity: 0.55;
+  background-image: linear-gradient(rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.25));
+}
+
+/* marca de onde a coluna vai cair */
+th.p72-alvo-esq {
+  box-shadow: inset 3px 0 0 0 #22c55e;
+}
+
+th.p72-alvo-dir {
+  box-shadow: inset -3px 0 0 0 #22c55e;
+}
+
+/* etiqueta que acompanha o mouse durante o arraste */
+.p72-fantasma {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.35);
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* enquanto arrasta, o texto da pagina nao fica selecionando sozinho */
+body.p72-sem-selecao {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* a alca de largura que ja existia continua com a mao propria dela */
+th.p72-movivel .col-resizer {
+  cursor: col-resize;
+}
+
+/* nada disso vai para o papel */
+@media print {
+  .p72-fantasma { display: none !important; }
+  th.p72-arrastando { opacity: 1 !important; background-image: none !important; }
+  th.p72-alvo-esq, th.p72-alvo-dir { box-shadow: none !important; }
+}
+</style>
+
+
+<script>
+/* PATCH 73: IMPRIMIR SO A ABA QUE ESTA NA TELA */
+(function () {
+  if (window.P73 && window.P73.__v73) return;
+  var P73 = window.P73 = window.P73 || {};
+  P73.__v73 = true;
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES                                                          */
+  /* ------------------------------------------------------------------ */
+  function porId(id) { return document.getElementById(id); }
+
+  function depois(fn, ms) {
+    setTimeout(function () { try { fn(); } catch (e) { /* ignora */ } }, ms);
+  }
+
+  /* nomes das abas do painel, na ordem dos botoes de cima */
+  var ABAS = [
+    'itens', 'liberacao', 'medicoes', 'graficos', 'recebimento',
+    'cronograma', 'pagamento', 'ctm', 'custo', 'obraflow'
+  ];
+
+  var LIMITE_CORES = 6000;   /* teto de elementos pintados, para nao travar */
+
+  var pintados = [];   /* [elemento, style que ele tinha antes] */
+  var mexidos = [];    /* [painel, style que ele tinha antes] */
+  var marcas = [];     /* [elemento, classe que a gente pos] */
+
+  P73.__imprimindo = false;
+
+  /* ------------------------------------------------------------------ */
+  /* 1) DESCOBRIR QUAL ABA ESTA NA TELA                                 */
+  /* ------------------------------------------------------------------ */
+  function todosOsPaineis() {
+    var achados = [];
+    var vistos = {};
+    for (var i = 0; i < ABAS.length; i++) {
+      var el = porId('tab-' + ABAS[i]);
+      if (el && !vistos[el.id]) { vistos[el.id] = 1; achados.push(el); }
+    }
+    /* pega tambem alguma aba criada depois, sem repetir */
+    var extras = document.querySelectorAll('[id^="tab-"]');
+    for (var k = 0; k < extras.length; k++) {
+      var e2 = extras[k];
+      if (!e2 || !e2.id || vistos[e2.id]) continue;
+      if (e2.tagName !== 'DIV' && e2.tagName !== 'SECTION') continue;
+      vistos[e2.id] = 1;
+      achados.push(e2);
+    }
+    return achados;
+  }
+
+  /* o painel aparece se ele nao esta escondido e nenhum pai o esconde */
+  function estaAparecendo(el) {
+    if (!el) return false;
+    var passo = el;
+    var voltas = 0;
+    while (passo && passo.nodeType === 1 && voltas < 60) {
+      var cs = null;
+      try { cs = window.getComputedStyle(passo); } catch (e) { cs = null; }
+      if (cs) {
+        if (cs.display === 'none') return false;
+        if (cs.visibility === 'hidden') return false;
+      } else if (passo.style && passo.style.display === 'none') {
+        return false;
+      }
+      if (passo === document.body) break;
+      passo = passo.parentNode;
+      voltas++;
+    }
+    return true;
+  }
+
+  /* primeiro tenta pelo botao marcado como ativo; se nao der, olha quem
+     realmente esta aparecendo na tela */
+  function abaVisivel() {
+    for (var i = 0; i < ABAS.length; i++) {
+      var btn = porId('btn-tab-' + ABAS[i]);
+      var painel = porId('tab-' + ABAS[i]);
+      if (!btn || !painel) continue;
+      if (btn.classList && btn.classList.contains('active') && estaAparecendo(painel)) {
+        return painel;
+      }
+    }
+    var lista = todosOsPaineis();
+    for (var k = 0; k < lista.length; k++) {
+      if (estaAparecendo(lista[k])) return lista[k];
+    }
+    /* ultimo recurso: botao ativo mesmo que a conta de visivel falhe */
+    for (var j = 0; j < ABAS.length; j++) {
+      var b2 = porId('btn-tab-' + ABAS[j]);
+      var p2 = porId('tab-' + ABAS[j]);
+      if (b2 && p2 && b2.classList && b2.classList.contains('active')) return p2;
+    }
+    return null;
+  }
+  P73.abaVisivel = abaVisivel;
+
+  /* ------------------------------------------------------------------ */
+  /* 2) MODOS DE IMPRESSAO QUE JA TEM DONO: O 73 NAO ENTRA              */
+  /* ------------------------------------------------------------------ */
+  var MODOS_COM_DONO = [
+    'p71-imprimindo',      /* Patch 71: imprimir so um quadro */
+    'print-resumo-mode',   /* CTM: resumo em lote */
+    'print-history-mode',  /* CTM: historico */
+    'print-specs-mode',    /* CTM: especificacoes */
+    'print-cad-mode'       /* CTM: fichas de CAD */
+  ];
+
+  function modoComDono() {
+    var b = document.body;
+    if (!b || !b.classList) return false;
+    for (var i = 0; i < MODOS_COM_DONO.length; i++) {
+      if (b.classList.contains(MODOS_COM_DONO[i])) return MODOS_COM_DONO[i];
+    }
+    return false;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 3) COR NO PAPEL (mesma ideia do Patch 63, mas so na aba da tela)   */
+  /* ------------------------------------------------------------------ */
+  function corVale(c) {
+    if (!c) return false;
+    if (c === 'transparent') return false;
+    if (c.indexOf('rgba(0, 0, 0, 0)') >= 0) return false;
+    return true;
+  }
+
+  function fixarCores(painel) {
+    if (!painel) return;
+    var lista = [painel];
+    var dentro = painel.querySelectorAll('*');
+    var total = Math.min(dentro.length, LIMITE_CORES);
+    for (var n = 0; n < total; n++) lista.push(dentro[n]);
+
+    for (var i = 0; i < lista.length; i++) {
+      var el = lista[i];
+      if (!el || !el.style) continue;
+      var nome = el.tagName;
+      if (nome === 'SCRIPT' || nome === 'STYLE' || nome === 'CANVAS') continue;
+      var cs;
+      try { cs = window.getComputedStyle(el); } catch (e) { continue; }
+      if (!cs || cs.display === 'none') continue;
+      var fundo = cs.backgroundColor;
+      var texto = cs.color;
+      var borda = cs.borderTopColor;
+      var temBorda = (corVale(borda) && cs.borderTopWidth !== '0px');
+      if (!corVale(fundo) && !corVale(texto) && !temBorda) continue;
+
+      /* guarda o estilo de linha exatamente como estava, para devolver */
+      pintados.push([el, el.getAttribute('style')]);
+      if (corVale(fundo)) el.style.setProperty('background-color', fundo, 'important');
+      if (corVale(texto)) el.style.setProperty('color', texto, 'important');
+      if (temBorda) el.style.setProperty('border-color', borda, 'important');
+    }
+  }
+
+  function soltarCores() {
+    for (var i = 0; i < pintados.length; i++) {
+      var el = pintados[i][0];
+      var antes = pintados[i][1];
+      if (!el || !el.style) continue;
+      if (antes === null) el.removeAttribute('style');
+      else el.setAttribute('style', antes);
+    }
+    pintados = [];
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 4) PREPARAR E DESFAZER A ARRUMACAO DO PAPEL                        */
+  /* ------------------------------------------------------------------ */
+  function porClasse(el, classe) {
+    if (!el || !el.classList) return;
+    if (el.classList.contains(classe)) return;   /* ja tinha: nao mexe */
+    el.classList.add(classe);
+    marcas.push([el, classe]);
+  }
+
+  function tirarMarcas() {
+    for (var i = marcas.length - 1; i >= 0; i--) {
+      var el = marcas[i][0];
+      var c = marcas[i][1];
+      if (!el || !el.classList) continue;
+      if (c.indexOf('@voltar:') === 0) { el.classList.add(c.replace('@voltar:', '')); continue; }
+      el.classList.remove(c);
+    }
+    marcas = [];
+  }
+
+  /* tira do caminho qualquer sobra do "imprimir tudo" do Patch 63 e
+     garante que os paineis das outras abas fiquem escondidos de verdade */
+  function guardarAsOutras(visivel) {
+    var lista = todosOsPaineis();
+    for (var i = 0; i < lista.length; i++) {
+      var el = lista[i];
+      if (el === visivel) continue;
+
+      /* classes que o 63 usa para abrir todas as abas no papel */
+      if (el.classList) {
+        if (el.classList.contains('p63-pane-print')) {
+          el.classList.remove('p63-pane-print');
+          marcas.push([el, '@voltar:p63-pane-print']);
+        }
+        if (el.classList.contains('p63-quebra')) {
+          el.classList.remove('p63-quebra');
+          marcas.push([el, '@voltar:p63-quebra']);
+        }
+      }
+
+      /* marca de "nao vai para o papel" (o desenho de impressao usa ela) */
+      porClasse(el, 'p73-fora');
+
+      /* se algum resto deixou o painel aberto por estilo de linha,
+         fecha agora e devolve o estilo original depois */
+      var cs = null;
+      try { cs = window.getComputedStyle(el); } catch (e) { cs = null; }
+      if (!cs || cs.display !== 'none') {
+        mexidos.push([el, el.getAttribute('style')]);
+        el.style.setProperty('display', 'none', 'important');
+      }
+    }
+  }
+
+  function devolverAsOutras() {
+    for (var i = mexidos.length - 1; i >= 0; i--) {
+      var el = mexidos[i][0];
+      var antes = mexidos[i][1];
+      if (!el || !el.style) continue;
+      if (antes === null) el.removeAttribute('style');
+      else el.setAttribute('style', antes);
+    }
+    mexidos = [];
+    /* as classes do 63 que a gente tirou voltam em tirarMarcas() */
+  }
+
+  function fecharOQueSujaOPapel() {
+    try {
+      if (window.P63 && typeof window.P63.fecharPreview === 'function') window.P63.fecharPreview();
+    } catch (e) { /* ignora */ }
+    try {
+      if (window.ORMENU && typeof window.ORMENU.fechar === 'function') window.ORMENU.fechar();
+      if (typeof window.p37FecharMenuAbas === 'function') window.p37FecharMenuAbas();
+      var menu = porId('meu-menu-abas');
+      if (menu) menu.removeAttribute('open');
+    } catch (e) { /* ignora */ }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 5) O JEITO ANTIGO, PARA OS CASOS QUE NAO SAO DO 73                 */
+  /* ------------------------------------------------------------------ */
+  function chamarAnterior() {
+    var f = P73.__anterior;
+    if (typeof f === 'function' && !f.__p73) {
+      try { return f(); } catch (e) { /* ignora */ }
+    }
+    if (window.P63 && typeof window.P63.imprimirTudo === 'function') {
+      try { return window.P63.imprimirTudo(); } catch (e) { /* ignora */ }
+    }
+    if (window.P63 && typeof window.P63.__imprimirOriginal === 'function') {
+      try { return window.P63.__imprimirOriginal(); } catch (e) { /* ignora */ }
+    }
+    try { window.print(); } catch (e) { /* ignora */ }
+    return false;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 6) IMPRIMIR SO A ABA QUE ESTA NA TELA                              */
+  /* ------------------------------------------------------------------ */
+  function imprimirSoAba() {
+    var dono = modoComDono();
+    if (dono) { P73.__ultimoDesvio = dono; return chamarAnterior(); }
+
+    var painel = abaVisivel();
+    if (!painel) { P73.__ultimoDesvio = 'aba-nao-encontrada'; return chamarAnterior(); }
+
+    P73.__ultimoDesvio = '';
+    P73.ultimaAba = painel.id || '';
+    P73.__imprimindo = true;
+
+    fecharOQueSujaOPapel();
+
+    /* o resumo do mes do Pagamento precisa estar em dia antes do papel */
+    try {
+      if (window.P63 && typeof window.P63.atualizarResumo === 'function') window.P63.atualizarResumo();
+    } catch (e) { /* ignora */ }
+
+    var body = document.body;
+    porClasse(body, 'print-active');
+    porClasse(body, 'p73-so-aba');
+    /* aproveita o acabamento de papel do Patch 63 (sem botao, valor no
+       lugar do campo, cor no papel) sem abrir as outras abas */
+    if (window.P63) porClasse(body, 'p63-print-all');
+
+    var lista = todosOsPaineis();
+    for (var i = 0; i < lista.length; i++) porClasse(lista[i], 'print-active');
+    porClasse(painel, 'p73-aba-visivel');
+
+    /* titulo de aba que o 63 tenha deixado para tras nao entra no papel */
+    var sobras = document.querySelectorAll('.p63-titulo-aba');
+    for (var s = 0; s < sobras.length; s++) {
+      if (!painel.contains(sobras[s])) porClasse(sobras[s], 'p73-fora');
+    }
+
+    guardarAsOutras(painel);
+    fixarCores(painel);
+
+    try {
+      window.print();
+    } finally {
+      soltarCores();
+      devolverAsOutras();
+      tirarMarcas();
+      P73.__imprimindo = false;
+    }
+    return true;
+  }
+  P73.imprimirSoAba = imprimirSoAba;
+
+  /* ------------------------------------------------------------------ */
+  /* 7) ENTRAR NA FRENTE DO BOTAO DE IMPRIMIR                           */
+  /* ------------------------------------------------------------------ */
+  function ligar() {
+    var atual = window.imprimirPagina;
+    if (typeof atual === 'function' && atual.__p73) return false;
+    if (typeof atual === 'function') P73.__anterior = atual;
+
+    var novo = function () { return imprimirSoAba(); };
+    novo.__p73 = true;
+    /* a marca do 63 evita que ele volte a embrulhar por cima da gente */
+    novo.__p63 = true;
+    window.imprimirPagina = novo;
+    try { imprimirPagina = novo; } catch (e) { /* ignora */ }
+    P73.__ligado = true;
+    return true;
+  }
+  P73.ligar = ligar;
+
+  /* Ctrl+P: nao passa pelo botao, entao a gente so marca a aba da tela
+     para o desenho de impressao saber quem aparece */
+  function ligarCtrlP() {
+    if (P73.__ctrlp) return;
+    P73.__ctrlp = true;
+
+    window.addEventListener('beforeprint', function () {
+      if (P73.__imprimindo) return;          /* veio do botao: ja esta tratado */
+      if (modoComDono()) return;             /* tem outro dono: nao mexe */
+      var painel = abaVisivel();
+      if (!painel) return;
+      porClasse(document.body, 'p73-so-aba');
+      porClasse(painel, 'p73-aba-visivel');
+      guardarAsOutras(painel);
+    });
+
+    window.addEventListener('afterprint', function () {
+      if (P73.__imprimindo) return;
+      devolverAsOutras();
+      tirarMarcas();
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 8) FERRAMENTAS DE CONFERENCIA (console F12)                        */
+  /* ------------------------------------------------------------------ */
+  P73.situacao = function () {
+    var painel = abaVisivel();
+    var info = {
+      ligado: !!P73.__ligado,
+      abaDaTela: painel ? painel.id : '(nao encontrada)',
+      temPatch63: !!window.P63,
+      temPatch71: !!window.P71,
+      modoComDono: modoComDono() || '(nenhum)',
+      ultimaAbaImpressa: P73.ultimaAba || '(nenhuma)'
+    };
+    try { console.log('[P73]', info); } catch (e) { /* ignora */ }
+    return info;
+  };
+
+  P73.desligar = function () {
+    P73.__desligado = true;
+    var f = P73.__anterior;
+    if (typeof f === 'function' && !f.__p73) {
+      window.imprimirPagina = f;
+      try { imprimirPagina = f; } catch (e) { /* ignora */ }
+    }
+    P73.__ligado = false;
+    try { console.log('[P73] desligado: o botao de imprimir voltou ao que era antes'); } catch (e) { /* ignora */ }
+    return true;
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* PARTIDA                                                            */
+  /* ------------------------------------------------------------------ */
+  function partir() {
+    if (P73.__desligado) return;
+    try { ligar(); } catch (e) { /* ignora */ }
+    try { ligarCtrlP(); } catch (e) { /* ignora */ }
+  }
+
+  partir();
+
+  /* o Patch 63 se reapresenta depois de uns instantes; a gente confere
+     de novo nesses mesmos momentos para ficar sempre na frente */
+  var HORAS = [0, 900, 2600, 5000];
+  for (var h = 0; h < HORAS.length; h++) depois(partir, HORAS[h]);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { depois(partir, 0); });
+  }
+  window.addEventListener('load', function () { depois(partir, 300); });
+})();
+</script>
+<style>
+/* PATCH 73: no papel sai SO a aba que esta na tela */
+
+/* na tela nada muda: as regras abaixo valem so na hora de imprimir */
+@media print {
+
+  /* 1) qualquer painel de aba que NAO seja o da tela fica de fora do papel */
+  body.p73-so-aba [id^="tab-"]:not(.p73-aba-visivel) {
+    display: none !important;
+  }
+
+  /* 2) coisas marcadas como "fora do papel" (titulos de aba que o Patch 63
+        tenha deixado para tras, paineis guardados) tambem nao saem */
+  body.p73-so-aba .p73-fora {
+    display: none !important;
+  }
+
+  /* 3) a aba da tela aparece inteira, sem corte e sem barra de rolagem */
+  body.p73-so-aba .p73-aba-visivel {
+    display: block !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* 4) a primeira folha comeca no comeco: nada de quebra antes da aba */
+  body.p73-so-aba .p73-aba-visivel {
+    break-before: auto !important;
+    page-break-before: auto !important;
+  }
+
+  /* 5) tabela grande dentro da aba sai completa em vez de rolar */
+  body.p73-so-aba .p73-aba-visivel .table-responsive {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* 6) as cores da tela vao para o papel, igual ao que ja acontecia */
+  body.p73-so-aba,
+  body.p73-so-aba .p73-aba-visivel,
+  body.p73-so-aba .p73-aba-visivel * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+</style>
+
+
+<script>
+/* PATCH 74: VALOR PAGO VALE NAS DUAS SUB-ABAS E TITULO COM O MES ESCRITO */
+(function () {
+  if (window.P74 && window.P74.__v74) return;
+  var P74 = window.P74 = window.P74 || {};
+  P74.__v74 = true;
+
+  /* nomes de mes escritos por inteiro (o painel usa a forma curta) */
+  var MES_CHEIO = ['Janeiro', 'Fevereiro', 'Mar\u00e7o', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  var MES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+    'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+  var TITULO_BASE = 'Resumo de Pagamento do M\u00eas ';
+
+  /* os dois lados: tabela do resumo + quadro de totais de cada lado */
+  var LADOS = [
+    ['containerResumoPgto', 'containerTotaisPgto'],
+    ['p63ResumoTabela', 'p63ResumoTotais']
+  ];
+
+  /* ------------------------------------------------------------------ */
+  /* AJUDANTES                                                          */
+  /* ------------------------------------------------------------------ */
+  function porId(id) { return document.getElementById(id); }
+
+  function paraNumero(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v == null ? '' : v).replace(/\s/g, '').replace(/R\$/gi, '');
+    if (s.indexOf(',') > -1) {
+      if (s.indexOf('.') > -1) s = s.replace(/\./g, '');
+      s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function dinheiro(n) {
+    var v = paraNumero(n);
+    try {
+      return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return 'R$ ' + v.toFixed(2);
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 1) MES ESCRITO POR INTEIRO E TITULO DOS DOIS BLOCOS                */
+  /* ------------------------------------------------------------------ */
+  function chaveMes() {
+    try {
+      if (typeof window.getChaveMesPgto === 'function') return String(window.getChaveMesPgto() || '');
+    } catch (e) { /* ignora */ }
+    return '';
+  }
+
+  function mesDaChave() {
+    var m = /^(\d{4})-(\d{1,2})$/.exec(chaveMes());
+    if (!m) return -1;
+    var i = parseInt(m[2], 10) - 1;
+    return (i >= 0 && i < 12) ? i : -1;
+  }
+
+  /* se a chave do mes nao vier, le o rotulo da tela (ex.: Ago/2026) */
+  function mesDoRotulo() {
+    var ids = ['pgtoMesAnoLabelResumo', 'pgtoMesAnoLabel', 'pgtoMesAnoLabelColab'];
+    for (var k = 0; k < ids.length; k++) {
+      var el = porId(ids[k]);
+      if (!el) continue;
+      var txt = String(el.textContent || '').toLowerCase();
+      for (var i = 0; i < 12; i++) {
+        if (txt.indexOf(MES_CURTO[i]) > -1) return i;
+      }
+    }
+    return -1;
+  }
+
+  function mesEscrito() {
+    var i = mesDaChave();
+    if (i < 0) i = mesDoRotulo();
+    if (i < 0) return '';
+    return MES_CHEIO[i];
+  }
+  P74.mes = mesEscrito;
+
+  function textoDoTitulo() {
+    var nome = mesEscrito();
+    return nome ? (TITULO_BASE + nome) : TITULO_BASE.replace(/\s+$/, '');
+  }
+  P74.textoTitulo = textoDoTitulo;
+
+  /* o bloco de resumo que fica no fim dos Lancamentos */
+  function blocoDosLancamentos() {
+    return porId('p63BlocoResumo') || porId('p71BlocoResumo') || null;
+  }
+
+  function tituloDoBloco(bloco) {
+    if (!bloco) return null;
+    var t = bloco.querySelector('.p63-resumo-titulo, .p74-titulo-mes');
+    if (t) return t;
+    var h = bloco.getElementsByTagName('h3');
+    for (var i = 0; i < h.length; i++) {
+      var txt = String(h[i].textContent || '').toLowerCase();
+      if (txt.indexOf('resumo de pagamento') > -1) return h[i];
+    }
+    return null;
+  }
+
+  function titulos() {
+    var texto = textoDoTitulo();
+    var mudou = false;
+
+    /* bloco de baixo, dentro dos Lancamentos */
+    var alvo1 = tituloDoBloco(blocoDosLancamentos());
+    if (alvo1) {
+      if ((alvo1.className || '').indexOf('p74-titulo-mes') < 0) {
+        alvo1.className = String(alvo1.className || '') + ' p74-titulo-mes';
+      }
+      if (alvo1.textContent !== texto) { alvo1.textContent = texto; mudou = true; }
+    }
+
+    /* bloco da sub-aba Resumo */
+    var alvo2 = porId('p71TituloResumo') || porId('p74TituloResumo');
+    if (!alvo2) {
+      var painel = porId('panelPgtoResumo');
+      if (painel) {
+        alvo2 = document.createElement('div');
+        alvo2.id = 'p74TituloResumo';
+        alvo2.className = 'p71-titulo';
+        painel.insertBefore(alvo2, painel.firstChild);
+      }
+    }
+    if (alvo2) {
+      if ((alvo2.className || '').indexOf('p74-titulo-mes') < 0) {
+        alvo2.className = String(alvo2.className || '') + ' p74-titulo-mes';
+      }
+      if (alvo2.textContent !== texto) { alvo2.textContent = texto; mudou = true; }
+    }
+    return mudou;
+  }
+  P74.titulos = titulos;
+
+  /* ------------------------------------------------------------------ */
+  /* 2) OS CAMPOS DE VALOR PAGO DOS DOIS LADOS                          */
+  /* ------------------------------------------------------------------ */
+  function camposDe(raiz) {
+    if (!raiz) return [];
+    return raiz.querySelectorAll(
+      '.valor-pago-cell input, input[data-p71], input[data-p70-alvo], input[data-p74], td:last-child input');
+  }
+
+  function dadosDoCampo(campo) {
+    if (!campo) return null;
+    var colab = campo.getAttribute('data-p74-colab') || campo.getAttribute('data-p71-colab');
+    var obra = campo.getAttribute('data-p74-obra') || campo.getAttribute('data-p71-obra');
+    if (colab) return { colabId: colab, obraId: obra || '' };
+    var attr = campo.getAttribute('onchange') || campo.getAttribute('data-p70-alvo') || '';
+    var m = /atualizarValorPagoPgto\(\s*'([^']*)'\s*,\s*'([^']*)'/.exec(attr);
+    if (!m) return null;
+    return { colabId: m[1], obraId: m[2] };
+  }
+
+  function eNossoCampo(campo) {
+    if (!campo || campo.tagName !== 'INPUT') return false;
+    for (var i = 0; i < LADOS.length; i++) {
+      var raiz = porId(LADOS[i][0]);
+      if (raiz && raiz.contains(campo)) return true;
+    }
+    return false;
+  }
+
+  /* deixa o campo pronto para digitar nos dois lados */
+  function liberarCampo(campo) {
+    var d = dadosDoCampo(campo);
+    if (!d) return null;
+
+    campo.setAttribute('data-p74', '1');
+    campo.setAttribute('data-p74-colab', d.colabId);
+    if (d.obraId) campo.setAttribute('data-p74-obra', d.obraId);
+
+    if (campo.disabled) campo.disabled = false;
+    if (campo.readOnly) campo.readOnly = false;
+    campo.removeAttribute('disabled');
+    campo.removeAttribute('readonly');
+
+    /* eco do numero: nao aparece na tela, aparece no papel */
+    var cel = campo.parentNode;
+    if (cel && cel.tagName === 'TD') {
+      var eco = cel.querySelector('.p70-eco-papel, .p63-eco-papel');
+      if (!eco) {
+        eco = document.createElement('span');
+        eco.className = 'p63-eco-papel p70-eco-papel';
+        cel.appendChild(eco);
+      }
+      var certo = dinheiro(campo.value);
+      if (eco.textContent !== certo) eco.textContent = certo;
+    }
+    return d;
+  }
+
+  function liberarTodos() {
+    var quantos = 0;
+    for (var i = 0; i < LADOS.length; i++) {
+      var campos = camposDe(porId(LADOS[i][0]));
+      for (var k = 0; k < campos.length; k++) {
+        if (liberarCampo(campos[k])) quantos++;
+      }
+    }
+    return quantos;
+  }
+  P74.liberar = liberarTodos;
+
+  /* o mesmo colaborador aparece nos dois lados: os dois campos andam juntos */
+  function espelhar(colabId, texto) {
+    var alvo = String(colabId);
+    for (var i = 0; i < LADOS.length; i++) {
+      var campos = camposDe(porId(LADOS[i][0]));
+      for (var k = 0; k < campos.length; k++) {
+        var campo = campos[k];
+        var d = dadosDoCampo(campo);
+        if (!d || String(d.colabId) !== alvo) continue;
+        if (campo !== document.activeElement && String(campo.value) !== String(texto)) {
+          campo.value = texto;
+        }
+        var cel = campo.parentNode;
+        if (cel && cel.tagName === 'TD') {
+          var eco = cel.querySelector('.p70-eco-papel, .p63-eco-papel');
+          if (eco) eco.textContent = dinheiro(texto);
+        }
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 3) OS DOIS QUADROS DE TOTAIS GERAIS DO MES, NA HORA                */
+  /* ------------------------------------------------------------------ */
+  function acharItem(caixa, rotulo) {
+    var itens = caixa ? caixa.querySelectorAll('.totais-item') : [];
+    for (var i = 0; i < itens.length; i++) {
+      if ((itens[i].textContent || '').toLowerCase().indexOf(rotulo) > -1) return itens[i];
+    }
+    return null;
+  }
+
+  function valorDoItem(item) {
+    if (!item) return 0;
+    var v = item.querySelector('.totais-value');
+    return v ? paraNumero(v.textContent) : 0;
+  }
+
+  function escreverTotais(caixaId, totalPago) {
+    var caixa = porId(caixaId);
+    if (!caixa) return false;
+
+    var itemPago = acharItem(caixa, 'valor pago');
+    if (itemPago) {
+      var alvo = itemPago.querySelector('.totais-value');
+      if (alvo) alvo.textContent = dinheiro(totalPago);
+    }
+
+    /* saldo = custo total que ja esta na tela menos o que foi pago
+       (a conta do painel nao muda: so refazemos a subtracao) */
+    var itemCusto = acharItem(caixa, 'custo total');
+    var itemSaldo = acharItem(caixa, 'saldo');
+    if (itemCusto && itemSaldo) {
+      var saldo = valorDoItem(itemCusto) - paraNumero(totalPago);
+      var alvoS = itemSaldo.querySelector('.totais-value');
+      if (alvoS) {
+        alvoS.textContent = dinheiro(saldo);
+        if (saldo > 0) {
+          if ((alvoS.className || '').indexOf('totais-red') < 0) alvoS.className += ' totais-red';
+        } else {
+          alvoS.className = String(alvoS.className || '').replace(/\s*totais-red/g, '');
+        }
+      }
+    }
+    return true;
+  }
+
+  /* soma um valor por colaborador (o mesmo nome nao conta duas vezes) */
+  function somaDoLado(raizId) {
+    var raiz = porId(raizId);
+    if (!raiz) return null;
+    var campos = camposDe(raiz);
+    if (!campos || !campos.length) return null;
+    var total = 0, vistos = {}, achou = false;
+    for (var i = 0; i < campos.length; i++) {
+      var d = dadosDoCampo(campos[i]);
+      if (!d) continue;
+      var chave = String(d.colabId);
+      if (vistos[chave]) continue;
+      vistos[chave] = true;
+      total += paraNumero(campos[i].value);
+      achou = true;
+    }
+    return achou ? total : null;
+  }
+
+  function recalcular() {
+    var total = null;
+    for (var i = 0; i < LADOS.length && total === null; i++) {
+      total = somaDoLado(LADOS[i][0]);
+    }
+    if (total === null) return false;
+    for (var k = 0; k < LADOS.length; k++) {
+      escreverTotais(LADOS[k][1], total);
+    }
+    P74.ultimoTotal = total;
+    return true;
+  }
+  P74.recalcular = recalcular;
+
+  /* ------------------------------------------------------------------ */
+  /* 4) GRAVACAO SEM PERDER O QUE ESTA SENDO DIGITADO                   */
+  /* ------------------------------------------------------------------ */
+  /* usa a mesma funcao de sempre do painel (nada de conta nova), mas
+     segura o redesenho para o campo nao piscar no meio da digitacao */
+  function gravar(colabId, obraId, valor) {
+    var f = window.atualizarValorPagoPgto;
+    if (typeof f !== 'function') return false;
+    var guardaR = window.renderResumoPgto;
+    var guardaL = window.renderLancamentosPgto;
+    var nada = function () { };
+    try {
+      if (typeof guardaR === 'function') window.renderResumoPgto = nada;
+      if (typeof guardaL === 'function') window.renderLancamentosPgto = nada;
+      f(colabId, obraId, paraNumero(valor));
+    } catch (e) {
+      return false;
+    } finally {
+      if (typeof guardaR === 'function') window.renderResumoPgto = guardaR;
+      if (typeof guardaL === 'function') window.renderLancamentosPgto = guardaL;
+    }
+    return true;
+  }
+
+  var pendente = null, relogio = null;
+
+  function despejar() {
+    if (relogio) { clearTimeout(relogio); relogio = null; }
+    if (!pendente) return false;
+    var p = pendente;
+    pendente = null;
+    return gravar(p.colabId, p.obraId, p.valor);
+  }
+  P74.despejar = despejar;
+
+  function agendar(colabId, obraId, valor) {
+    pendente = { colabId: colabId, obraId: obraId, valor: valor };
+    if (relogio) clearTimeout(relogio);
+    relogio = setTimeout(function () { relogio = null; despejar(); }, 150);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 5) ESCUTA DA DIGITACAO NOS DOIS LADOS                             */
+  /* ------------------------------------------------------------------ */
+  function sincronizar() {
+    try { if (window.P71 && typeof window.P71.arrumar === 'function') window.P71.arrumar(); } catch (e) { /* ignora */ }
+    try { liberarTodos(); } catch (e2) { /* ignora */ }
+    try { recalcular(); } catch (e3) { /* ignora */ }
+    try { titulos(); } catch (e4) { /* ignora */ }
+    return true;
+  }
+  P74.sincronizar = sincronizar;
+
+  function tratar(ev) {
+    var campo = ev && ev.target;
+    if (!eNossoCampo(campo)) return;
+    var d = liberarCampo(campo);
+    if (!d) return;
+
+    var texto = String(campo.value);
+
+    /* na hora: o outro lado recebe o mesmo numero e os dois quadros
+       de Totais Gerais do Mes sao refeitos */
+    espelhar(d.colabId, texto);
+    recalcular();
+
+    if (ev.type === 'change') {
+      despejar();
+      gravar(d.colabId, d.obraId, texto);
+      /* depois de gravar, o painel redesenha: alinhamos tudo de novo */
+      setTimeout(function () { try { sincronizar(); } catch (e) { /* ignora */ } }, 0);
+    } else {
+      agendar(d.colabId, d.obraId, texto);
+    }
+  }
+
+  function ligarDigitacao() {
+    if (P74.__digitacao) return false;
+    P74.__digitacao = true;
+    document.addEventListener('input', tratar, true);
+    document.addEventListener('change', tratar, true);
+    document.addEventListener('blur', function (ev) {
+      if (eNossoCampo(ev && ev.target)) despejar();
+    }, true);
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 6) LIGACOES NAS FUNCOES DO PAINEL                                  */
+  /* ------------------------------------------------------------------ */
+  function marcar(f) {
+    f.__p74 = true;
+    f.__p71 = true;
+    f.__p70 = true;
+    f.__p63 = true;
+    return f;
+  }
+
+  function embrulhar(nome, depois) {
+    var original = window[nome];
+    if (typeof original !== 'function' || original.__p74) return false;
+    var novo = function () {
+      try { despejar(); } catch (e) { /* ignora */ }
+      var r = original.apply(this, arguments);
+      try { depois(); } catch (e2) { /* ignora */ }
+      return r;
+    };
+    window[nome] = marcar(novo);
+    return true;
+  }
+
+  function ligarTudo() {
+    embrulhar('renderResumoPgto', function () { liberarTodos(); recalcular(); titulos(); });
+    embrulhar('renderLancamentosPgto', function () { liberarTodos(); recalcular(); titulos(); });
+    embrulhar('renderPagamento', function () { titulos(); recalcular(); });
+    embrulhar('trocarSubTabPgtoNovo', function () { sincronizar(); });
+    embrulhar('mudarMesPgto', function () { sincronizar(); });
+    embrulhar('atualizarValorPagoPgto', function () { liberarTodos(); recalcular(); titulos(); });
+    return true;
+  }
+
+  function comecar() {
+    ligarTudo();
+    ligarDigitacao();
+    try { sincronizar(); } catch (e) { /* ignora */ }
+    return true;
+  }
+  P74.comecar = comecar;
+
+  P74.situacao = function () {
+    console.log('Patch 74 ativo. Mes escrito: ' + (mesEscrito() || '(nao identificado)'));
+    console.log('Titulo dos dois blocos: ' + textoDoTitulo());
+    console.log('Campos de Valor Pago liberados: ' + liberarTodos());
+    console.log('Total pago somado agora: ' + dinheiro(P74.ultimoTotal || 0));
+    console.log('Quadros de totais encontrados: ' +
+      (porId('containerTotaisPgto') ? 'Resumo sim' : 'Resumo nao') + ', ' +
+      (porId('p63ResumoTotais') ? 'Lancamentos sim' : 'Lancamentos nao'));
+    return true;
+  };
+
+  function esperar(vezes) {
+    if (typeof window.renderResumoPgto === 'function' &&
+        typeof window.atualizarValorPagoPgto === 'function') {
+      comecar();
+      return;
+    }
+    if (vezes <= 0) return;
+    setTimeout(function () { esperar(vezes - 1); }, 300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { esperar(60); });
+  } else {
+    esperar(60);
+  }
+
+  /* os patches antigos re-embrulham as funcoes do painel depois de uns
+     segundos; a nossa camada volta por cima nessas horas */
+  var HORAS = [900, 1500, 2600, 3200, 4800, 6500];
+  for (var h = 0; h < HORAS.length; h++) {
+    (function (t) {
+      setTimeout(function () { try { comecar(); } catch (e) { /* ignora */ } }, t);
+    }(HORAS[h]));
+  }
+})();
+</script>
+
+<style>
+/* PATCH 74: TITULO COM O MES ESCRITO E VALOR PAGO NOS DOIS LADOS */
+
+/* o titulo dos dois blocos usa o mesmo desenho de sempre */
+.p74-titulo-mes {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* campo de Valor Pago segue liberado nas duas sub-abas */
+#containerResumoPgto .valor-pago-cell input[data-p74],
+#p63ResumoTabela .valor-pago-cell input[data-p74] {
+  background: #ffffff;
+  cursor: text;
+  pointer-events: auto;
+}
+
+/* eco do numero digitado: escondido na tela, visivel no papel */
+.p63-eco-papel,
+.p70-eco-papel {
+  display: none;
+}
+
+@media print {
+  .p74-titulo-mes {
+    background: transparent !important;
+    border-left: 0 !important;
+    padding-left: 0 !important;
+  }
+
+  /* no papel sai o numero, nao a caixinha de digitar */
+  #containerResumoPgto .valor-pago-cell input[data-p74],
+  #p63ResumoTabela .valor-pago-cell input[data-p74] {
+    display: none !important;
+  }
+
+  .p63-eco-papel,
+  .p70-eco-papel {
+    display: inline !important;
+  }
+}
+</style>
+
 </body>
 </html>

@@ -11885,6 +11885,73 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               return getColaboradoresAll().filter(c => c.funcao === 'Ajudante' || c.funcao === 'ajudante');
             }
             
+            // ========== PATCH 78: funcao do colaborador (Profissional / Ajudante) ==========
+            // Havia uma opcao "Ajudante" no modal gravada com o valor "Profissional",
+            // o que impedia o cadastro de ajudantes. Aqui padronizamos o valor e
+            // corrigimos os cadastros antigos que ficaram com a funcao errada.
+            function _normalizarFuncaoColab(valor) {
+              var v = String(valor == null ? '' : valor).trim().toLowerCase();
+              if (v.indexOf('ajud') === 0) return 'Ajudante';
+              return 'Profissional';
+            }
+            window._normalizarFuncaoColab = _normalizarFuncaoColab;
+
+            // Reparo dos cadastros antigos: se um colaborador aparece como ajudante
+            // em qualquer lancamento, a funcao dele passa a ser "Ajudante".
+            function _repararFuncoesAjudante(silencioso) {
+              if (!window.db || !Array.isArray(db.obras)) return 0;
+              var idsAjudante = {};
+              db.obras.forEach(function (obra) {
+                (obra.lancamentosProducao || []).forEach(function (l) {
+                  (l.ajudantes || []).forEach(function (aid) { idsAjudante[aid] = true; });
+                });
+              });
+              var corrigidos = 0;
+              db.obras.forEach(function (obra) {
+                (obra.colaboradores || []).forEach(function (c) {
+                  var alvo = idsAjudante[c.id] ? 'Ajudante' : _normalizarFuncaoColab(c.funcao);
+                  if (c.funcao !== alvo) { c.funcao = alvo; corrigidos++; }
+                });
+                (obra.colaboradoresPgto || []).forEach(function (c) {
+                  var alvo = idsAjudante[c.id] ? 'Ajudante' : _normalizarFuncaoColab(c.funcao);
+                  if (c.funcao !== alvo) { c.funcao = alvo; corrigidos++; }
+                });
+              });
+              if (corrigidos > 0 && typeof salvarDB === 'function') salvarDB();
+              if (!silencioso) {
+                alert(corrigidos > 0
+                  ? 'Funcoes corrigidas: ' + corrigidos + ' registro(s).'
+                  : 'Nenhuma funcao precisava de correcao.');
+                if (typeof renderPagamento === 'function') renderPagamento();
+              }
+              return corrigidos;
+            }
+            window.repararFuncoesAjudante = function () { _repararFuncoesAjudante(false); };
+
+            // Roda uma unica vez, sem incomodar, depois que o banco carregar.
+            (function () {
+              var JA = 'patch78_funcoes_reparadas';
+              function tentar(voltas) {
+                try {
+                  if (window.db && Array.isArray(db.obras) && db.obras.length > 0) {
+                    if (!localStorage.getItem(JA)) {
+                      _repararFuncoesAjudante(true);
+                      localStorage.setItem(JA, '1');
+                    }
+                    if (typeof popularSelectsPgto === 'function') popularSelectsPgto();
+                    return;
+                  }
+                } catch (e) { /* ignora */ }
+                if (voltas > 0) setTimeout(function () { tentar(voltas - 1); }, 1500);
+              }
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () { tentar(20); });
+              } else {
+                tentar(20);
+              }
+            })();
+            // PATCH78_AJUDANTE_OK
+
             // ========== COLABORADOR CRUD ==========
             
             window.abrirModalColaborador = function(){
@@ -11917,7 +11984,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               var editId = document.getElementById('colabEditId').value;
               var editObraId = document.getElementById('colabEditObraId').value;
               var nome = document.getElementById('colabInputNome').value.trim();
-              var funcao = document.getElementById('colabInputFuncao').value;
+              var funcao = _normalizarFuncaoColab(document.getElementById('colabInputFuncao').value); // PATCH 78
               var telefone = document.getElementById('colabInputTelefone').value.trim();
               var cpf = document.getElementById('colabInputCpf').value.trim();
               if(!nome){ alert('Informe o nome do colaborador.'); return; }
@@ -11967,7 +12034,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('colabEditId').value = c.id;
               document.getElementById('colabEditObraId').value = obraId;
               document.getElementById('colabInputNome').value = c.nome || '';
-              document.getElementById('colabInputFuncao').value = c.funcao || 'Profissional';
+              document.getElementById('colabInputFuncao').value = _normalizarFuncaoColab(c.funcao); // PATCH 78
               document.getElementById('colabInputTelefone').value = c.telefone || '';
               document.getElementById('colabInputCpf').value = c.cpf || '';
               document.getElementById('colabModalTitle').textContent = 'Editar Colaborador';
@@ -12719,7 +12786,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                             <label style="font-size:0.82rem;font-weight:600;">Função</label>
                             <select id="colabInputFuncao" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
                                 <option value="Profissional">Profissional</option>
-                                <option value="Profissional">Ajudante</option>                            
+                                <option value="Ajudante">Ajudante</option>                            
                             </select>
                         </div>
                         <div>
@@ -16739,9 +16806,33 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
   var BASE = [
     {
       id: "bx-tarefas",
-      nome: "Tarefas do Grupo (Bitrix24)",
+      nome: "Tarefas do Grupo",
       desc: "Lista de tarefas do grupo 28, com o filtro pronto",
       url: "https://porticoesquadrias.bitrix24.com.br/stream/",
+      ico: "\ud83d\udccb",
+      cor: "#2563eb"
+    },
+    {
+      id: "bx-talocacaao",
+      nome: "Alocação de Obras",
+      desc: "Lista de tarefas do grupo 28, com o filtro pronto",
+      url: "https://docs.google.com/spreadsheets/d/1d6wVTrzmIH-ck1ly6W2dwlDNRmlXskL5vKmzQ55pgac/edit?gid=1549849778#gid=1549849778m/",
+      ico: "\ud83d\udccb",
+      cor: "#2563eb"
+    },
+    {
+      id: "bx-justicativas",
+      nome: "Justificativas de Ponto",
+      desc: "Lista de tarefas do grupo 28, com o filtro pronto",
+      url: "https://docs.google.com/spreadsheets/d/1FXqLLxCpJPs-DWUikUMBRTfried6ewBJ/edit?gid=678811758#gid=678811758",
+      ico: "\ud83d\udccb",
+      cor: "#2563eb"
+    },
+    {
+      id: "bx-controle",
+      nome: "Controle de Obras",
+      desc: "Lista de tarefas do grupo 28, com o filtro pronto",
+      url: "https://docs.google.com/spreadsheets/d/1KmBvpGrsQmM3EROnp4ZrhbxKxMCtraOKJ9ac8f2Wws8/edit?gid=1161341563#gid=1161341563",
       ico: "\ud83d\udccb",
       cor: "#2563eb"
     },
@@ -37614,6 +37705,224 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 }
 </style>
+
+
+<!-- ========== PATCH77_SUBABAS_CUSTO_OK ========== -->
+<script>
+/* PATCH 77: divide a aba Centro de Custos em 6 sub-abas.
+   Nao recria nada: apenas move os blocos existentes para dentro das sub-abas,
+   mantendo todos os ids e todas as funcoes atuais funcionando. */
+(function () {
+  "use strict";
+
+  var CHAVE = "custoSubAbaAtiva";
+  var ID_NAV = "custoSubNav";
+
+  var ABAS = [
+    { k: "geral",  t: "\uD83D\uDCC8 Vis\u00E3o Geral" },
+    { k: "lancar", t: "\u2795 Lan\u00E7ar Despesa" },
+    { k: "obra",   t: "\uD83C\uDFD7\uFE0F Por Obra" },
+    { k: "regiao", t: "\uD83D\uDCCD Por Regi\u00E3o" },
+    { k: "colab",  t: "\uD83D\uDC77 Por Colaborador" },
+    { k: "lista",  t: "\uD83D\uDCCB Despesas" }
+  ];
+
+  function estilo() {
+    if (document.getElementById("custoSubEstilo")) { return; }
+    var s = document.createElement("style");
+    s.id = "custoSubEstilo";
+    s.textContent =
+      "#" + ID_NAV + "{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px;" +
+      "padding-bottom:8px;border-bottom:2px solid var(--border,#e2e8f0);}" +
+      ".custo-sub-btn{cursor:pointer;border:1px solid var(--border,#cbd5e1);" +
+      "background:var(--card-bg,#f8fafc);color:var(--text,#1e293b);" +
+      "padding:7px 13px;border-radius:8px;font-size:0.82rem;font-weight:600;" +
+      "line-height:1.2;transition:all .15s;}" +
+      ".custo-sub-btn:hover{border-color:#1e3a5f;}" +
+      ".custo-sub-btn.ativo{background:#1e3a5f;color:#fff;border-color:#1e3a5f;}" +
+      ".custo-sub-painel{animation:custoSubFade .18s ease-in;}" +
+      "@keyframes custoSubFade{from{opacity:.35}to{opacity:1}}" +
+      "body.dark-mode .custo-sub-btn{background:#1e293b;color:#e2e8f0;border-color:#334155;}" +
+      "body.dark-mode .custo-sub-btn.ativo{background:#2563eb;color:#fff;border-color:#2563eb;}";
+    document.head.appendChild(s);
+  }
+
+  /* devolve o filho direto de #tab-custo que contem o elemento informado */
+  function blocoDe(painel, id) {
+    var el = document.getElementById(id);
+    if (!el) { return null; }
+    var n = el;
+    while (n && n.parentNode && n.parentNode !== painel) { n = n.parentNode; }
+    return (n && n.parentNode === painel) ? n : null;
+  }
+
+  function mover(painel, no) {
+    if (no && painel) { painel.appendChild(no); }
+  }
+
+  function montar() {
+    var painel = document.getElementById("tab-custo");
+    if (!painel) { return false; }
+    if (document.getElementById(ID_NAV)) { return true; }
+
+    /* precisa que os blocos originais ja estejam na pagina */
+    if (!document.getElementById("containerCustoTable")) { return false; }
+
+    estilo();
+
+    var blocoFiltros = blocoDe(painel, "custoFilterObra");
+    var blocoForm    = blocoDe(painel, "custoInputObra");
+    var blocoBotoes  = blocoDe(painel, "custoInputData");
+    var blocoGraf    = blocoDe(painel, "custoBarChart");
+    var cResumoObra  = document.getElementById("containerCustoResumoObra");
+    var cRegiao      = document.getElementById("containerCustoPorRegiao");
+    var cColab       = document.getElementById("containerCustoPorColaborador");
+    var cTabela      = document.getElementById("containerCustoTable");
+    var cTotal       = document.getElementById("containerCustoTotal");
+
+    /* filtros continuam sempre visiveis, logo abaixo do titulo */
+    if (blocoFiltros) { painel.insertBefore(blocoFiltros, painel.firstChild.nextSibling || null); }
+
+    /* barra das sub-abas */
+    var nav = document.createElement("div");
+    nav.id = ID_NAV;
+    painel.appendChild(nav);
+
+    var caixas = {};
+    ABAS.forEach(function (a) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "custo-sub-btn";
+      b.id = "custoSubBtn-" + a.k;
+      b.textContent = a.t;
+      b.addEventListener("click", function () { abrir(a.k); });
+      nav.appendChild(b);
+
+      var p = document.createElement("div");
+      p.className = "custo-sub-painel";
+      p.id = "custoSubPainel-" + a.k;
+      p.style.display = "none";
+      painel.appendChild(p);
+      caixas[a.k] = p;
+    });
+
+    /* espelho do total geral, para aparecer tambem na Visao Geral */
+    var espelho = document.createElement("div");
+    espelho.id = "custoTotalEspelho";
+    espelho.style.marginBottom = "14px";
+    caixas.geral.appendChild(espelho);
+
+    /* distribui os blocos que ja existiam */
+    mover(caixas.geral,  blocoGraf);
+    mover(caixas.lancar, blocoForm);
+    mover(caixas.lancar, blocoBotoes);
+    mover(caixas.obra,   cResumoObra);
+    mover(caixas.regiao, cRegiao);
+    mover(caixas.colab,  cColab);
+    mover(caixas.lista,  cTabela);
+    mover(caixas.lista,  cTotal);
+
+    /* aviso simpatico quando um resumo estiver vazio */
+    [["obra", cResumoObra], ["regiao", cRegiao], ["colab", cColab]].forEach(function (par) {
+      var vazio = document.createElement("div");
+      vazio.className = "custo-sub-vazio";
+      vazio.style.cssText = "padding:16px;font-size:0.85rem;color:var(--text-light,#64748b);";
+      vazio.textContent = "Nenhum dado para os filtros selecionados.";
+      vazio.style.display = "none";
+      caixas[par[0]].appendChild(vazio);
+    });
+
+    sincronizar();
+    envolverRender();
+
+    var salva = null;
+    try { salva = localStorage.getItem(CHAVE); } catch (e) { salva = null; }
+    abrir(salva && caixas[salva] ? salva : "geral");
+    return true;
+  }
+
+  /* copia o total para a Visao Geral e mostra/esconde os avisos de vazio */
+  function sincronizar() {
+    var total = document.getElementById("containerCustoTotal");
+    var espelho = document.getElementById("custoTotalEspelho");
+    if (total && espelho) { espelho.innerHTML = total.innerHTML; }
+
+    [["obra", "containerCustoResumoObra"],
+     ["regiao", "containerCustoPorRegiao"],
+     ["colab", "containerCustoPorColaborador"]].forEach(function (par) {
+      var caixa = document.getElementById("custoSubPainel-" + par[0]);
+      var alvo = document.getElementById(par[1]);
+      if (!caixa || !alvo) { return; }
+      var aviso = caixa.querySelector(".custo-sub-vazio");
+      if (!aviso) { return; }
+      var vazio = alvo.innerHTML.replace(/\s|&nbsp;/g, "") === "";
+      aviso.style.display = vazio ? "block" : "none";
+    });
+  }
+
+  function abrir(chave) {
+    ABAS.forEach(function (a) {
+      var p = document.getElementById("custoSubPainel-" + a.k);
+      var b = document.getElementById("custoSubBtn-" + a.k);
+      var on = (a.k === chave);
+      if (p) { p.style.display = on ? "block" : "none"; }
+      if (b) { b.className = on ? "custo-sub-btn ativo" : "custo-sub-btn"; }
+    });
+    try { localStorage.setItem(CHAVE, chave); } catch (e) { /* ignora */ }
+
+    /* redesenha para os graficos aparecerem certos ao voltar para a aba */
+    if (typeof window.renderCustoDashboard === "function") {
+      try { window.renderCustoDashboard(); } catch (e) { /* ignora */ }
+    } else {
+      sincronizar();
+    }
+  }
+  window.abrirSubAbaCusto = abrir;
+
+  /* mantem o espelho do total e os avisos atualizados a cada render */
+  function envolverRender() {
+    if (typeof window.renderCustoDashboard !== "function") { return; }
+    if (window.renderCustoDashboard.__p77) { return; }
+    var original = window.renderCustoDashboard;
+    var nova = function () {
+      var r = original.apply(this, arguments);
+      try { sincronizar(); } catch (e) { /* ignora */ }
+      return r;
+    };
+    nova.__p77 = true;
+    window.renderCustoDashboard = nova;
+  }
+
+  /* tenta montar assim que possivel e continua tentando enquanto o painel
+     ainda estiver sendo criado por outros scripts */
+  function tentar(voltas) {
+    if (montar()) { return; }
+    if (voltas <= 0) { return; }
+    setTimeout(function () { tentar(voltas - 1); }, 400);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { tentar(25); });
+  } else {
+    tentar(25);
+  }
+
+  /* se o usuario abrir a aba de custos antes do script terminar, garante o encaixe */
+  (function () {
+    var anterior = window.trocarAba;
+    if (typeof anterior !== "function" || anterior.__p77) { return; }
+    var nova = function (aba) {
+      var r = anterior.apply(this, arguments);
+      if (aba === "custo") {
+        try { montar(); envolverRender(); sincronizar(); } catch (e) { /* ignora */ }
+      }
+      return r;
+    };
+    nova.__p77 = true;
+    window.trocarAba = nova;
+  })();
+})();
+</script>
 
 </body>
 </html>

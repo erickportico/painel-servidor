@@ -268,7 +268,7 @@ if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard =
         if (typeof window.popularCustoObraSelect !== 'function') window.popularCustoObraSelect = function() {};
         if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard = function() {};
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- O SDK do Supabase já foi carregado acima; evita download e inicialização duplicados. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Acompanhamento de Produção e Instalação</title>
@@ -281,7 +281,9 @@ if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard =
     <!-- Importação estável do PDF.js + Worker alinhado -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
-        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -6499,7 +6501,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
 
                     <!-- Área de Texto com os Dados Extraídos -->
                     <div style="margin-bottom:15px;">
-                        <textarea id="recebimentoPasteArea" style="width:100%; height:150px; font-family:monospace; font-size:0.85rem; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:vertical;"></textarea>
+                        <textarea id="recebimentoPasteAreaLegacy" aria-label="Dados extraídos da lista de materiais" style="width:100%; height:150px; font-family:monospace; font-size:0.85rem; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:vertical;"></textarea>
                     </div>
 
                     <!-- Botões de Ação -->
@@ -45511,5 +45513,97 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 <!-- PATCH89_ANTITRAVA_OK -->
+
+<!-- REVISÃO NÃO DESTRUTIVA: melhorias de acessibilidade, responsividade e compatibilidade. -->
+<style id="revisao-nao-destrutiva">
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--primary-accent, #2563eb);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+    }
+  }
+
+  @media (max-width: 860px) {
+    #modalImportarLista .modal > div[style*="grid-template-columns: repeat(4, 1fr)"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 520px) {
+    #modalImportarLista .modal > div[style*="grid-template-columns: repeat(4, 1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+<script>
+(function () {
+  'use strict';
+
+  function copiarCampo(origem, destino) {
+    var a = document.getElementById(origem);
+    var b = document.getElementById(destino);
+    if (a && b) { b.value = a.value; }
+  }
+
+  /* Mantém compatibilidade com o modal antigo, sem remover seus dados. */
+  window.fecharModalImportacao = function () {
+    var modal = document.getElementById('modalImportarLista');
+    if (modal) { modal.style.display = 'none'; }
+  };
+
+  window.processarPDFModal = function (event) {
+    if (typeof window.lerPDFListaAcessorios !== 'function') {
+      var status = document.getElementById('pdfStatusLabel');
+      if (status) { status.textContent = 'Leitura de PDF indisponível nesta versão.'; }
+      return;
+    }
+    try {
+      var retorno = window.lerPDFListaAcessorios(event);
+      if (retorno && typeof retorno.then === 'function') {
+        retorno.then(function () {
+          copiarCampo('recebimentoPasteArea', 'recebimentoPasteAreaLegacy');
+          copiarCampo('impRecData', 'impData');
+          copiarCampo('impRecListaCorte', 'impListaCorte');
+          copiarCampo('impRecNF', 'impNotaFiscal');
+          copiarCampo('impRecFornecedor', 'impFornecedor');
+          copiarCampo('impRecClasse', 'impClasse');
+          var status = document.getElementById('pdfStatusLabel');
+          if (status) { status.textContent = 'PDF processado.'; }
+        });
+      }
+    } catch (erro) {
+      var statusErro = document.getElementById('pdfStatusLabel');
+      if (statusErro) { statusErro.textContent = 'Não foi possível ler o PDF.'; }
+    }
+  };
+
+  window.confirmarEImportarParaPainel = function () {
+    var origem = document.getElementById('recebimentoPasteAreaLegacy');
+    var destino = document.getElementById('recebimentoPasteArea');
+    if (!origem || !destino || !String(origem.value || '').trim()) {
+      window.alert('Cole ou carregue os dados da lista antes de importar.');
+      return;
+    }
+    destino.value = origem.value;
+    copiarCampo('impData', 'impRecData');
+    copiarCampo('impListaCorte', 'impRecListaCorte');
+    copiarCampo('impNotaFiscal', 'impRecNF');
+    copiarCampo('impFornecedor', 'impRecFornecedor');
+    copiarCampo('impClasse', 'impRecClasse');
+    if (typeof window.processarImportacaoRecebimento === 'function') {
+      window.processarImportacaoRecebimento();
+    } else {
+      window.alert('A função de importação não está disponível.');
+    }
+  };
+})();
+</script>
 </body>
 </html>

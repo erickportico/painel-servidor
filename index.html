@@ -39820,22 +39820,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function colocarBotao() {
-    var cx = caixaMenu();
-    if (!cx) { return; }
-    var b = document.getElementById('ps81Botao');
-    if (!b) {
-      b = document.createElement('button');
-      b.id = 'ps81Botao';
-      b.type = 'button';
-      b.setAttribute('data-ps81', '1');
-      b.textContent = 'Unificar Duplicados';
-      b.onclick = function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        abrir();
-      };
-    }
-    if (b.parentNode !== cx) { cx.appendChild(b); }
+    /* Opção removida do menu; o módulo interno permanece preservado. */
+    return;
   }
 
   function montarCaixa() {

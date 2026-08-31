@@ -5142,6 +5142,71 @@ body.p53-travado { overflow: hidden !important; }
         }
       }
     </style>
+    <style id="correcao-modais-usuarios-admin">
+      /* Cadastro de usuários: sempre centralizado, sem alterar a tela normal. */
+      html body #p87Fundo,
+      html body #p86bCad,
+      html body #p86bLogin {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+      }
+      html body #p87Caixa,
+      html body #p86bCad .cx,
+      html body #p86bLogin .cx {
+        margin: auto !important;
+        box-sizing: border-box !important;
+      }
+      html body #p87Novo.on {
+        display: block !important;
+        width: min(720px, 100%) !important;
+        margin: 0 auto 16px !important;
+        box-sizing: border-box !important;
+      }
+      html body #p87Novo.on .lin > div {
+        flex: 1 1 180px !important;
+        min-width: 0 !important;
+      }
+
+      /* Autorização administrativa: fica acima de qualquer janela existente. */
+      html body #ps79Modal,
+      html body #p86bLogin,
+      html body #p86bCad {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 2147483646 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+      }
+      html body #ps79Modal .cx,
+      html body #p86bLogin .cx,
+      html body #p86bCad .cx {
+        position: relative !important;
+        z-index: 2147483647 !important;
+        margin: auto !important;
+        max-height: calc(100vh - 40px) !important;
+        overflow: auto !important;
+      }
+      html body #ps79Modal input:focus,
+      html body #p86bLogin input:focus,
+      html body #p86bCad input:focus,
+      html body #ps79Modal select:focus,
+      html body #p86bCad select:focus {
+        outline: 3px solid rgba(37, 99, 235, .35) !important;
+        outline-offset: 2px !important;
+      }
+    </style>
+
+    <style id="correcao-persistencia-usuarios">
+      /* Mantem o cadastro de usuarios acessivel apos recarregar a pagina. */
+      #p87Novo.on input:focus, #p87Novo.on select:focus {
+        outline: 3px solid rgba(37,99,235,.30) !important;
+        outline-offset: 2px !important;
+      }
+    </style>
 </head>
 
 <body class="dark-mode">
@@ -43490,12 +43555,36 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
   }
 
+  /* Persistência reforçada dos usuários: mantém a chave original e uma cópia de recuperação. */
+  var K_USERS_RECUPERACAO = K_USERS + '_recuperacao_v1';
   function lerJson(k, def) {
-    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
+    var bruto = null;
+    try { bruto = localStorage.getItem(k); } catch (e) { bruto = null; }
+    if (!bruto && k === K_USERS) {
+      try { bruto = localStorage.getItem(K_USERS_RECUPERACAO); } catch (e2) { bruto = null; }
+    }
+    if (!bruto) { return def; }
+    try {
+      var valor = JSON.parse(bruto);
+      if (k === K_USERS && !Array.isArray(valor)) { return def; }
+      return valor;
+    } catch (e3) {
+      if (k === K_USERS) {
+        try {
+          var recuperado = JSON.parse(localStorage.getItem(K_USERS_RECUPERACAO) || 'null');
+          return Array.isArray(recuperado) ? recuperado : def;
+        } catch (e4) { return def; }
+      }
+      return def;
+    }
   }
-
   function gravarJson(k, v) {
-    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+    try {
+      var serializado = JSON.stringify(v);
+      localStorage.setItem(k, serializado);
+      if (k === K_USERS) { localStorage.setItem(K_USERS_RECUPERACAO, serializado); }
+      return true;
+    } catch (e) { return false; }
   }
 
   function usuarios() {
@@ -44599,12 +44688,36 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
   }
 
+  /* Persistência reforçada dos usuários: mantém a chave original e uma cópia de recuperação. */
+  var K_USERS_RECUPERACAO = K_USERS + '_recuperacao_v1';
   function lerJson(k, def) {
-    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
+    var bruto = null;
+    try { bruto = localStorage.getItem(k); } catch (e) { bruto = null; }
+    if (!bruto && k === K_USERS) {
+      try { bruto = localStorage.getItem(K_USERS_RECUPERACAO); } catch (e2) { bruto = null; }
+    }
+    if (!bruto) { return def; }
+    try {
+      var valor = JSON.parse(bruto);
+      if (k === K_USERS && !Array.isArray(valor)) { return def; }
+      return valor;
+    } catch (e3) {
+      if (k === K_USERS) {
+        try {
+          var recuperado = JSON.parse(localStorage.getItem(K_USERS_RECUPERACAO) || 'null');
+          return Array.isArray(recuperado) ? recuperado : def;
+        } catch (e4) { return def; }
+      }
+      return def;
+    }
   }
-
   function gravarJson(k, v) {
-    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+    try {
+      var serializado = JSON.stringify(v);
+      localStorage.setItem(k, serializado);
+      if (k === K_USERS) { localStorage.setItem(K_USERS_RECUPERACAO, serializado); }
+      return true;
+    } catch (e) { return false; }
   }
 
   function usuarios() {
@@ -50169,5 +50282,269 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 })();
 </script>
+
+<!-- PATCH97_PPTX_CHEIO_OK inicio -->
+<script>
+/* ====== PATCH97_PPTX_CHEIO_OK - PPTX respeita a foto no slide inteiro (PATCH 96) ====== */
+(function () {
+  'use strict';
+  if (window.__PS97) { return; }
+  window.__PS97 = true;
+
+  var K_CHEIO = 'p96_cheio_v1';
+  var POL_L = 13.333;
+  var POL_A = 7.5;
+
+  /* ---------------- qual foto vai ocupar o slide inteiro ---------------- */
+  function lerCheio() {
+    try {
+      var o = JSON.parse(localStorage.getItem(K_CHEIO) || '{}');
+      return o && typeof o === 'object' ? o : {};
+    } catch (e) { return {}; }
+  }
+
+  /* ---------------- veu escuro (mesmo degrade da tela) ---------------- */
+  var veuCache = null;
+
+  function veuUrl() {
+    if (veuCache !== null) { return veuCache; }
+    veuCache = '';
+    try {
+      var cv = document.createElement('canvas');
+      cv.width = 1280;
+      cv.height = 720;
+      var cx = cv.getContext('2d');
+      if (!cx) { return veuCache; }
+      var g = cx.createLinearGradient(0, 0, cv.width, 0);
+      g.addColorStop(0, 'rgba(6,12,24,0.86)');
+      g.addColorStop(0.55, 'rgba(6,12,24,0.55)');
+      g.addColorStop(1, 'rgba(6,12,24,0.30)');
+      cx.fillStyle = g;
+      cx.fillRect(0, 0, cv.width, cv.height);
+      veuCache = cv.toDataURL('image/png');
+    } catch (e2) { veuCache = ''; }
+    return veuCache;
+  }
+
+  /* ---------------- folha de rascunho: guarda as pecas do slide ---------------- */
+  function rascunho() {
+    var b = { fundo: null, ops: [] };
+    b.addImage = function (o) { b.ops.push(['img', o]); return b; };
+    b.addShape = function (t, o) { b.ops.push(['shape', t, o]); return b; };
+    b.addText = function (t, o) { b.ops.push(['text', t, o]); return b; };
+    b.addTable = function (t, o) { b.ops.push(['table', t, o]); return b; };
+    b.addChart = function (t, d, o) { b.ops.push(['chart', t, d, o]); return b; };
+    b.addNotes = function (t) { b.ops.push(['notes', t]); return b; };
+    b.addMedia = function (o) { b.ops.push(['media', o]); return b; };
+    try {
+      Object.defineProperty(b, 'background', {
+        configurable: true,
+        get: function () { return b.fundo; },
+        set: function (v) { b.fundo = v; }
+      });
+    } catch (e) {}
+    return b;
+  }
+
+  function fonteDaImagem(o) {
+    if (!o) { return ''; }
+    return String(o.data || o.path || '');
+  }
+
+  function tocar(real, op) {
+    if (op[0] === 'img') { real.addImage(op[1]); return; }
+    if (op[0] === 'shape') { real.addShape(op[1], op[2]); return; }
+    if (op[0] === 'text') { real.addText(op[1], op[2]); return; }
+    if (op[0] === 'table') { real.addTable(op[1], op[2]); return; }
+    if (op[0] === 'chart') { real.addChart(op[1], op[2], op[3]); return; }
+    if (op[0] === 'notes') { real.addNotes(op[1]); return; }
+    if (op[0] === 'media') { real.addMedia(op[1]); return; }
+  }
+
+  /* ---------------- monta de verdade, na ordem certa ---------------- */
+  function montar(inv) {
+    if (inv.__pronto) { return; }
+    inv.__pronto = true;
+
+    var folhas = inv.__folhas;
+    var n = folhas.length;
+    var c = lerCheio();
+
+    var marca = [];
+    var i, j;
+    for (i = 0; i < n; i++) { marca.push(false); }
+    if (n > 0) { marca[0] = !!c.capa; }
+    if (n > 1) { marca[1] = !!c.dados; }
+    if (n > 2) { marca[n - 1] = !!c.fim; }
+
+    /* ultima foto do relatorio: serve para a pagina de encerramento */
+    var ultima = '';
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < folhas[i].ops.length; j++) {
+        if (folhas[i].ops[j][0] === 'img') {
+          var f = fonteDaImagem(folhas[i].ops[j][1]);
+          if (f) { ultima = f; }
+        }
+      }
+    }
+
+    for (i = 0; i < n; i++) {
+      var b = folhas[i];
+      var real;
+      try { real = inv.__r.addSlide(); } catch (e) { continue; }
+      if (b.fundo) { try { real.background = b.fundo; } catch (e1) {} }
+
+      var cheio = marca[i];
+      var propria = '';
+      for (j = 0; j < b.ops.length; j++) {
+        if (b.ops[j][0] === 'img') {
+          propria = fonteDaImagem(b.ops[j][1]);
+          if (propria) { break; }
+        }
+      }
+      var url = propria || ultima;
+      var esconder = false;
+
+      if (cheio && url) {
+        try {
+          real.addImage({
+            data: url, x: 0, y: 0, w: POL_L, h: POL_A,
+            sizing: { type: 'cover', w: POL_L, h: POL_A }
+          });
+          var v = veuUrl();
+          if (v) { real.addImage({ data: v, x: 0, y: 0, w: POL_L, h: POL_A }); }
+          esconder = !!propria;
+        } catch (e2) { esconder = false; }
+      }
+
+      for (j = 0; j < b.ops.length; j++) {
+        if (esconder && b.ops[j][0] === 'img') { continue; }
+        try { tocar(real, b.ops[j]); } catch (e3) {}
+      }
+    }
+  }
+
+  /* ---------------- capa por cima do gerador de PowerPoint ---------------- */
+  function embrulhar(Base) {
+    if (!Base || Base.__p97) { return Base; }
+
+    function P97() {
+      this.__r = new Base();
+      this.__folhas = [];
+      this.__pronto = false;
+    }
+
+    P97.__p97 = true;
+    P97.__base = Base;
+
+    P97.prototype.addSlide = function (a) {
+      try { if (a) { this.__r.__p97arg = a; } } catch (e) {}
+      var b = rascunho();
+      this.__folhas.push(b);
+      return b;
+    };
+
+    P97.prototype.addSection = function (o) {
+      try { return this.__r.addSection(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.defineLayout = function (o) {
+      try { return this.__r.defineLayout(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.defineSlideMaster = function (o) {
+      try { return this.__r.defineSlideMaster(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.writeFile = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.writeFile(o);
+    };
+
+    P97.prototype.write = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.write(o);
+    };
+
+    P97.prototype.stream = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.stream(o);
+    };
+
+    ['layout', 'author', 'title', 'subject', 'company', 'revision', 'rtlMode', 'theme'].forEach(function (nome) {
+      try {
+        Object.defineProperty(P97.prototype, nome, {
+          configurable: true,
+          get: function () { try { return this.__r[nome]; } catch (e) { return undefined; } },
+          set: function (v) { try { this.__r[nome] = v; } catch (e) {} }
+        });
+      } catch (e2) {}
+    });
+
+    /* atalhos que a biblioteca expoe na classe */
+    try {
+      ['ShapeType', 'SchemeColor', 'AlignH', 'AlignV', 'ChartType', 'OutputType', 'version'].forEach(function (k) {
+        if (Base[k] !== undefined) { P97[k] = Base[k]; }
+      });
+    } catch (e3) {}
+
+    return P97;
+  }
+
+  /* ---------------- entrar no lugar da biblioteca, na hora que ela chegar ---------------- */
+  var guardado = {};
+
+  function instalarNome(nome) {
+    var atual;
+    try { atual = window[nome]; } catch (e) { atual = undefined; }
+
+    function pegar() {
+      var b = guardado[nome];
+      if (!b) { return undefined; }
+      if (!b.__w) { b.__w = embrulhar(b.real); }
+      return b.__w;
+    }
+
+    try {
+      Object.defineProperty(window, nome, {
+        configurable: true,
+        get: pegar,
+        set: function (v) {
+          if (v && v.__p97) { return; }
+          guardado[nome] = { real: v, __w: null };
+        }
+      });
+    } catch (e2) {
+      if (typeof atual === 'function' && !atual.__p97) {
+        try { window[nome] = embrulhar(atual); } catch (e3) {}
+      }
+      return;
+    }
+
+    if (typeof atual === 'function' && !atual.__p97) {
+      guardado[nome] = { real: atual, __w: null };
+    }
+  }
+
+  instalarNome('PptxGenJS');
+  instalarNome('pptxgen');
+
+  /* rede de seguranca: se por algum motivo a troca acima nao valer, tenta de novo */
+  setInterval(function () {
+    ['PptxGenJS', 'pptxgen'].forEach(function (nome) {
+      try {
+        var v = window[nome];
+        if (typeof v === 'function' && !v.__p97) { window[nome] = embrulhar(v); }
+      } catch (e) {}
+    });
+  }, 1500);
+
+})();
+
+</script>
+<!-- PATCH97_PPTX_CHEIO_OK fim -->
 </body>
 </html>

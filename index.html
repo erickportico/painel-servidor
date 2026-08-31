@@ -38544,7 +38544,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     p.textContent = 'Entre com seu usuario e senha para continuar.';
     cx.appendChild(h);
     cx.appendChild(p);
-    var iu = campo(cx, 'E-mail ou usuário', 'text', '');
+    var iu = campo(cx, 'E-mail', 'email', '');
     var is = campo(cx, 'Senha', 'password', '');
     var lb = document.createElement('label');
     lb.className = 'lb';
@@ -38569,7 +38569,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     async function tentar() {
       var identificador = String(iu.value || '').trim().toLowerCase();
       var senha = String(is.value || '');
-      if (!identificador || !senha) { er.textContent = 'Preencha e-mail/usuário e senha.'; return; }
+      if (!identificador || !senha) { er.textContent = 'Preencha o e-mail e a senha.'; return; }
 
       // Usuários novos entram pelo Supabase usando e-mail.
       if (window.PainelAuthSupabase && identificador.indexOf('@') >= 1) {
@@ -38605,24 +38605,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         return;
       }
 
-      // Fallback: preserva o acesso dos usuários antigos gravados localmente.
-      var nome = identificador;
-      var lista = usuarios(), achou = null, i;
-      for (i = 0; i < lista.length; i++) {
-        if (String(lista[i].usuario).toLowerCase() === nome) { achou = lista[i]; break; }
-      }
-      if (!achou || achou.hash !== hashSenha(nome, senha)) {
-        er.textContent = 'Usuário/e-mail ou senha inválidos.';
-        is.value = '';
-        registrar('login-falhou', nome);
-        return;
-      }
-      abrirSessao(achou, ck.checked);
-      registrar('login', achou.usuario);
-      if (ov.parentNode) { ov.parentNode.removeChild(ov); }
-      barra();
-      if (achou.trocar) { modalTrocarSenha(achou.usuario, true); }
-      else { toast('Bem-vindo, ' + (achou.nome || achou.usuario) + '!', 'ok'); }
+      er.textContent = window.PainelAuthSupabase
+        ? 'Use o e-mail cadastrado no Supabase Auth.'
+        : 'O cliente Supabase não foi carregado. Verifique supabase_auth_client.js.';
+      return;
     }
     bt.addEventListener('click', tentar);
     is.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { tentar(); } });
@@ -43496,13 +43482,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         return;
       }
 
-      // Fallback local, preservando o comportamento anterior se o cliente não estiver disponível.
-      var lista = usuarios();
-      if (acharUsuario(usu)) { er.textContent = 'Já existe um usuário com esse nome.'; return; }
-      lista.push({ usuario: usu, nome: nome, perfil: primeiro ? 'admin' : sel.value, hash: hashSenha(usu, se1), trocar: false, criadoEm: Date.now() });
-      if (!gravarJson(K_USERS, lista)) { er.textContent = 'Não foi possível salvar neste navegador.'; return; }
-      aviso('Usuário criado. Agora entre com ele.');
-      voltar();
+      er.textContent = 'O cadastro centralizado do Supabase não está disponível. Verifique supabase_auth_client.js.';
+      return;
     }
     botao(bt, 'Voltar', '', voltar);
     botao(bt, 'Criar usu\u00e1rio', 'pri', criar);
@@ -43615,7 +43596,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     async function entrar() {
       var identificador = String(iu.value || '').trim().toLowerCase();
       var senha = String(is.value || '');
-      if (!identificador || !senha) { er.textContent = 'Preencha e-mail/usuário e senha.'; return; }
+      if (!identificador || !senha) { er.textContent = 'Preencha o e-mail e a senha.'; return; }
 
       if (window.PainelAuthSupabase && identificador.indexOf('@') >= 1) {
         bt.disabled = true;
@@ -43647,18 +43628,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         return;
       }
 
-      // Fallback local para preservar usuários antigos.
-      var nome = identificador;
-      var u = acharUsuario(nome);
-      if (!u || u.hash !== hashSenha(nome, senha)) {
-        er.textContent = 'Usuário/e-mail ou senha inválidos.';
-        is.value = '';
-        return;
-      }
-      abrirSessao(u, ck.checked);
-      fecharTela('p86bLogin');
-      barraPropria();
-      aviso('Bem-vindo, ' + (u.nome || u.usuario) + '!');
+      er.textContent = window.PainelAuthSupabase
+        ? 'Use o e-mail cadastrado no Supabase Auth.'
+        : 'O cliente Supabase não foi carregado. Verifique supabase_auth_client.js.';
+      return;
     }
     botao(bt, 'Entrar', 'pri', entrar);
     is.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { entrar(); } });

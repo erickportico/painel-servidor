@@ -44798,8 +44798,15 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function colocarBotao() {
+    var atual = sessao();
+    var eAdmin = !!(atual && String(atual.perfil || '').toLowerCase() === 'admin');
+    var existente = document.getElementById('p87Botao');
+    if (!eAdmin) {
+      if (existente && existente.parentNode) { existente.parentNode.removeChild(existente); }
+      return;
+    }
     var cx = caixaMenu();
-    var b = document.getElementById('p87Botao');
+    var b = existente || document.getElementById('p87Botao');
     if (!b) {
       b = document.createElement('button');
       b.id = 'p87Botao';
@@ -47434,8 +47441,14 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function colocarBotao() {
+    var fixo = document.getElementById('btn-tab-fpdo');
+    var antigo = document.getElementById('p92Botao');
+    if (fixo) {
+      if (antigo && antigo.parentNode) { antigo.parentNode.removeChild(antigo); }
+      return;
+    }
     var cx = caixaMenu();
-    var b = document.getElementById('p92Botao');
+    var b = antigo || document.getElementById('p92Botao');
     if (!b) {
       b = document.createElement('button');
       b.id = 'p92Botao';

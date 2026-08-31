@@ -269,7 +269,6 @@ if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard =
         if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard = function() {};
     </script>
     <script src="supabase_auth_client.js"></script>
-    <!-- O SDK do Supabase já foi carregado acima; evita download e inicialização duplicados. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Acompanhamento de Produção e Instalação</title>
@@ -282,9 +281,7 @@ if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard =
     <!-- Importação estável do PDF.js + Worker alinhado -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
-        if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        }
+        window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -4963,251 +4960,6 @@ body.p53-travado { overflow: hidden !important; }
   #modalParcelasInstalacao { display: none !important; }
 }
 </style>
-    <link rel="preconnect" href="https://hosvxzayiuklouhrqeuv.supabase.co">
-    <!-- OTIMIZACAO_PERFORMANCE_1_OK -->
-    <script>
-    (function () {
-      'use strict';
-      function otimizarImagens() {
-        var imgs = document.images || [];
-        for (var i = 0; i < imgs.length; i++) {
-          var img = imgs[i];
-          if (!img.hasAttribute('loading')) { img.setAttribute('loading', 'lazy'); }
-          if (!img.hasAttribute('decoding')) { img.setAttribute('decoding', 'async'); }
-        }
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', otimizarImagens, { once: true });
-      } else {
-        otimizarImagens();
-      }
-    })();
-    </script>
-    <style id="ctm-filtros-avancados-style">
-      #ctm-filtros-avancados { margin: 0 0 16px; padding: 16px; border: 1px solid var(--border,#e2e8f0); border-radius: 16px; background: linear-gradient(135deg,color-mix(in srgb,var(--card-bg,#fff) 96%,#2563eb),var(--card-bg,#fff)); box-shadow: 0 8px 22px rgba(15,23,42,.06); }
-      #ctm-filtros-avancados .ctm-filtros-cabecalho { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:13px; }
-      #ctm-filtros-avancados .ctm-filtros-titulo { color:var(--text,#1e293b); font-size:.92rem; font-weight:800; }
-      #ctm-filtros-avancados .ctm-filtros-subtitulo { display:block; margin-top:3px; color:var(--text-light,#64748b); font-size:.76rem; }
-      #ctm-filtros-avancados .ctm-filtros-grade { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:11px; }
-      #ctm-filtros-avancados label { display:block; color:var(--text-light,#64748b); font-size:.72rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; }
-      #ctm-filtros-avancados input, #ctm-filtros-avancados select { width:100%; min-height:40px; margin-top:6px; padding:8px 10px; box-sizing:border-box; border:1px solid var(--border,#cbd5e1); border-radius:9px; background:var(--input-bg,#fff); color:var(--text,#1e293b); }
-      #ctm-filtros-avancados input:focus, #ctm-filtros-avancados select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.16); }
-      #ctm-filtros-avancados .ctm-filtros-resumo { margin-top:12px; color:var(--text-light,#64748b); font-size:.78rem; }
-      body.dark-mode #ctm-filtros-avancados { background:linear-gradient(135deg,#111827,#172554); border-color:#334155; }
-      body.dark-mode #ctm-filtros-avancados .ctm-filtros-titulo { color:#e2e8f0; }
-      @media (max-width:620px) { #ctm-filtros-avancados .ctm-filtros-cabecalho { align-items:flex-start; flex-direction:column; } }
-    </style>
-    <style id="correcao-impressao-diario-boletim">
-      /* Corrige sobreposição sem alterar o layout normal da tela. */
-      @media print {
-        html body #p84Fundo,
-        html body #p83Fundo,
-        html body #p84Botao,
-        html body #p83Botao,
-        html body #p84Login,
-        html body #p83Login,
-        html body #p84Cad,
-        html body #p83Cad {
-          display: none !important;
-          visibility: hidden !important;
-        }
-        html body #p84Impressao,
-        html body #p83Impressao {
-          display: block !important;
-          position: static !important;
-          inset: auto !important;
-          left: auto !important;
-          top: auto !important;
-          width: 100% !important;
-          max-width: none !important;
-          height: auto !important;
-          max-height: none !important;
-          overflow: visible !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background: #fff !important;
-          color: #000 !important;
-          transform: none !important;
-          z-index: auto !important;
-        }
-        html body #p84Impressao *,
-        html body #p83Impressao * {
-          position: static !important;
-          transform: none !important;
-        }
-        html body #p84Impressao img,
-        html body #p83Impressao img {
-          max-width: 100% !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-        html body #p84Impressao table,
-        html body #p83Impressao table,
-        html body #p84Impressao .pr-bl,
-        html body #p83Impressao .pr-bl {
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-      }
-    </style>
-    <script id="correcao-impressao-isolada-diario-boletim">
-(function () {
-  if (window.p85ImprimirSomente) return;
-  var estado = null;
-  var timer = null;
-
-  function restaurar() {
-    if (!estado) return;
-    if (timer) { clearTimeout(timer); timer = null; }
-    estado.elementos.forEach(function (item) {
-      if (item.el === estado.relatorio) return;
-      if (item.style === null) item.el.removeAttribute('style');
-      else item.el.setAttribute('style', item.style);
-    });
-    if (estado.htmlStyle === null) document.documentElement.removeAttribute('style');
-    else document.documentElement.setAttribute('style', estado.htmlStyle);
-    if (estado.bodyClass === null) document.body.removeAttribute('class');
-    else document.body.setAttribute('class', estado.bodyClass);
-    if (estado.relatorioStyle === null) estado.relatorio.removeAttribute('style');
-    else estado.relatorio.setAttribute('style', estado.relatorioStyle);
-    estado = null;
-  }
-
-  function antesDaImpressao(id) {
-    var relatorio = document.getElementById(id);
-    if (!relatorio) return false;
-    restaurar();
-    estado = {
-      relatorio: relatorio,
-      bodyClass: document.body.getAttribute('class'),
-      htmlStyle: document.documentElement.getAttribute('style'),
-      relatorioStyle: relatorio.getAttribute('style'),
-      elementos: Array.prototype.map.call(document.body.children, function (el) {
-        return { el: el, style: el.getAttribute('style') };
-      })
-    };
-    document.body.classList.add('p85-impressao-isolada');
-    Array.prototype.forEach.call(document.body.children, function (el) {
-      if (el !== relatorio) el.style.setProperty('display', 'none', 'important');
-    });
-    relatorio.style.setProperty('display', 'block', 'important');
-    relatorio.style.setProperty('position', 'static', 'important');
-    relatorio.style.setProperty('inset', 'auto', 'important');
-    relatorio.style.setProperty('left', 'auto', 'important');
-    relatorio.style.setProperty('top', 'auto', 'important');
-    relatorio.style.setProperty('width', '100%', 'important');
-    relatorio.style.setProperty('max-width', 'none', 'important');
-    relatorio.style.setProperty('height', 'auto', 'important');
-    relatorio.style.setProperty('max-height', 'none', 'important');
-    relatorio.style.setProperty('overflow', 'visible', 'important');
-    relatorio.style.setProperty('margin', '0', 'important');
-    relatorio.style.setProperty('padding', '0', 'important');
-    document.documentElement.style.setProperty('overflow', 'visible', 'important');
-    document.body.style.setProperty('overflow', 'visible', 'important');
-    return true;
-  }
-
-  window.p85ImprimirSomente = function (id) {
-    if (!antesDaImpressao(id)) { window.print(); return; }
-    var finalizado = false;
-    function concluir() {
-      if (finalizado) return;
-      finalizado = true;
-      restaurar();
-      window.removeEventListener('afterprint', concluir);
-    }
-    window.addEventListener('afterprint', concluir);
-    try { window.print(); } catch (e) { concluir(); throw e; }
-    timer = window.setTimeout(concluir, 2500);
-  };
-})();
-    </script>
-    <style id="correcao-impressao-isolada-diario-boletim-style">
-      @media print {
-        html body.p85-impressao-isolada > * { display: none !important; }
-        html body.p85-impressao-isolada > #p84Impressao,
-        html body.p85-impressao-isolada > #p83Impressao {
-          display: block !important;
-          position: static !important;
-          inset: auto !important;
-          width: 100% !important;
-          max-width: none !important;
-          height: auto !important;
-          max-height: none !important;
-          overflow: visible !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          transform: none !important;
-          background: #fff !important;
-          color: #000 !important;
-        }
-      }
-    </style>
-    <style id="correcao-modais-usuarios-admin">
-      /* Cadastro de usuários: sempre centralizado, sem alterar a tela normal. */
-      html body #p87Fundo,
-      html body #p86bCad,
-      html body #p86bLogin {
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 20px !important;
-        box-sizing: border-box !important;
-      }
-      html body #p87Caixa,
-      html body #p86bCad .cx,
-      html body #p86bLogin .cx {
-        margin: auto !important;
-        box-sizing: border-box !important;
-      }
-      html body #p87Novo.on {
-        display: block !important;
-        width: min(720px, 100%) !important;
-        margin: 0 auto 16px !important;
-        box-sizing: border-box !important;
-      }
-      html body #p87Novo.on .lin > div {
-        flex: 1 1 180px !important;
-        min-width: 0 !important;
-      }
-
-      /* Autorização administrativa: fica acima de qualquer janela existente. */
-      html body #ps79Modal,
-      html body #p86bLogin,
-      html body #p86bCad {
-        position: fixed !important;
-        inset: 0 !important;
-        z-index: 2147483646 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 20px !important;
-      }
-      html body #ps79Modal .cx,
-      html body #p86bLogin .cx,
-      html body #p86bCad .cx {
-        position: relative !important;
-        z-index: 2147483647 !important;
-        margin: auto !important;
-        max-height: calc(100vh - 40px) !important;
-        overflow: auto !important;
-      }
-      html body #ps79Modal input:focus,
-      html body #p86bLogin input:focus,
-      html body #p86bCad input:focus,
-      html body #ps79Modal select:focus,
-      html body #p86bCad select:focus {
-        outline: 3px solid rgba(37, 99, 235, .35) !important;
-        outline-offset: 2px !important;
-      }
-    </style>
-
-    <style id="correcao-persistencia-usuarios">
-      /* Mantem o cadastro de usuarios acessivel apos recarregar a pagina. */
-      #p87Novo.on input:focus, #p87Novo.on select:focus {
-        outline: 3px solid rgba(37,99,235,.30) !important;
-        outline-offset: 2px !important;
-      }
-    </style>
 </head>
 
 <body class="dark-mode">
@@ -5286,6 +5038,7 @@ body.p53-travado { overflow: hidden !important; }
                         <button class="tab-btn" id="btn-tab-pagamento" onclick="trocarAba('pagamento')">💰 Pagamento de Produção</button>
                         <button class="tab-btn" id="btn-tab-ctm" onclick="trocarAba('ctm')">🔲 Contramarco (CTM)</button>
                         <button class="tab-btn" id="btn-tab-custo" onclick="trocarAba('custo')">📊 Centro de Custos</button>
+                        <button class="tab-btn" id="btn-tab-fpdo" type="button" onclick="if (window.p92AbrirFpdo) { window.p92AbrirFpdo(); } else { alert('O Relatório FPDO ainda está carregando. Tente novamente.'); }">📋 Relatório FPDO</button>
                     </div>
 
                     <!-- 3. Seu conteúdo principal ocupa a tela inteira -->
@@ -6406,37 +6159,6 @@ body.p53-travado { overflow: hidden !important; }
                         <input type="date" id="custoFilterPeriodoAte" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
                     </div>
                 </div>
-                <div id="ctm-filtros-avancados" aria-label="Filtros avançados do Centro de Custos">
-                    <div class="ctm-filtros-cabecalho">
-                        <div>
-                            <span class="ctm-filtros-titulo">Busca avançada</span>
-                            <span class="ctm-filtros-subtitulo">Refine os lançamentos por status, texto ou faixa de valor.</span>
-                        </div>
-                        <button type="button" class="secondary" onclick="limparFiltrosCusto()">Limpar filtros</button>
-                    </div>
-                    <div class="ctm-filtros-grade">
-                        <label>Status
-                            <select id="custoFilterStatus" onchange="renderCustoDashboard()">
-                                <option value="">Todos os status</option>
-                                <option value="Sem status">Sem status</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Pago">Pago</option>
-                                <option value="Aprovado">Aprovado</option>
-                                <option value="Cancelado">Cancelado</option>
-                            </select>
-                        </label>
-                        <label>Palavra-chave
-                            <input type="search" id="custoFilterTexto" placeholder="Descrição, categoria, região..." oninput="renderCustoDashboard()">
-                        </label>
-                        <label>Valor mínimo (R$)
-                            <input type="number" id="custoFilterValorMin" min="0" step="0.01" placeholder="0,00" oninput="renderCustoDashboard()">
-                        </label>
-                        <label>Valor máximo (R$)
-                            <input type="number" id="custoFilterValorMax" min="0" step="0.01" placeholder="0,00" oninput="renderCustoDashboard()">
-                        </label>
-                    </div>
-                    <div id="custoFiltrosAvancadosResumo" class="ctm-filtros-resumo">Todos os lançamentos estão sendo exibidos.</div>
-                </div>
                 <!-- PATCH 38: filtro por colaborador -->
                 <!-- PATCH 41: obra do lancamento -->
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
@@ -6778,7 +6500,7 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
 
                     <!-- Área de Texto com os Dados Extraídos -->
                     <div style="margin-bottom:15px;">
-                        <textarea id="recebimentoPasteAreaLegacy" aria-label="Dados extraídos da lista de materiais" style="width:100%; height:150px; font-family:monospace; font-size:0.85rem; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:vertical;"></textarea>
+                        <textarea id="recebimentoPasteArea" style="width:100%; height:150px; font-family:monospace; font-size:0.85rem; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:vertical;"></textarea>
                     </div>
 
                     <!-- Botões de Ação -->
@@ -14777,10 +14499,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   var dataDe = _custoVal("custoFilterDataDe");
                   var dataAte = _custoVal("custoFilterDataAte");
                   var colabFiltro = _custoVal("custoFilterColaborador"); // PATCH 38
-                  var statusFiltro = _custoVal("custoFilterStatus");
-                  var textoFiltro = _custoVal("custoFilterTexto").trim().toLowerCase();
-                  var valorMinFiltro = parseFloat(_custoVal("custoFilterValorMin"));
-                  var valorMaxFiltro = parseFloat(_custoVal("custoFilterValorMax"));
                   var periodoDe = document.getElementById("custoFilterPeriodoDe") ? document.getElementById("custoFilterPeriodoDe").value : "";
                   var periodoAte = document.getElementById("custoFilterPeriodoAte") ? document.getElementById("custoFilterPeriodoAte").value : "";
                   var result = [];
@@ -14797,15 +14515,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       if(dataAte && (!dRef || dRef > dataAte)) return;
                       // PATCH 38: filtro por colaborador
                       if(colabFiltro && (c.colaborador || "") !== colabFiltro) return;
-                      var statusCusto = String(c.status || "").trim() || "Sem status";
-                      if(statusFiltro && statusCusto !== statusFiltro) return;
-                      var valorCusto = Number(c.valor) || 0;
-                      if(!isNaN(valorMinFiltro) && valorCusto < valorMinFiltro) return;
-                      if(!isNaN(valorMaxFiltro) && valorCusto > valorMaxFiltro) return;
-                      if(textoFiltro){
-                        var textoCusto = [c.descricao, c.categoria, c.regiao, c.colaborador, statusCusto].join(" ").toLowerCase();
-                        if(textoCusto.indexOf(textoFiltro) === -1) return;
-                      }
                       if(periodoDe){
                         var d = c.data || "";
                         if(d < periodoDe) return;
@@ -14817,8 +14526,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       result.push(c);
                     });
                   });
-                  var resumo = document.getElementById("custoFiltrosAvancadosResumo");
-                  if(resumo){ resumo.textContent = result.length + (result.length === 1 ? " lançamento encontrado." : " lançamentos encontrados."); }
                   return result;
                 }
                 
@@ -15142,7 +14849,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
 
                 window.limparFiltrosCusto = function(){
-                  ["custoFilterRegiao","custoFilterMes","custoFilterCategoria","custoFilterDataDe","custoFilterDataAte","custoFilterColaborador","custoFilterStatus","custoFilterTexto","custoFilterValorMin","custoFilterValorMax"].forEach(function(id){
+                  ["custoFilterRegiao","custoFilterMes","custoFilterCategoria","custoFilterDataDe","custoFilterDataAte","custoFilterColaborador"].forEach(function(id){
                     var el = document.getElementById(id);
                     if(el) el.value = "";
                   });
@@ -38837,7 +38544,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     p.textContent = 'Entre com seu usuario e senha para continuar.';
     cx.appendChild(h);
     cx.appendChild(p);
-    var iu = campo(cx, 'Usuario', 'text', '');
+    var iu = campo(cx, 'E-mail ou usuário', 'text', '');
     var is = campo(cx, 'Senha', 'password', '');
     var lb = document.createElement('label');
     lb.className = 'lb';
@@ -38859,16 +38566,53 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     document.body.appendChild(ov);
     setTimeout(function () { try { iu.focus(); } catch (e) {} }, 60);
 
-    function tentar() {
-      var nome = String(iu.value || '').trim().toLowerCase();
+    async function tentar() {
+      var identificador = String(iu.value || '').trim().toLowerCase();
       var senha = String(is.value || '');
-      if (!nome || !senha) { er.textContent = 'Preencha usuario e senha.'; return; }
+      if (!identificador || !senha) { er.textContent = 'Preencha e-mail/usuário e senha.'; return; }
+
+      // Usuários novos entram pelo Supabase usando e-mail.
+      if (window.PainelAuthSupabase && identificador.indexOf('@') >= 1) {
+        bt.disabled = true;
+        bt.textContent = 'Entrando...';
+        er.textContent = '';
+        try {
+          var resultado = await window.PainelAuthSupabase.entrarComEmail(identificador, senha);
+          var perfil = resultado.perfil;
+          var usuarioAuth = resultado.user;
+          var sessaoSupabase = {
+            usuario: perfil.usuario,
+            nome: perfil.nome || perfil.usuario,
+            perfil: perfil.perfil,
+            authId: usuarioAuth.id,
+            at: Date.now()
+          };
+          if (typeof gravarJson === 'function' && typeof K_SESS !== 'undefined') {
+            gravarJson(K_SESS, sessaoSupabase);
+          }
+          registrar('login-supabase', perfil.usuario);
+          if (ov.parentNode) { ov.parentNode.removeChild(ov); }
+          barra();
+          toast('Bem-vindo, ' + (perfil.nome || perfil.usuario) + '!', 'ok');
+        } catch (erro) {
+          console.error('Erro no login Supabase:', erro);
+          er.textContent = erro && erro.message ? erro.message : 'E-mail ou senha inválidos.';
+          is.value = '';
+        } finally {
+          bt.disabled = false;
+          bt.textContent = 'Entrar';
+        }
+        return;
+      }
+
+      // Fallback: preserva o acesso dos usuários antigos gravados localmente.
+      var nome = identificador;
       var lista = usuarios(), achou = null, i;
       for (i = 0; i < lista.length; i++) {
         if (String(lista[i].usuario).toLowerCase() === nome) { achou = lista[i]; break; }
       }
       if (!achou || achou.hash !== hashSenha(nome, senha)) {
-        er.textContent = 'Usuario ou senha invalidos.';
+        er.textContent = 'Usuário/e-mail ou senha inválidos.';
         is.value = '';
         registrar('login-falhou', nome);
         return;
@@ -38880,7 +38624,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       if (achou.trocar) { modalTrocarSenha(achou.usuario, true); }
       else { toast('Bem-vindo, ' + (achou.nome || achou.usuario) + '!', 'ok'); }
     }
-
     bt.addEventListener('click', tentar);
     is.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { tentar(); } });
     iu.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { is.focus(); } });
@@ -40112,8 +39855,22 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function colocarBotao() {
-    /* Opção removida do menu; o módulo interno permanece preservado. */
-    return;
+    var cx = caixaMenu();
+    if (!cx) { return; }
+    var b = document.getElementById('ps81Botao');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'ps81Botao';
+      b.type = 'button';
+      b.setAttribute('data-ps81', '1');
+      b.textContent = 'Unificar Duplicados';
+      b.onclick = function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        abrir();
+      };
+    }
+    if (b.parentNode !== cx) { cx.appendChild(b); }
   }
 
   function montarCaixa() {
@@ -41807,7 +41564,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
     h += '<div class="pr-ass">_______________________________________<br>' + esc(d.responsavel || 'Responsável') + '</div>';
     alvo.innerHTML = h;
-    setTimeout(function () { window.p85ImprimirSomente('p84Impressao'); }, 200);
+    setTimeout(function () { window.print(); }, 200);
   }
 
   /* ================================================================ *
@@ -42774,7 +42531,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (b.conclusao) { h += '<h3>Conclusão</h3><div class="pr-tx">' + esc(b.conclusao) + '</div>'; }
     h += '<div class="pr-ass">_______________________________________<br>' + esc(b.responsavel || 'Responsável') + '</div>';
     d.innerHTML = h;
-    setTimeout(function () { window.p85ImprimirSomente('p83Impressao'); }, 200);
+    setTimeout(function () { window.print(); }, 200);
   }
 
   /* ================================================================ *
@@ -43556,36 +43313,12 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
   }
 
-  /* Persistência reforçada dos usuários: mantém a chave original e uma cópia de recuperação. */
-  var K_USERS_RECUPERACAO = K_USERS + '_recuperacao_v1';
   function lerJson(k, def) {
-    var bruto = null;
-    try { bruto = localStorage.getItem(k); } catch (e) { bruto = null; }
-    if (!bruto && k === K_USERS) {
-      try { bruto = localStorage.getItem(K_USERS_RECUPERACAO); } catch (e2) { bruto = null; }
-    }
-    if (!bruto) { return def; }
-    try {
-      var valor = JSON.parse(bruto);
-      if (k === K_USERS && !Array.isArray(valor)) { return def; }
-      return valor;
-    } catch (e3) {
-      if (k === K_USERS) {
-        try {
-          var recuperado = JSON.parse(localStorage.getItem(K_USERS_RECUPERACAO) || 'null');
-          return Array.isArray(recuperado) ? recuperado : def;
-        } catch (e4) { return def; }
-      }
-      return def;
-    }
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
   }
+
   function gravarJson(k, v) {
-    try {
-      var serializado = JSON.stringify(v);
-      localStorage.setItem(k, serializado);
-      if (k === K_USERS) { localStorage.setItem(K_USERS_RECUPERACAO, serializado); }
-      return true;
-    } catch (e) { return false; }
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
   }
 
   function usuarios() {
@@ -43680,8 +43413,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     cx.appendChild(h);
     cx.appendChild(p);
 
-    var inNome = campo(cx, 'Nome completo', 'text', '');
-    var inUsu  = campo(cx, 'Usu\u00e1rio (sem espa\u00e7os)', 'text', '');
+    var inNome  = campo(cx, 'Nome completo', 'text', '');
+    var inEmail = campo(cx, 'E-mail', 'email', '');
+    var inUsu   = campo(cx, 'Usu\u00e1rio (sem espa\u00e7os)', 'text', '');
     var inSe1  = campo(cx, 'Senha (m\u00ednimo 4 caracteres)', 'password', '');
     var inSe2  = campo(cx, 'Repita a senha', 'password', '');
 
@@ -43730,41 +43464,50 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       }
     }
 
-    function criar() {
+    async function criar() {
       var nome  = String(inNome.value || '').trim();
+      var email = String(inEmail.value || '').trim().toLowerCase();
       var usu   = String(inUsu.value || '').trim().toLowerCase();
       var se1   = String(inSe1.value || '');
       var se2   = String(inSe2.value || '');
-
       if (!nome) { er.textContent = 'Escreva o nome completo.'; return; }
-      if (usu.length < 3) { er.textContent = 'O usu\u00e1rio precisa de pelo menos 3 caracteres.'; return; }
-      if (!/^[a-z0-9._-]+$/.test(usu)) { er.textContent = 'Use apenas letras sem acento, n\u00fameros, ponto, tra\u00e7o ou sublinhado no usu\u00e1rio.'; return; }
-      if (se1.length < 4) { er.textContent = 'A senha precisa de pelo menos 4 caracteres.'; return; }
-      if (se1 !== se2) { er.textContent = 'As duas senhas est\u00e3o diferentes.'; return; }
+      if (window.PainelAuthSupabase && (!email || email.indexOf('@') < 1)) {
+        er.textContent = 'Informe um e-mail válido para o cadastro centralizado.'; return;
+      }
+      if (usu.length < 3) { er.textContent = 'O usuário precisa de pelo menos 3 caracteres.'; return; }
+      if (!/^[a-z0-9._-]+$/.test(usu)) { er.textContent = 'Use apenas letras sem acento, números, ponto, traço ou sublinhado no usuário.'; return; }
+      if (se1.length < 6) { er.textContent = 'A senha precisa de pelo menos 6 caracteres.'; return; }
+      if (se1 !== se2) { er.textContent = 'As duas senhas estão diferentes.'; return; }
 
-      var lista = usuarios();
-      if (acharUsuario(usu)) { er.textContent = 'J\u00e1 existe um usu\u00e1rio com esse nome.'; return; }
-
-      lista.push({
-        usuario: usu,
-        nome: nome,
-        perfil: primeiro ? 'admin' : sel.value,
-        hash: hashSenha(usu, se1),
-        trocar: false,
-        criadoEm: Date.now()
-      });
-      if (!gravarJson(K_USERS, lista)) {
-        er.textContent = 'N\u00e3o foi poss\u00edvel salvar neste navegador.';
+      if (window.PainelAuthSupabase) {
+        bt.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+        er.textContent = 'Criando usuário no Supabase...';
+        try {
+          await window.PainelAuthSupabase.cadastrarComEmail(email, se1, nome, usu, primeiro ? 'admin' : sel.value);
+          er.textContent = '';
+          alert('Usuário criado com sucesso. Verifique o e-mail se a confirmação estiver ativada.');
+          voltar();
+        } catch (erro) {
+          console.error('Erro no cadastro Supabase:', erro);
+          er.textContent = erro && erro.message ? erro.message : 'Não foi possível criar o usuário.';
+        } finally {
+          bt.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+        }
         return;
       }
-      aviso('Usu\u00e1rio criado. Agora entre com ele.');
+
+      // Fallback local, preservando o comportamento anterior se o cliente não estiver disponível.
+      var lista = usuarios();
+      if (acharUsuario(usu)) { er.textContent = 'Já existe um usuário com esse nome.'; return; }
+      lista.push({ usuario: usu, nome: nome, perfil: primeiro ? 'admin' : sel.value, hash: hashSenha(usu, se1), trocar: false, criadoEm: Date.now() });
+      if (!gravarJson(K_USERS, lista)) { er.textContent = 'Não foi possível salvar neste navegador.'; return; }
+      aviso('Usuário criado. Agora entre com ele.');
       voltar();
     }
-
     botao(bt, 'Voltar', '', voltar);
     botao(bt, 'Criar usu\u00e1rio', 'pri', criar);
 
-    [inNome, inUsu, inSe1, inSe2].forEach(function (el) {
+    [inNome, inEmail, inUsu, inSe1, inSe2].forEach(function (el) {
       el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { criar(); } });
     });
   }
@@ -43869,13 +43612,46 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     document.body.appendChild(ov);
     setTimeout(function () { try { iu.focus(); } catch (e) { /* ignora */ } }, 60);
 
-    function entrar() {
-      var nome = String(iu.value || '').trim().toLowerCase();
+    async function entrar() {
+      var identificador = String(iu.value || '').trim().toLowerCase();
       var senha = String(is.value || '');
-      if (!nome || !senha) { er.textContent = 'Preencha usu\u00e1rio e senha.'; return; }
+      if (!identificador || !senha) { er.textContent = 'Preencha e-mail/usuário e senha.'; return; }
+
+      if (window.PainelAuthSupabase && identificador.indexOf('@') >= 1) {
+        bt.disabled = true;
+        er.textContent = 'Entrando...';
+        try {
+          var resultado = await window.PainelAuthSupabase.entrarComEmail(identificador, senha);
+          var perfil = resultado.perfil;
+          var usuarioAuth = resultado.user;
+          var sessaoSupabase = {
+            usuario: perfil.usuario,
+            nome: perfil.nome || perfil.usuario,
+            perfil: perfil.perfil,
+            authId: usuarioAuth.id,
+            at: Date.now()
+          };
+          if (typeof gravarJson === 'function' && typeof K_SESS !== 'undefined') {
+            gravarJson(K_SESS, sessaoSupabase);
+          }
+          fecharTela('p86bLogin');
+          barraPropria();
+          aviso('Bem-vindo, ' + (perfil.nome || perfil.usuario) + '!');
+        } catch (erro) {
+          console.error('Erro no login Supabase:', erro);
+          er.textContent = erro && erro.message ? erro.message : 'E-mail ou senha inválidos.';
+          is.value = '';
+        } finally {
+          bt.disabled = false;
+        }
+        return;
+      }
+
+      // Fallback local para preservar usuários antigos.
+      var nome = identificador;
       var u = acharUsuario(nome);
       if (!u || u.hash !== hashSenha(nome, senha)) {
-        er.textContent = 'Usu\u00e1rio ou senha inv\u00e1lidos.';
+        er.textContent = 'Usuário/e-mail ou senha inválidos.';
         is.value = '';
         return;
       }
@@ -43884,7 +43660,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       barraPropria();
       aviso('Bem-vindo, ' + (u.nome || u.usuario) + '!');
     }
-
     botao(bt, 'Entrar', 'pri', entrar);
     is.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { entrar(); } });
     iu.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { is.focus(); } });
@@ -44689,36 +44464,12 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
   }
 
-  /* Persistência reforçada dos usuários: mantém a chave original e uma cópia de recuperação. */
-  var K_USERS_RECUPERACAO = K_USERS + '_recuperacao_v1';
   function lerJson(k, def) {
-    var bruto = null;
-    try { bruto = localStorage.getItem(k); } catch (e) { bruto = null; }
-    if (!bruto && k === K_USERS) {
-      try { bruto = localStorage.getItem(K_USERS_RECUPERACAO); } catch (e2) { bruto = null; }
-    }
-    if (!bruto) { return def; }
-    try {
-      var valor = JSON.parse(bruto);
-      if (k === K_USERS && !Array.isArray(valor)) { return def; }
-      return valor;
-    } catch (e3) {
-      if (k === K_USERS) {
-        try {
-          var recuperado = JSON.parse(localStorage.getItem(K_USERS_RECUPERACAO) || 'null');
-          return Array.isArray(recuperado) ? recuperado : def;
-        } catch (e4) { return def; }
-      }
-      return def;
-    }
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
   }
+
   function gravarJson(k, v) {
-    try {
-      var serializado = JSON.stringify(v);
-      localStorage.setItem(k, serializado);
-      if (k === K_USERS) { localStorage.setItem(K_USERS_RECUPERACAO, serializado); }
-      return true;
-    } catch (e) { return false; }
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
   }
 
   function usuarios() {
@@ -45840,99 +45591,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 </script>
 <!-- PATCH89_ANTITRAVA_OK -->
 
-<!-- REVISÃO NÃO DESTRUTIVA: melhorias de acessibilidade, responsividade e compatibilidade. -->
-<style id="revisao-nao-destrutiva">
-  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-    outline: 3px solid var(--primary-accent, #2563eb);
-    outline-offset: 2px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: .01ms !important;
-      animation-iteration-count: 1 !important;
-      scroll-behavior: auto !important;
-      transition-duration: .01ms !important;
-    }
-  }
-
-  @media (max-width: 860px) {
-    #modalImportarLista .modal > div[style*="grid-template-columns: repeat(4, 1fr)"] {
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-  }
-
-  @media (max-width: 520px) {
-    #modalImportarLista .modal > div[style*="grid-template-columns: repeat(4, 1fr)"] {
-      grid-template-columns: 1fr !important;
-    }
-  }
-</style>
-<script>
-(function () {
-  'use strict';
-
-  function copiarCampo(origem, destino) {
-    var a = document.getElementById(origem);
-    var b = document.getElementById(destino);
-    if (a && b) { b.value = a.value; }
-  }
-
-  /* Mantém compatibilidade com o modal antigo, sem remover seus dados. */
-  window.fecharModalImportacao = function () {
-    var modal = document.getElementById('modalImportarLista');
-    if (modal) { modal.style.display = 'none'; }
-  };
-
-  window.processarPDFModal = function (event) {
-    if (typeof window.lerPDFListaAcessorios !== 'function') {
-      var status = document.getElementById('pdfStatusLabel');
-      if (status) { status.textContent = 'Leitura de PDF indisponível nesta versão.'; }
-      return;
-    }
-    try {
-      var retorno = window.lerPDFListaAcessorios(event);
-      if (retorno && typeof retorno.then === 'function') {
-        retorno.then(function () {
-          copiarCampo('recebimentoPasteArea', 'recebimentoPasteAreaLegacy');
-          copiarCampo('impRecData', 'impData');
-          copiarCampo('impRecListaCorte', 'impListaCorte');
-          copiarCampo('impRecNF', 'impNotaFiscal');
-          copiarCampo('impRecFornecedor', 'impFornecedor');
-          copiarCampo('impRecClasse', 'impClasse');
-          var status = document.getElementById('pdfStatusLabel');
-          if (status) { status.textContent = 'PDF processado.'; }
-        });
-      }
-    } catch (erro) {
-      var statusErro = document.getElementById('pdfStatusLabel');
-      if (statusErro) { statusErro.textContent = 'Não foi possível ler o PDF.'; }
-    }
-  };
-
-  window.confirmarEImportarParaPainel = function () {
-    var origem = document.getElementById('recebimentoPasteAreaLegacy');
-    var destino = document.getElementById('recebimentoPasteArea');
-    if (!origem || !destino || !String(origem.value || '').trim()) {
-      window.alert('Cole ou carregue os dados da lista antes de importar.');
-      return;
-    }
-    destino.value = origem.value;
-    copiarCampo('impData', 'impRecData');
-    copiarCampo('impListaCorte', 'impRecListaCorte');
-    copiarCampo('impNotaFiscal', 'impRecNF');
-    copiarCampo('impFornecedor', 'impRecFornecedor');
-    copiarCampo('impClasse', 'impRecClasse');
-    if (typeof window.processarImportacaoRecebimento === 'function') {
-      window.processarImportacaoRecebimento();
-    } else {
-      window.alert('A função de importação não está disponível.');
-    }
-  };
-})();
-</script>
-
-<!-- PATCH92_FPDO_OK -->
+<!-- PATCH92_REINTEGRADO -->
 <script>
 /* ====== PATCH92_FPDO_OK - Relatorio FPDO (Fique por dentro da obra) ====== */
 (function () {
@@ -47814,7 +47473,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 
-<!-- PATCH93_FPDO_FIX_OK -->
+<!-- PATCH93_REINTEGRADO -->
 <script>
 /* ================================================================== *
  * PATCH 93 - Correcoes do Relatorio FPDO
@@ -48078,7 +47737,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 
-<!-- PATCH94_FPDO_PPTX_OK -->
+<!-- PATCH94_REINTEGRADO -->
 <script>
 /* ====== PATCH94_FPDO_PPTX_OK - Relatorio FPDO em slides 16:9 + Salvar PPTX ====== */
 (function () {
@@ -49101,7 +48760,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 
-<!-- PATCH95_IMG_OK -->
+<!-- PATCH95_REINTEGRADO -->
 <script>
 /* ====== PATCH95_IMG_OK - Criar e editar imagens no Relatorio FPDO ====== */
 (function () {
@@ -50283,269 +49942,5 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 })();
 </script>
-
-<!-- PATCH97_PPTX_CHEIO_OK inicio -->
-<script>
-/* ====== PATCH97_PPTX_CHEIO_OK - PPTX respeita a foto no slide inteiro (PATCH 96) ====== */
-(function () {
-  'use strict';
-  if (window.__PS97) { return; }
-  window.__PS97 = true;
-
-  var K_CHEIO = 'p96_cheio_v1';
-  var POL_L = 13.333;
-  var POL_A = 7.5;
-
-  /* ---------------- qual foto vai ocupar o slide inteiro ---------------- */
-  function lerCheio() {
-    try {
-      var o = JSON.parse(localStorage.getItem(K_CHEIO) || '{}');
-      return o && typeof o === 'object' ? o : {};
-    } catch (e) { return {}; }
-  }
-
-  /* ---------------- veu escuro (mesmo degrade da tela) ---------------- */
-  var veuCache = null;
-
-  function veuUrl() {
-    if (veuCache !== null) { return veuCache; }
-    veuCache = '';
-    try {
-      var cv = document.createElement('canvas');
-      cv.width = 1280;
-      cv.height = 720;
-      var cx = cv.getContext('2d');
-      if (!cx) { return veuCache; }
-      var g = cx.createLinearGradient(0, 0, cv.width, 0);
-      g.addColorStop(0, 'rgba(6,12,24,0.86)');
-      g.addColorStop(0.55, 'rgba(6,12,24,0.55)');
-      g.addColorStop(1, 'rgba(6,12,24,0.30)');
-      cx.fillStyle = g;
-      cx.fillRect(0, 0, cv.width, cv.height);
-      veuCache = cv.toDataURL('image/png');
-    } catch (e2) { veuCache = ''; }
-    return veuCache;
-  }
-
-  /* ---------------- folha de rascunho: guarda as pecas do slide ---------------- */
-  function rascunho() {
-    var b = { fundo: null, ops: [] };
-    b.addImage = function (o) { b.ops.push(['img', o]); return b; };
-    b.addShape = function (t, o) { b.ops.push(['shape', t, o]); return b; };
-    b.addText = function (t, o) { b.ops.push(['text', t, o]); return b; };
-    b.addTable = function (t, o) { b.ops.push(['table', t, o]); return b; };
-    b.addChart = function (t, d, o) { b.ops.push(['chart', t, d, o]); return b; };
-    b.addNotes = function (t) { b.ops.push(['notes', t]); return b; };
-    b.addMedia = function (o) { b.ops.push(['media', o]); return b; };
-    try {
-      Object.defineProperty(b, 'background', {
-        configurable: true,
-        get: function () { return b.fundo; },
-        set: function (v) { b.fundo = v; }
-      });
-    } catch (e) {}
-    return b;
-  }
-
-  function fonteDaImagem(o) {
-    if (!o) { return ''; }
-    return String(o.data || o.path || '');
-  }
-
-  function tocar(real, op) {
-    if (op[0] === 'img') { real.addImage(op[1]); return; }
-    if (op[0] === 'shape') { real.addShape(op[1], op[2]); return; }
-    if (op[0] === 'text') { real.addText(op[1], op[2]); return; }
-    if (op[0] === 'table') { real.addTable(op[1], op[2]); return; }
-    if (op[0] === 'chart') { real.addChart(op[1], op[2], op[3]); return; }
-    if (op[0] === 'notes') { real.addNotes(op[1]); return; }
-    if (op[0] === 'media') { real.addMedia(op[1]); return; }
-  }
-
-  /* ---------------- monta de verdade, na ordem certa ---------------- */
-  function montar(inv) {
-    if (inv.__pronto) { return; }
-    inv.__pronto = true;
-
-    var folhas = inv.__folhas;
-    var n = folhas.length;
-    var c = lerCheio();
-
-    var marca = [];
-    var i, j;
-    for (i = 0; i < n; i++) { marca.push(false); }
-    if (n > 0) { marca[0] = !!c.capa; }
-    if (n > 1) { marca[1] = !!c.dados; }
-    if (n > 2) { marca[n - 1] = !!c.fim; }
-
-    /* ultima foto do relatorio: serve para a pagina de encerramento */
-    var ultima = '';
-    for (i = 0; i < n; i++) {
-      for (j = 0; j < folhas[i].ops.length; j++) {
-        if (folhas[i].ops[j][0] === 'img') {
-          var f = fonteDaImagem(folhas[i].ops[j][1]);
-          if (f) { ultima = f; }
-        }
-      }
-    }
-
-    for (i = 0; i < n; i++) {
-      var b = folhas[i];
-      var real;
-      try { real = inv.__r.addSlide(); } catch (e) { continue; }
-      if (b.fundo) { try { real.background = b.fundo; } catch (e1) {} }
-
-      var cheio = marca[i];
-      var propria = '';
-      for (j = 0; j < b.ops.length; j++) {
-        if (b.ops[j][0] === 'img') {
-          propria = fonteDaImagem(b.ops[j][1]);
-          if (propria) { break; }
-        }
-      }
-      var url = propria || ultima;
-      var esconder = false;
-
-      if (cheio && url) {
-        try {
-          real.addImage({
-            data: url, x: 0, y: 0, w: POL_L, h: POL_A,
-            sizing: { type: 'cover', w: POL_L, h: POL_A }
-          });
-          var v = veuUrl();
-          if (v) { real.addImage({ data: v, x: 0, y: 0, w: POL_L, h: POL_A }); }
-          esconder = !!propria;
-        } catch (e2) { esconder = false; }
-      }
-
-      for (j = 0; j < b.ops.length; j++) {
-        if (esconder && b.ops[j][0] === 'img') { continue; }
-        try { tocar(real, b.ops[j]); } catch (e3) {}
-      }
-    }
-  }
-
-  /* ---------------- capa por cima do gerador de PowerPoint ---------------- */
-  function embrulhar(Base) {
-    if (!Base || Base.__p97) { return Base; }
-
-    function P97() {
-      this.__r = new Base();
-      this.__folhas = [];
-      this.__pronto = false;
-    }
-
-    P97.__p97 = true;
-    P97.__base = Base;
-
-    P97.prototype.addSlide = function (a) {
-      try { if (a) { this.__r.__p97arg = a; } } catch (e) {}
-      var b = rascunho();
-      this.__folhas.push(b);
-      return b;
-    };
-
-    P97.prototype.addSection = function (o) {
-      try { return this.__r.addSection(o); } catch (e) { return null; }
-    };
-
-    P97.prototype.defineLayout = function (o) {
-      try { return this.__r.defineLayout(o); } catch (e) { return null; }
-    };
-
-    P97.prototype.defineSlideMaster = function (o) {
-      try { return this.__r.defineSlideMaster(o); } catch (e) { return null; }
-    };
-
-    P97.prototype.writeFile = function (o) {
-      var eu = this;
-      try { montar(eu); } catch (e) {}
-      return eu.__r.writeFile(o);
-    };
-
-    P97.prototype.write = function (o) {
-      var eu = this;
-      try { montar(eu); } catch (e) {}
-      return eu.__r.write(o);
-    };
-
-    P97.prototype.stream = function (o) {
-      var eu = this;
-      try { montar(eu); } catch (e) {}
-      return eu.__r.stream(o);
-    };
-
-    ['layout', 'author', 'title', 'subject', 'company', 'revision', 'rtlMode', 'theme'].forEach(function (nome) {
-      try {
-        Object.defineProperty(P97.prototype, nome, {
-          configurable: true,
-          get: function () { try { return this.__r[nome]; } catch (e) { return undefined; } },
-          set: function (v) { try { this.__r[nome] = v; } catch (e) {} }
-        });
-      } catch (e2) {}
-    });
-
-    /* atalhos que a biblioteca expoe na classe */
-    try {
-      ['ShapeType', 'SchemeColor', 'AlignH', 'AlignV', 'ChartType', 'OutputType', 'version'].forEach(function (k) {
-        if (Base[k] !== undefined) { P97[k] = Base[k]; }
-      });
-    } catch (e3) {}
-
-    return P97;
-  }
-
-  /* ---------------- entrar no lugar da biblioteca, na hora que ela chegar ---------------- */
-  var guardado = {};
-
-  function instalarNome(nome) {
-    var atual;
-    try { atual = window[nome]; } catch (e) { atual = undefined; }
-
-    function pegar() {
-      var b = guardado[nome];
-      if (!b) { return undefined; }
-      if (!b.__w) { b.__w = embrulhar(b.real); }
-      return b.__w;
-    }
-
-    try {
-      Object.defineProperty(window, nome, {
-        configurable: true,
-        get: pegar,
-        set: function (v) {
-          if (v && v.__p97) { return; }
-          guardado[nome] = { real: v, __w: null };
-        }
-      });
-    } catch (e2) {
-      if (typeof atual === 'function' && !atual.__p97) {
-        try { window[nome] = embrulhar(atual); } catch (e3) {}
-      }
-      return;
-    }
-
-    if (typeof atual === 'function' && !atual.__p97) {
-      guardado[nome] = { real: atual, __w: null };
-    }
-  }
-
-  instalarNome('PptxGenJS');
-  instalarNome('pptxgen');
-
-  /* rede de seguranca: se por algum motivo a troca acima nao valer, tenta de novo */
-  setInterval(function () {
-    ['PptxGenJS', 'pptxgen'].forEach(function (nome) {
-      try {
-        var v = window[nome];
-        if (typeof v === 'function' && !v.__p97) { window[nome] = embrulhar(v); }
-      } catch (e) {}
-    });
-  }, 1500);
-
-})();
-
-</script>
-<!-- PATCH97_PPTX_CHEIO_OK fim -->
 </body>
 </html>

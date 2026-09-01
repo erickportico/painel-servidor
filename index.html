@@ -5005,6 +5005,18 @@ body.p53-travado { overflow: hidden !important; }
   #modalParcelasInstalacao { display: none !important; }
 }
 </style>
+<style id="p83-p84-print-isolation">
+@media print {
+  body.p84-print-mode > * { display: none !important; }
+  body.p84-print-mode > #p84PrintStandalone { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
+  body.p84-print-mode > #p84PrintStandalone, body.p84-print-mode > #p84PrintStandalone * { visibility: visible !important; }
+  body.p83-print-mode > * { display: none !important; }
+  body.p83-print-mode > #p83PrintStandalone { display: block !important; position: static !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
+  body.p83-print-mode > #p83PrintStandalone, body.p83-print-mode > #p83PrintStandalone * { visibility: visible !important; }
+  #p84PrintStandalone, #p83PrintStandalone { box-sizing: border-box !important; }
+  #p84PrintStandalone img, #p83PrintStandalone img { max-width: 100% !important; height: auto !important; }
+}
+</style>
 </head>
 
 <body class="dark-mode">
@@ -41645,7 +41657,43 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
     h += '<div class="pr-ass">_______________________________________<br>' + esc(d.responsavel || 'Responsável') + '</div>';
     alvo.innerHTML = h;
-    setTimeout(function () { window.print(); }, 200);
+    var janelaImpressao = window.open('', '_blank');
+    if (!janelaImpressao) { alert('Permita pop-ups para imprimir o Diário de Obra.'); return; }
+    var cssImpressao = '<style>' +
+      '@page{size:A4 portrait;margin:10mm}' +
+      'html,body{margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}' +
+      'body{font-size:10pt}' +
+      'table{width:100%;border-collapse:collapse;margin:0 0 8px;font-size:9pt}' +
+      'th,td{border:1px solid #000;padding:3px 5px;vertical-align:top}' +
+      'th{background:#e5e7eb;text-align:left}' +
+      '.pr-tit{text-align:center;font-size:15pt;font-weight:700;margin:0 0 2px}' +
+      '.pr-sub{text-align:center;font-size:9pt;margin:0 0 8px}' +
+      'h3{font-size:10pt;margin:8px 0 3px;border-bottom:1px solid #000;padding-bottom:2px}' +
+      '.pr-tx{font-size:9pt;white-space:pre-wrap;margin:0 0 6px}' +
+      '.pr-fotos{display:grid;grid-template-columns:1fr 1fr;gap:6px}' +
+      '.pr-fotos figure{margin:0;break-inside:avoid;page-break-inside:avoid}' +
+      '.pr-fotos img{width:100%;height:auto;border:1px solid #000}' +
+      '.pr-fotos figcaption{font-size:8pt;text-align:center;padding:2px}' +
+      '.pr-ass{margin-top:20px;text-align:center;font-size:9pt}' +
+      '</style>';
+    janelaImpressao.document.open();
+    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Diário de Obra</title>' + cssImpressao + '</head><body>' + h + '</body></html>');
+    janelaImpressao.document.close();
+    var imprimirJanela = function () {
+      try { janelaImpressao.focus(); janelaImpressao.print(); } catch (erro) {}
+    };
+    var imagens = janelaImpressao.document.images;
+    var restantes = imagens.length;
+    if (!restantes) { setTimeout(imprimirJanela, 150); }
+    else {
+      var pronto = false;
+      var imagemPronta = function () { restantes--; if (restantes <= 0 && !pronto) { pronto = true; setTimeout(imprimirJanela, 150); } };
+      for (var ii = 0; ii < imagens.length; ii++) {
+        if (imagens[ii].complete) { imagemPronta(); }
+        else { imagens[ii].addEventListener('load', imagemPronta, { once: true }); imagens[ii].addEventListener('error', imagemPronta, { once: true }); }
+      }
+      setTimeout(function () { if (!pronto) { pronto = true; imprimirJanela(); } }, 5000);
+    }
   }
 
   /* ================================================================ *
@@ -42612,7 +42660,44 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (b.conclusao) { h += '<h3>Conclusão</h3><div class="pr-tx">' + esc(b.conclusao) + '</div>'; }
     h += '<div class="pr-ass">_______________________________________<br>' + esc(b.responsavel || 'Responsável') + '</div>';
     d.innerHTML = h;
-    setTimeout(function () { window.print(); }, 200);
+    var janelaImpressao = window.open('', '_blank');
+    if (!janelaImpressao) { alert('Permita pop-ups para imprimir o Boletim de Inspeção.'); return; }
+    var cssImpressao = '<style>' +
+      '@page{size:A4 portrait;margin:10mm}' +
+      'html,body{margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}' +
+      'body{font-size:10pt}' +
+      'table{width:100%;border-collapse:collapse;margin:0 0 10px;font-size:9pt}' +
+      'th,td{border:1px solid #000;padding:4px 6px;vertical-align:top}' +
+      'th{background:#e5e7eb;text-align:left}' +
+      '.pr-tit{text-align:center;font-size:16pt;font-weight:700;margin:0 0 2px}' +
+      '.pr-sub{text-align:center;font-size:9pt;margin:0 0 10px}' +
+      'h3{font-size:10pt;margin:10px 0 4px;border-bottom:1px solid #000;padding-bottom:2px}' +
+      '.pr-tx{font-size:9pt;white-space:pre-wrap;margin:0 0 6px}' +
+      '.pr-bl{border:1px solid #000;padding:6px;margin:0 0 8px;break-inside:avoid;page-break-inside:avoid}' +
+      '.pr-fotos{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}' +
+      '.pr-fotos figure{margin:0;break-inside:avoid;page-break-inside:avoid}' +
+      '.pr-fotos img{width:100%;height:auto;border:1px solid #000}' +
+      '.pr-fotos figcaption{font-size:8pt;text-align:center;padding:2px}' +
+      '.pr-ass{margin-top:22px;text-align:center;font-size:9pt}' +
+      '</style>';
+    janelaImpressao.document.open();
+    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Boletim de Inspeção</title>' + cssImpressao + '</head><body>' + h + '</body></html>');
+    janelaImpressao.document.close();
+    var imprimirJanela = function () {
+      try { janelaImpressao.focus(); janelaImpressao.print(); } catch (erro) {}
+    };
+    var imagens = janelaImpressao.document.images;
+    var restantes = imagens.length;
+    if (!restantes) { setTimeout(imprimirJanela, 150); }
+    else {
+      var pronto = false;
+      var imagemPronta = function () { restantes--; if (restantes <= 0 && !pronto) { pronto = true; setTimeout(imprimirJanela, 150); } };
+      for (var ii = 0; ii < imagens.length; ii++) {
+        if (imagens[ii].complete) { imagemPronta(); }
+        else { imagens[ii].addEventListener('load', imagemPronta, { once: true }); imagens[ii].addEventListener('error', imagemPronta, { once: true }); }
+      }
+      setTimeout(function () { if (!pronto) { pronto = true; imprimirJanela(); } }, 5000);
+    }
   }
 
   /* ================================================================ *

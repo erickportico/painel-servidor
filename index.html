@@ -47763,7 +47763,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   var MAX_SLIDES = 90;
 
   var FUNDO = '000000';
-  var BRANCO = 'FFFFFF';
+  var BRANCO = '000000';
   var AMARELO = 'FFFF00';
   var AZUL = '00B0F0';
   var VERDE = '92D050';
@@ -48155,6 +48155,14 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       });
     }
 
+    /* --- acabamento PPTX: cabeçalho recorrente nas páginas internas --- */
+    S.forEach(function (slide, si) {
+      if (si === 0 || si === S.length - 1) { return; }
+      slide.el.push(Q(1.5, 2.4, 97.0, 0.22, 'AAB0B6'));
+      slide.el.push(T(3.0, 1.0, 32.0, 3.5, 'ANDAMENTO DA OBRA', { s: 10, b: true, c: '000000', f: 'Calibri' }));
+      slide.el.push(T(86.0, 0.8, 10.0, 4.0, 'PÓRTICO', { s: 10, b: true, al: 'right', c: '6B7280', f: 'Calibri Light' }));
+    });
+
     /* --- 9) encerramento ----------------------------------------- */
     el = nova();
     selo(el);
@@ -48223,13 +48231,13 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     s.id = ID_ESTILO;
     s.type = 'text/css';
     s.textContent = [
-      '.p94-folha{position:relative;width:' + LARG + 'px;height:' + ALT + 'px;background:#000;',
-      '  color:#fff;overflow:hidden;font-family:Calibri,Arial,Helvetica,sans-serif;',
+      '.p94-folha{position:relative;width:' + LARG + 'px;height:' + ALT + 'px;background:#fff;',
+      '  color:#000;overflow:hidden;font-family:Calibri,Arial,Helvetica,sans-serif;',
       '  box-sizing:border-box;margin:0 auto 14px auto}',
       '.p94-folha *{box-sizing:border-box}',
       '.p94-folha .p94-q{position:absolute}',
-      '.p94-folha .p94-i{position:absolute;display:flex;align-items:center;justify-content:center}',
-      '.p94-folha .p94-i img{max-width:100%;max-height:100%;width:100%;height:100%;display:block}',
+      '.p94-folha .p94-i{position:absolute;display:flex;align-items:center;justify-content:center;border:1px solid #D1D5DB;background:#F8FAFC;overflow:hidden}',
+      '.p94-folha .p94-i img{max-width:100%;max-height:100%;width:100%;height:100%;display:block;object-position:center}',
       '.p94-folha .p94-t{position:absolute;display:flex;align-items:center;line-height:1.22;',
       '  white-space:pre-wrap;overflow:hidden}',
       '.p94-folha .p94-t.p94-top{display:block}',

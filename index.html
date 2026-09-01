@@ -6204,6 +6204,16 @@ body.p53-travado { overflow: hidden !important; }
                         <input type="text" id="custoFilterRegiao" placeholder="Filtrar região..." oninput="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
                     </div>
                     <div>
+                        <label style="font-size:0.8rem;font-weight:600;">Empresa</label>
+                        <select id="custoFilterEmpresa" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
+                            <option value="">Todas as Empresas</option>
+                            <option value="PORTICO">PORTICO</option>
+                            <option value="TRAXX">TRAXX</option>
+                            <option value="POLINORDESTE">POLINORDESTE</option>
+                            <option value="POLIMENTAIS">POLIMENTAIS</option>
+                        </select>
+                    </div>
+                    <div>
                         <label style="font-size:0.8rem;font-weight:600;">Mês</label>
                         <input type="month" id="custoFilterMes" onchange="renderCustoDashboard()" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:0.85rem;box-sizing:border-box;">
                     </div>
@@ -14598,6 +14608,12 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   var dataDe = _custoVal("custoFilterDataDe");
                   var dataAte = _custoVal("custoFilterDataAte");
                   var colabFiltro = _custoVal("custoFilterColaborador"); // PATCH 38
+                  var empresaFiltro = _custoVal("custoFilterEmpresa").toUpperCase();
+                  var empresasPorColab = {};
+                  (db.obras || []).forEach(function(o){
+                    (o.colaboradores || []).forEach(function(c){ if(c && c.nome) empresasPorColab[String(c.nome).trim().toLowerCase()] = String(c.empresa || '').toUpperCase(); });
+                    (o.colaboradoresPgto || []).forEach(function(c){ if(c && c.nome && !empresasPorColab[String(c.nome).trim().toLowerCase()]) empresasPorColab[String(c.nome).trim().toLowerCase()] = String(c.empresa || '').toUpperCase(); });
+                  });
                   var periodoDe = document.getElementById("custoFilterPeriodoDe") ? document.getElementById("custoFilterPeriodoDe").value : "";
                   var periodoAte = document.getElementById("custoFilterPeriodoAte") ? document.getElementById("custoFilterPeriodoAte").value : "";
                   var result = [];
@@ -14614,6 +14630,10 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                       if(dataAte && (!dRef || dRef > dataAte)) return;
                       // PATCH 38: filtro por colaborador
                       if(colabFiltro && (c.colaborador || "") !== colabFiltro) return;
+                      if(empresaFiltro){
+                        var empresaCusto = String(c.empresa || empresasPorColab[String(c.colaborador || '').trim().toLowerCase()] || '').toUpperCase();
+                        if(empresaCusto !== empresaFiltro) return;
+                      }
                       if(periodoDe){
                         var d = c.data || "";
                         if(d < periodoDe) return;
@@ -14948,7 +14968,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
 
                 window.limparFiltrosCusto = function(){
-                  ["custoFilterRegiao","custoFilterMes","custoFilterCategoria","custoFilterDataDe","custoFilterDataAte","custoFilterColaborador"].forEach(function(id){
+                  ["custoFilterRegiao","custoFilterMes","custoFilterCategoria","custoFilterDataDe","custoFilterDataAte","custoFilterColaborador","custoFilterEmpresa"].forEach(function(id){
                     var el = document.getElementById(id);
                     if(el) el.value = "";
                   });
@@ -50313,5 +50333,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 <script src="fpdo_editor_visual.js"></script>
+<script src="modernizacao_painel_v1.js"></script>
 </body>
 </html>

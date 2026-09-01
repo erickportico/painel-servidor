@@ -46423,6 +46423,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           '<img src="' + esc(f.url) + '" alt="foto" data-a="lupa" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '">' +
           '<input class="p92-leg" data-l="foto" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '" value="' + esc(f.leg || '') + '" placeholder="Legenda da foto">' +
           '<div class="p92-fx">' +
+            '<button class="p92-btn p92-btn-mini" type="button" data-p95b="editar" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '" title="Editar, cortar, pintar e marcar">Editar</button>' +
             '<button class="p92-btn p92-btn-mini" type="button" data-a="fmover" data-d="-1" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '"' + (i === 0 ? ' disabled' : '') + '>&#9664;</button>' +
             '<button class="p92-btn p92-btn-mini" type="button" data-a="fmover" data-d="1" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '"' + (i === fotos.length - 1 ? ' disabled' : '') + '>&#9654;</button>' +
             '<button class="p92-btn p92-btn-mini p92-btn-no" type="button" data-a="fapagar" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '">Excluir</button>' +
@@ -49433,11 +49434,32 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
    * imagens: carregar e gravar
    * ================================================================ */
   function carregarImagem(url, ok, falhou) {
-    var im = new Image();
-    try { im.crossOrigin = 'anonymous'; } catch (e) {}
-    im.onload = function () { ok(im); };
-    im.onerror = function () { if (falhou) { falhou(); } };
-    im.src = String(url || '');
+    var src = String(url || '');
+    var tentouSemCors = false;
+    function erro() {
+      if (falhou) { falhou(); }
+    }
+    function tentar(comCors) {
+      var im = new Image();
+      if (comCors) { try { im.crossOrigin = 'anonymous'; } catch (e) {} }
+      im.onload = function () {
+        if (!im.naturalWidth && !im.width) { erro(); return; }
+        ok(im);
+      };
+      im.onerror = function () {
+        /* Algumas imagens antigas foram salvas como data/blob URL e falham
+           quando crossOrigin é aplicado. Tente novamente sem esse atributo. */
+        if (comCors && !tentouSemCors) {
+          tentouSemCors = true;
+          tentar(false);
+          return;
+        }
+        erro();
+      };
+      im.src = src;
+    }
+    if (!src) { erro(); return; }
+    tentar(/^https?:\\/\\//i.test(src));
   }
 
   function canvasParaUrl(cv) {
@@ -50277,7 +50299,13 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (a === 'salvar' || a === 'salvarNova') {
       if (editor.base) { aviso('Confirme ou cancele o ajuste de brilho antes de salvar.', 'erro'); return; }
       var leg = (document.getElementById('p95Leg') || {}).value || '';
-      var url = canvasParaUrl(editor.cv);
+      var url;
+      try {
+        url = canvasParaUrl(editor.cv);
+      } catch (ex) {
+        aviso('Esta imagem nao permite exportacao pelo navegador. Salve-a novamente pela galeria e tente editar outra vez.', 'erro');
+        return;
+      }
       var cfg = editor.cfg;
       if (a === 'salvarNova' && cfg.aoSalvarNova) { cfg.aoSalvarNova(url, leg); return; }
       if (cfg.aoSalvar) { cfg.aoSalvar(url, leg); }

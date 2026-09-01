@@ -49177,15 +49177,15 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '#p95Aviso.p95-bom{background:#065f46;color:#ecfdf5}',
       '#p95Aviso.p95-ruim{background:#7f1d1d;color:#fef2f2}',
 
-      '#p95Fundo{position:fixed;inset:0;background:rgba(2,6,23,.88);z-index:2147483200;display:none;',
-      'overflow:auto;padding:10px;font:14px/1.4 system-ui,Arial}',
-      '#p95Cx{max-width:1120px;margin:0 auto;background:#0f172a;border:1px solid #334155;border-radius:14px;',
-      'color:#e2e8f0;overflow:hidden}',
-      '#p95Cx header{display:flex;gap:8px;align-items:center;justify-content:space-between;',
+      '#p95Fundo{position:relative;inset:auto;background:#f8fafc;z-index:10;display:none;',
+      'overflow:visible;padding:0;margin:14px 0;font:14px/1.4 system-ui,Arial;border-top:1px solid #cbd5e1}',
+      '#p95Cx{max-width:1120px;margin:0 auto;background:#ffffff;border:1px solid #cbd5e1;border-radius:14px;',
+      'color:#0f172a;overflow:hidden}',
+      '#p95Cx header{display:flex;gap:8px;align-items:center;justify-content:space-between;background:#0f172a;',
       'padding:10px 14px;border-bottom:1px solid #334155;flex-wrap:wrap}',
       '#p95Cx header h4{margin:0;font-size:16px;color:#f8fafc}',
-      '.p95-barra{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-bottom:1px solid #263449}',
-      '.p95-barra b{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}',
+      '.p95-barra{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-bottom:1px solid #cbd5e1;background:#f8fafc}',
+      '.p95-barra b{font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}',
       '.p95-bt{background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:8px;padding:7px 11px;',
       'font:600 13px system-ui,Arial;cursor:pointer}',
       '.p95-bt:hover{background:#334155}',
@@ -49195,15 +49195,15 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.p95-bt[disabled]{opacity:.5;cursor:default}',
       '.p95-cor{width:44px;height:32px;padding:0;border:1px solid #475569;border-radius:8px;background:#1e293b;cursor:pointer}',
       '.p95-fai{width:120px;vertical-align:middle}',
-      '.p95-rot{font-size:12px;color:#cbd5e1}',
+      '.p95-rot{font-size:12px;color:#475569}',
       '.p95-palco{position:relative;display:block;margin:0 auto;background:#020617;line-height:0;max-width:100%}',
       '.p95-palco canvas{display:block;max-width:100%;height:auto;touch-action:none}',
       '.p95-palco canvas.p95-ov{position:absolute;left:0;top:0;width:100%;height:100%;cursor:crosshair}',
-      '.p95-area{padding:10px;max-height:58vh;overflow:auto;background:#020617}',
+      '.p95-area{padding:10px;max-height:58vh;overflow:auto;background:#f8fafc}',
       '.p95-pe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-top:1px solid #334155}',
-      '.p95-in{background:#111827;border:1px solid #475569;color:#e2e8f0;border-radius:8px;padding:7px 9px;',
+      '.p95-in{background:#ffffff;border:1px solid #94a3b8;color:#0f172a;border-radius:8px;padding:7px 9px;',
       'font:14px system-ui,Arial;min-width:200px;flex:1}',
-      '.p95-dica{padding:6px 14px;font-size:12px;color:#94a3b8;background:#0b1220}',
+      '.p95-dica{padding:6px 14px;font-size:12px;color:#475569;background:#f1f5f9}',
       '.p95-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:12px}',
       '.p95-ficha{border:2px solid #334155;border-radius:10px;overflow:hidden;background:#0b1220;cursor:pointer;position:relative}',
       '.p95-ficha.sel{border-color:#22c55e}',
@@ -49229,7 +49229,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       f = document.createElement('div');
       f.id = 'p95Fundo';
       f.innerHTML = '<div id="p95Cx"></div>';
-      document.body.appendChild(f);
+      var host = document.getElementById('p92Corpo') || document.body;
+      host.appendChild(f);
     }
     f.style.display = 'block';
     return document.getElementById('p95Cx');
@@ -49239,6 +49240,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var f = document.getElementById('p95Fundo');
     if (!f) { return; }
     f.style.display = 'none';
+    f.removeAttribute('aria-busy');
     var cx = document.getElementById('p95Cx');
     if (cx) { cx.innerHTML = ''; }
     editor = null;

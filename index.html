@@ -38441,7 +38441,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '#ps79Login h2{margin:0 0 4px;font-size:19px;color:#16304f}',
       '#ps79Login p.sb{margin:0 0 16px;font-size:12px;color:#64748b}',
       '#ps79Login label{display:block;font-size:12px;color:#334155;margin:10px 0 4px;font-weight:600}',
-      '#ps79Login input[type=text],#ps79Login input[type=password]{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px}',
+      '#ps79Login input[type=text],#ps79Login input[type=email],#ps79Login input[type=password]{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px}',
       '#ps79Login .lb{display:flex;align-items:center;gap:6px;margin:12px 0 0;font-size:12px;color:#475569;font-weight:400}',
       '#ps79Login button{width:100%;margin-top:14px;padding:10px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer}',
       '#ps79Login .er{margin-top:10px;font-size:12px;color:#b91c1c;min-height:16px}',
@@ -41026,6 +41026,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         '</div>' +
       '</div>';
     document.body.appendChild(f);
+    window.__p87ListaSupabase = null;
+    window.__p87CarregandoSupabase = false;
     f.addEventListener('click', function (ev) { if (ev.target === f) { fechar(); } });
     f.addEventListener('click', aoClicar);
     f.addEventListener('input', aoDigitar);
@@ -44529,12 +44531,31 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var s = sessao();
     var manda = podeMexer();
 
+    if (window.PainelAuthSupabase && !window.__p87ListaSupabase && !window.__p87CarregandoSupabase) {
+      window.__p87CarregandoSupabase = true;
+      c.innerHTML = '<p class="p87-info">Carregando usuários centralizados do Supabase...</p>';
+      window.PainelAuthSupabase.listarPerfis().then(function (remotos) {
+        window.__p87ListaSupabase = (remotos || []).map(function (u) {
+          return { id: u.id, usuario: u.usuario || '', nome: u.nome || u.usuario || '', perfil: u.perfil || 'visitante', ativo: u.ativo === true, criadoEm: u.criado_em || u.atualizado_em || '' };
+        });
+        window.__p87CarregandoSupabase = false;
+        desenhar();
+      }).catch(function (erro) {
+        window.__p87CarregandoSupabase = false;
+        c.innerHTML = '<p class="p87-info">Não foi possível carregar os usuários do Supabase: ' + esc(erro && erro.message ? erro.message : 'erro desconhecido') + '</p>';
+      });
+      return;
+    }
+    var remoto = Array.isArray(window.__p87ListaSupabase);
+    var lista = remoto ? window.__p87ListaSupabase : usuarios();
+    var s = sessao();
+    var manda = remoto ? false : podeMexer();
     var h = '';
-    h += '<p class="sb">Esta \u00e9 a lista de acessos criados na tela de entrada do painel. ' +
-         'Os usu\u00e1rios ficam guardados neste computador/navegador, por isso quem entrar de outro ' +
-         'aparelho precisa criar o acesso dele l\u00e1 tamb\u00e9m. A senha nunca aparece: fica gravada ' +
-         'embaralhada, s\u00f3 d\u00e1 para trocar por uma nova.</p>';
-
+    if (remoto) {
+      h += '<p class="sb">Lista centralizada no Supabase. Todos os usuários cadastrados aparecem em qualquer navegador. A senha nunca é exibida.</p>';
+    } else {
+      h += '<p class="sb">A lista local antiga ainda está preservada apenas como backup. O cadastro oficial deve ser feito no Supabase.</p>';
+    }
     if (s) {
       h += '<p class="sb">Voc\u00ea est\u00e1 conectado como <b>' + esc(s.nome || s.usuario) +
            '</b> (' + esc(nomePerfil(s.perfil)) + ').' +

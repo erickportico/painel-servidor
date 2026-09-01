@@ -79,6 +79,18 @@
     return resultado;
   }
 
+  async function listarPerfis() {
+    var atual = await perfilAtual();
+    if (!atual || !atual.perfil || String(atual.perfil.perfil).toLowerCase() !== 'admin') {
+      throw new Error('Somente administradores podem consultar os usuários.');
+    }
+    var result = await client().from('usuarios_perfis')
+      .select('id,usuario,nome,perfil,ativo,criado_em,atualizado_em')
+      .order('nome', { ascending: true });
+    if (result.error) { throw result.error; }
+    return result.data || [];
+  }
+
   async function sessaoAtual() {
     return await perfilAtual();
   }
@@ -106,6 +118,7 @@
     cadastrarComEmail: cadastrarComEmail,
     perfilAtual: perfilAtual,
     sessaoAtual: sessaoAtual,
+    listarPerfis: listarPerfis,
     observarSessao: observarSessao,
     somenteAdmin: somenteAdmin,
     sair: sair

@@ -15384,6 +15384,8 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
       if (t !== "text") { return false; }
     }
     if (el.readOnly || el.disabled) { return false; }
+    /* FPDO, Diario de Obra e Boletim de Inspecao preservam o texto digitado. */
+    if (el.closest && el.closest('#p92Fundo, #p84Fundo, #p83Fundo')) { return false; }
     if (el.hasAttribute("data-sem-maiuscula")) { return false; }
     var chave = (el.id || "") + " " + (el.name || "") + " " +
                 (el.className || "") + " " + (el.placeholder || "");
@@ -41251,6 +41253,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           '<img src="' + esc(ft.url) + '" alt="foto da obra" data-a="lupa">' +
           '<input class="p84-leg" data-leg="' + esc(ft.id) + '" data-dono="' + dono + '" placeholder="Legenda da foto" value="' + esc(ft.leg || '') + '">' +
           '<div class="p84-fx">' +
+            '<button class="p84-btn p84-btn-mini" type="button" data-a="editarFoto" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">Editar</button>' +
             '<button class="p84-btn p84-btn-mini" type="button" data-a="fsobe" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">&#8592;</button>' +
             '<button class="p84-btn p84-btn-mini" type="button" data-a="fdesce" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">&#8594;</button>' +
             '<button class="p84-btn p84-btn-mini p84-btn-no" type="button" data-a="fsai" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">Remover</button>' +
@@ -41449,6 +41452,19 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
     if (a === 'fechar') { ev.preventDefault(); fechar(); return; }
     if (a === 'lista') { ev.preventDefault(); telaLista(); return; }
+
+    if (a === 'editarFoto') {
+      ev.preventDefault();
+      var fotosEditar = donoFotos(b.getAttribute('data-dono'));
+      var fotoEditar = null;
+      (fotosEditar || []).some(function (ft) { if (ft.id === b.getAttribute('data-f')) { fotoEditar = ft; return true; } return false; });
+      if (!fotoEditar || typeof window.p95EditarImagem !== 'function') { aviso('Editor de imagem ainda nao esta disponivel.', 'erro'); return; }
+      window.p95EditarImagem({
+        titulo: 'Editar foto do relatorio', url: fotoEditar.url, leg: fotoEditar.leg || '', rotSalvar: 'Salvar nesta foto',
+        aoSalvar: function (u, lg) { fotoEditar.url = u; fotoEditar.leg = String(lg || ''); salvarDepois(); desenhar(); window.p95FecharEditor && window.p95FecharEditor(); aviso('Foto editada e salva.', 'ok'); }
+      });
+      return;
+    }
 
     if (a === 'salvar') {
       ev.preventDefault();
@@ -42359,6 +42375,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           '<img src="' + esc(ft.url) + '" alt="foto da inspeção" data-a="lupa">' +
           '<input class="p83-leg" data-leg="' + esc(ft.id) + '" data-dono="' + dono + '" placeholder="Legenda da foto" value="' + esc(ft.leg || '') + '">' +
           '<div class="p83-fx">' +
+            '<button class="p83-btn p83-btn-mini" type="button" data-a="editarFoto" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">Editar</button>' +
             '<button class="p83-btn p83-btn-mini" type="button" data-a="fsobe" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">&#8592;</button>' +
             '<button class="p83-btn p83-btn-mini" type="button" data-a="fdesce" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">&#8594;</button>' +
             '<button class="p83-btn p83-btn-mini p83-btn-no" type="button" data-a="fsai" data-dono="' + dono + '" data-f="' + esc(ft.id) + '">Remover</button>' +
@@ -42515,6 +42532,19 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
     if (a === 'fechar') { ev.preventDefault(); fechar(); return; }
     if (a === 'lista') { ev.preventDefault(); telaLista(); return; }
+
+    if (a === 'editarFoto') {
+      ev.preventDefault();
+      var fotosEditar = donoFotos(b.getAttribute('data-dono'));
+      var fotoEditar = null;
+      (fotosEditar || []).some(function (ft) { if (ft.id === b.getAttribute('data-f')) { fotoEditar = ft; return true; } return false; });
+      if (!fotoEditar || typeof window.p95EditarImagem !== 'function') { aviso('Editor de imagem ainda nao esta disponivel.', 'erro'); return; }
+      window.p95EditarImagem({
+        titulo: 'Editar foto do relatorio', url: fotoEditar.url, leg: fotoEditar.leg || '', rotSalvar: 'Salvar nesta foto',
+        aoSalvar: function (u, lg) { fotoEditar.url = u; fotoEditar.leg = String(lg || ''); salvarDepois(); desenhar(); window.p95FecharEditor && window.p95FecharEditor(); aviso('Foto editada e salva.', 'ok'); }
+      });
+      return;
+    }
 
     if (a === 'salvar') {
       ev.preventDefault();
@@ -50345,6 +50375,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   window.p95CriarImagem = function (alvo) { telaCriar(alvo || 'capa'); };
+  /* Ponte pública para Diário e Boletim reutilizarem o mesmo editor. */
+  window.p95EditarImagem = function (cfg) { abrirEditor(cfg || {}); };
+  window.p95FecharEditor = function () { fecharCaixa(); };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciar);

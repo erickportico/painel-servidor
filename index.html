@@ -40912,11 +40912,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           c.width = l; c.height = a;
           c.getContext('2d').drawImage(img, 0, 0, l, a);
           depois(c.toDataURL('image/jpeg', 0.72));
-        } catch (e) { depois(dataURL); }
+        } catch (e) { depois(null); }
       };
-      img.onerror = function () { depois(dataURL); };
+      img.onerror = function () { depois(null); };
       img.src = dataURL;
-    } catch (e) { depois(dataURL); }
+    } catch (e) { depois(null); }
   }
 
   function lerArquivos(arquivos, depois) {
@@ -40929,7 +40929,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         var fr = new FileReader();
         fr.onload = function () {
           comprimir(String(fr.result), function (u) {
-            itens.push({ id: novoId('f'), url: u, leg: '' });
+            if (u && /^data:image\/(jpeg|png|webp);base64,/i.test(u)) {
+              itens.push({ id: novoId('f'), url: u, leg: '' });
+            }
             pend--;
             if (pend === 0) { depois(itens); }
           });
@@ -40944,13 +40946,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function escolherImagens(depois) {
     var inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/*';
+    inp.accept = 'image/jpeg,image/png,image/webp';
     inp.multiple = true;
     inp.style.display = 'none';
     document.body.appendChild(inp);
     inp.addEventListener('change', function () {
       lerArquivos(inp.files, function (itens) {
         try { document.body.removeChild(inp); } catch (e) {}
+        if (!itens.length && inp.files && inp.files.length) {
+          aviso('As imagens escolhidas não puderam ser lidas. No celular, use JPG, PNG ou WEBP; fotos HEIC/HEIF precisam ser convertidas antes.', 'erro');
+        }
         depois(itens);
       });
     });
@@ -40960,13 +40965,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function camaraDoAparelho(depois) {
     var inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/*';
+    inp.accept = 'image/jpeg,image/png,image/webp';
     inp.setAttribute('capture', 'environment');
     inp.style.display = 'none';
     document.body.appendChild(inp);
     inp.addEventListener('change', function () {
       lerArquivos(inp.files, function (itens) {
         try { document.body.removeChild(inp); } catch (e) {}
+        if (!itens.length && inp.files && inp.files.length) {
+          aviso('As imagens escolhidas não puderam ser lidas. No celular, use JPG, PNG ou WEBP; fotos HEIC/HEIF precisam ser convertidas antes.', 'erro');
+        }
         depois(itens);
       });
     });
@@ -42014,11 +42022,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           c.width = l; c.height = a;
           c.getContext('2d').drawImage(img, 0, 0, l, a);
           depois(c.toDataURL('image/jpeg', 0.72));
-        } catch (e) { depois(dataURL); }
+        } catch (e) { depois(null); }
       };
-      img.onerror = function () { depois(dataURL); };
+      img.onerror = function () { depois(null); };
       img.src = dataURL;
-    } catch (e) { depois(dataURL); }
+    } catch (e) { depois(null); }
   }
 
   function lerArquivos(arquivos, depois) {
@@ -42031,7 +42039,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         var fr = new FileReader();
         fr.onload = function () {
           comprimir(String(fr.result), function (u) {
-            itens.push({ id: novoId('f'), url: u, leg: '' });
+            if (u && /^data:image\/(jpeg|png|webp);base64,/i.test(u)) {
+              itens.push({ id: novoId('f'), url: u, leg: '' });
+            }
             pend--;
             if (pend === 0) { depois(itens); }
           });
@@ -42046,13 +42056,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function escolherImagens(depois) {
     var inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/*';
+    inp.accept = 'image/jpeg,image/png,image/webp';
     inp.multiple = true;
     inp.style.display = 'none';
     document.body.appendChild(inp);
     inp.addEventListener('change', function () {
       lerArquivos(inp.files, function (itens) {
         try { document.body.removeChild(inp); } catch (e) {}
+        if (!itens.length && inp.files && inp.files.length) {
+          aviso('As imagens escolhidas não puderam ser lidas. No celular, use JPG, PNG ou WEBP; fotos HEIC/HEIF precisam ser convertidas antes.', 'erro');
+        }
         depois(itens);
       });
     });
@@ -42062,13 +42075,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function camaraDoAparelho(depois) {
     var inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/*';
+    inp.accept = 'image/jpeg,image/png,image/webp';
     inp.setAttribute('capture', 'environment');
     inp.style.display = 'none';
     document.body.appendChild(inp);
     inp.addEventListener('change', function () {
       lerArquivos(inp.files, function (itens) {
         try { document.body.removeChild(inp); } catch (e) {}
+        if (!itens.length && inp.files && inp.files.length) {
+          aviso('As imagens escolhidas não puderam ser lidas. No celular, use JPG, PNG ou WEBP; fotos HEIC/HEIF precisam ser convertidas antes.', 'erro');
+        }
         depois(itens);
       });
     });
@@ -46209,11 +46225,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           c.width = l; c.height = a;
           c.getContext('2d').drawImage(img, 0, 0, l, a);
           depois(c.toDataURL('image/jpeg', 0.72));
-        } catch (e) { depois(dataURL); }
+        } catch (e) { depois(null); }
       };
-      img.onerror = function () { depois(dataURL); };
+      img.onerror = function () { depois(null); };
       img.src = dataURL;
-    } catch (e) { depois(dataURL); }
+    } catch (e) { depois(null); }
   }
 
   function lerArquivos(arquivos, depois) {
@@ -46226,7 +46242,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         var fr = new FileReader();
         fr.onload = function () {
           comprimir(String(fr.result), function (u) {
-            itens.push({ id: novoId('f'), url: u, leg: '' });
+            if (u && /^data:image\/(jpeg|png|webp);base64,/i.test(u)) {
+              itens.push({ id: novoId('f'), url: u, leg: '' });
+            }
             pend--;
             if (pend === 0) { depois(itens); }
           });
@@ -46241,13 +46259,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function escolherImagens(depois) {
     var inp = document.createElement('input');
     inp.type = 'file';
-    inp.accept = 'image/*';
+    inp.accept = 'image/jpeg,image/png,image/webp';
     inp.multiple = true;
     inp.style.display = 'none';
     document.body.appendChild(inp);
     inp.addEventListener('change', function () {
       lerArquivos(inp.files, function (itens) {
         try { document.body.removeChild(inp); } catch (e) {}
+        if (!itens.length && inp.files && inp.files.length) {
+          aviso('As imagens escolhidas não puderam ser lidas. No celular, use JPG, PNG ou WEBP; fotos HEIC/HEIF precisam ser convertidas antes.', 'erro');
+        }
         depois(itens);
       });
     });

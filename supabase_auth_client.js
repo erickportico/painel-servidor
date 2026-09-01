@@ -12,13 +12,31 @@
     return sb;
   }
 
+  function sincronizarSessaoPainel(resultado) {
+    if (!resultado || !resultado.user || !resultado.perfil) { return; }
+    var perfil = resultado.perfil;
+    var usuario = resultado.user;
+    var sessao = {
+      usuario: perfil.usuario,
+      nome: perfil.nome || perfil.usuario,
+      perfil: String(perfil.perfil || 'visitante').toLowerCase(),
+      authId: usuario.id,
+      at: Date.now()
+    };
+    var valor = JSON.stringify(sessao);
+    try { global.localStorage.setItem('painel_seg_sessao_v1', valor); } catch (e) {}
+    try { global.sessionStorage.setItem('painel_seg_sessao_v1', valor); } catch (e) {}
+  }
+
   async function entrarComEmail(email, senha) {
     var result = await client().auth.signInWithPassword({
       email: String(email || '').trim().toLowerCase(),
       password: String(senha || '')
     });
     if (result.error) { throw result.error; }
-    return await perfilAtual(result.data.user);
+    var autenticado = await perfilAtual(result.data.user);
+    sincronizarSessaoPainel(autenticado);
+    return autenticado;
   }
 
   async function cadastrarComEmail(email, senha, nome, usuario, perfil) {
@@ -56,7 +74,9 @@
       await client().auth.signOut();
       throw new Error('Usuário sem perfil ativo no painel.');
     }
-    return { user: user, perfil: result.data };
+    var resultado = { user: user, perfil: result.data };
+    sincronizarSessaoPainel(resultado);
+    return resultado;
   }
 
   async function sessaoAtual() {
@@ -66,6 +86,8 @@
   async function sair() {
     var result = await client().auth.signOut();
     if (result.error) { throw result.error; }
+    try { global.localStorage.removeItem('painel_seg_sessao_v1'); } catch (e) {}
+    try { global.sessionStorage.removeItem('painel_seg_sessao_v1'); } catch (e) {}
   }
 
   function observarSessao(callback) {

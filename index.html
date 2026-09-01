@@ -250,6 +250,54 @@
 })();
 </script>
 
+<!-- PATCH_VARREDURA_UNICA_OK -->
+<script>
+/* PATCH_VARREDURA_UNICA_OK
+   Antes: 9 patches diferentes (linhas ~39290-50374 do arquivo original)
+   criavam, cada um, seu proprio setInterval (900ms a 2000ms) + seu proprio
+   MutationObserver observando document.documentElement/body inteiro com
+   subtree:true, todos fazendo a mesma coisa: varrer o DOM e reinserir um
+   botao/elemento que "sumiu". Isso rodava ~9 varreduras completas da
+   pagina por segundo, brigando por CPU (motivo do patch anti-trava acima).
+
+   Agora: 1 unico MutationObserver + 1 unico setInterval cuidam de rodar
+   todas as varreduras registradas. Cada patch so chama
+   window.__varreduraUnica(suaFuncao) em vez de criar timer/observer proprio.
+   O comportamento de cada patch nao muda, so a forma de agendar. */
+(function () {
+  'use strict';
+  if (window.__varreduraUnica) { return; }
+
+  var tarefas = [];
+  var INTERVALO = 900; /* igual ao menor intervalo usado antes, para nao atrasar nenhum patch */
+  var pendente = false;
+
+  function rodarTodas() {
+    for (var i = 0; i < tarefas.length; i++) {
+      try { tarefas[i](); } catch (e) { /* ignora, mesma politica dos patches originais */ }
+    }
+  }
+
+  try {
+    var Obs = window.MutationObserver || window.WebKitMutationObserver;
+    if (Obs) {
+      var mo = new Obs(function () {
+        if (pendente) { return; }
+        pendente = true;
+        setTimeout(function () { pendente = false; rodarTodas(); }, 60);
+      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    }
+  } catch (e) { /* ignora */ }
+
+  setInterval(rodarTodas, INTERVALO);
+
+  window.__varreduraUnica = function (fn) {
+    if (typeof fn === 'function') { tarefas.push(fn); }
+  };
+})();
+</script>
+
     <!-- 1. Carrega o SDK do Supabase PRIMEIRO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -6776,7 +6824,6 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                 (function diagnosticarDados() {
                     const obra = db.obras.find(o => o.id === db.obraAtualId) || db.obras[0];
                     if (obra && obra.itens && obra.itens.length > 0) {
-                        console.log(`✅ [Diagnóstico] Obra "${obra.nome}" carregada com ${obra.itens.length} itens.`);
                     } else {
                         console.warn(`⚠️ [Diagnóstico] Obra "${obra?.nome || 'N/A'}" sem itens. Verificando chaves de backup no localStorage...`);
                         const chavesBackup = [];
@@ -6787,14 +6834,12 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                             }
                         }
                         if (chavesBackup.length > 0) {
-                            console.log(`📋 [Diagnóstico] Chaves encontradas: ${chavesBackup.join(', ')}`);
                             chavesBackup.forEach(k => {
                                 try {
                                     const raw = localStorage.getItem(k);
                                     const parsed = JSON.parse(raw);
                                     const obras = parsed.obras || (Array.isArray(parsed) ? parsed : []);
                                     const totalItens = obras.reduce((s, o) => s + (o.itens?.length || 0), 0);
-                                    console.log(`  ↳ ${k}: ${obras.length} obras, ${totalItens} itens no total`);
                                     if (totalItens > 0) console.log(`    → DADOS ENCONTRADOS nesta chave! Considere importar manualmente.`);
                                 } catch(e) { console.log(`  ↳ ${k}: erro ao ler`); }
                             });
@@ -7004,7 +7049,6 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                         .upsert({ id: 1, dados: pacote, updated_at: new Date() });
             
                     if (error) throw error;
-                    console.log("⚡ Salvo com sucesso no Supabase!");
                 } catch (errSupabase) {
                     console.error("⚠️ Erro ao salvar no Supabase:", errSupabase);
                 }
@@ -7053,7 +7097,6 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
             
                         if (!error) {
                             atualizarStatusNuvem('⚡ Supabase Realtime Ativo', 'ok');
-                            console.log("✅ Backup e obras sincronizados no Supabase!");
                         } else {
                             console.error("Erro no Supabase:", error);
                             atualizarStatusNuvem('⚠️ Erro de Salvamento', 'erro');
@@ -7108,7 +7151,6 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                     window.__painelRealtimeAtivo = true;
             
                     // DESATIVADO: A sincronização em tempo real agora é mantida nativamente pelo Supabase
-                    console.log('[PAINEL] WebSocket antigo desativado. O Supabase Realtime assumiu o controle.');
                 }
             
                 function criarPacoteBancoMultiBrowser() {
@@ -11031,7 +11073,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         }
             
                         if (sideBySideDetected || hasAnyItemMarkers) {
-                            console.log('[Estrategia H] Side-by-side:', sideBySideDetected, 'max/row:', maxItemsPerRow);
             
                             const rows = [];
                             let currentRow = null;
@@ -11049,7 +11090,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                 }
                             }
             
-                            console.log('[Estrategia H] Rows:', rows.length, rows.map(r => r.numCards));
             
                             for (const row of rows) {
                                 const N = row.numCards;
@@ -11066,7 +11106,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                 const nameStarts = rawParts.slice(1).map(p => p.trim()).filter(p => p.length > 0);
                                 while (nameStarts.length < N) nameStarts.push('');
             
-                                console.log('[Estrategia H] Item nums:', itemNums, 'nameStarts:', nameStarts);
             
                                 const knownLabels = /^(?:Refer[êà]ncia|Qtd|[Áá]rea\s+Total|Cor|Vidros?|Pain[éê]is?|Local(?:iza[çc][aã]o)?|Item\s*:)/i;
                                 let scanStart = 1;
@@ -11112,7 +11151,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                     tipologias.push(tip);
                                 }
             
-                                console.log('[Estrategia H] Tipologias:', tipologias);
             
                                 function splitByLabel(line, label, expectedCount) {
                                     const regex = new RegExp(label, 'i');
@@ -11130,7 +11168,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                             const rm = f.match(/([A-Za-z]{1,3}[-]?\d{0,4}[-]?[A-Za-z]?|[A-Z]{2,3})/);
                                             return rm ? rm[1].trim().toUpperCase() : '';
                                         });
-                                        console.log('[Estrategia H] Ref raw:', rawParts, 'extracted:', refFragments);
                                         break;
                                     }
                                 }
@@ -11152,7 +11189,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                                 if (altFragments[k] > 50) altFragments[k] /= 1000;
                                             }
                                         }
-                                        console.log('[Estrategia H] Qtd:', qtdFragments, 'Larg:', largFragments, 'Alt:', altFragments);
                                         break;
                                     }
                                 }
@@ -11165,7 +11201,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                             const am = areaParts[k].match(/(\d+[,.]?\d*)\s*m[²2]/i);
                                             if (am) areaFragments[k] = parseFloat(am[1].replace(',', '.'));
                                         }
-                                        console.log('[Estrategia H] Area:', areaFragments);
                                         break;
                                     }
                                 }
@@ -11182,7 +11217,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                     });
                                     while (corFrags.length < N) corFrags.push('');
                                     corFragments = corFrags.slice(0, N);
-                                    console.log('[Estrategia H] Cor fragments:', corFragments);
                                 }
             
                                 let vidroFragments = Array(N).fill('');
@@ -11237,7 +11271,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                                 vidroFragments[last] = (vidroParts[last] || '').trim() + ' ' + nextLn.trim();
                                                 vidroFragments[last] = vidroFragments[last].replace(/\s+/g, ' ').trim();
                                             }
-                                            console.log('[Estrategia H] Vidro (with cont):', vidroFragments);
                                         } else {
                                             vidroFragments = vidroParts.map(p => p.trim());
                                         }
@@ -11252,7 +11285,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                             .replace(/\s+/g, ' ')
                                             .trim();
                                     }
-                                    console.log('[Estrategia H] Vidro fragments:', vidroFragments);
                                 }
             
                                 let painelFragments = Array(N).fill('');
@@ -11302,7 +11334,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                             .replace(/[\s:]+$/, '')
                                             .trim();
                                     }
-                                    console.log('[Estrategia H] Loc fragments:', locFragments);
                                 }
             
                                 for (let k = 0; k < N; k++) {
@@ -11340,12 +11371,10 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                             }
                         }
             
-                        console.log('[Estrategia H] Itens extraidos:', itens.length);
                     })();
             
                     if (itens.length > 0) {
                         // Estratégia H teve sucesso — não tentar estratégias fallback
-                        console.log('[Parser] Estratégia H usada com sucesso, total de itens:', itens.length);
                     }
             
                     // ============================================================
@@ -21518,7 +21547,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
   }
   setTimeout(inicio, 1500);
 
-  console.log("PATCH 54 ativo: Pagamento de Producao somado no Centro de Custos.");
 })();
 </script>
 
@@ -22476,7 +22504,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     setTimeout(iniciar, 900);
   }
 
-  console.log('PATCH 55 ativo: ObraFlow - Plano Mestre (Etapa 1: EAP e hierarquia).');
 })();
 </script>
 
@@ -23555,7 +23582,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     setTimeout(function () { esperar(0); }, 1200);
   }
 
-  console.log('PATCH 56 ativo: ObraFlow - dependencias e predecessoras (Etapa 2).');
 })();
 </script>
 
@@ -24465,7 +24491,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     setTimeout(function () { esperar(0); }, 1600);
   }
 
-  console.log('PATCH 57 ativo: ObraFlow - linha de base e caminho critico (Etapa 3).');
 })();
 </script>
 
@@ -25336,7 +25361,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     setTimeout(function () { esperar(0); }, 1600);
   }
 
-  console.log('PATCH 58 ativo: ObraFlow - custos e recursos por tarefa (Etapa 4).');
 })();
 </script>
 
@@ -26639,7 +26663,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     setTimeout(function () { esperar(0); }, 2000);
   }
 
-  console.log('PATCH 59 ativo: ObraFlow - exportacao do plano (Etapa 5).');
 })();
 </script>
 
@@ -27359,7 +27382,6 @@ body.of-dep-aberto {
     ligarVigia();
     M.__pronto = true;
     if (window.console && console.log) {
-      console.log('PATCH 61 ativo: menu estilo Oreate (gaveta lateral).');
     }
   }
 
@@ -29755,7 +29777,6 @@ body.p63-print-all .p63-titulo-aba {
     try { iniciar(); } catch (e) { /* ignora */ }
     depois(function () { try { iniciar(); } catch (e) { /* ignora */ } }, 900);
     depois(function () { try { iniciar(); } catch (e) { /* ignora */ } }, 2500);
-    console.log('PATCH 64 ativo: editor do desenho da esquadria e fechamento do preview.');
   }
 
   if (document.readyState === 'loading') {
@@ -30122,10 +30143,7 @@ body #modalPreviewEsquadria.p64-off,
     liberarPagina();
     if (!silencioso) {
       if (nomes.length) {
-        console.log('[P65] Fechei a forca ' + nomes.length + ' janela(s): ' + nomes.join(', '));
-        console.log('[P65] Se fechou algo demais, digite  P65.desfazer()');
       } else {
-        console.log('[P65] Nao encontrei nenhuma janela aberta na tela.');
       }
     }
     return nomes;
@@ -30144,7 +30162,6 @@ body #modalPreviewEsquadria.p64-off,
       } catch (e) { /* ignora */ }
     }
     ultimos = [];
-    console.log('[P65] Desfiz o fechamento de ' + n + ' janela(s).');
     return n;
   }
   P65.desfazer = desfazer;
@@ -30152,14 +30169,12 @@ body #modalPreviewEsquadria.p64-off,
   function listar() {
     var lista = localizar();
     if (!lista.length) {
-      console.log('[P65] Nenhuma janela aberta agora.');
       return [];
     }
     var nomes = [];
     for (var i = 0; i < lista.length; i++) {
       nomes.push(nomeDe(lista[i]) + '  (camada ' + camada(lista[i]) + ')');
     }
-    console.log('[P65] Janelas abertas agora:');
     for (var k = 0; k < nomes.length; k++) console.log('   ' + (k + 1) + ') ' + nomes[k]);
     return lista;
   }
@@ -30201,12 +30216,10 @@ body #modalPreviewEsquadria.p64-off,
       var b = criarBotao();
       b.style.display = 'inline-flex';
       guardar(CHAVE_BOTAO, '1');
-      console.log('[P65] Botao "Fechar tudo" ligado no canto da tela. Para tirar: P65.botao(false)');
     } else {
       var v = document.getElementById('p65Botao');
       if (v && v.parentNode) v.parentNode.removeChild(v);
       guardar(CHAVE_BOTAO, '0');
-      console.log('[P65] Botao "Fechar tudo" desligado.');
     }
     return ligar;
   }
@@ -30228,13 +30241,6 @@ body #modalPreviewEsquadria.p64-off,
   }
 
   function ajuda() {
-    console.log('%c PATCH 65 - fechamento forcado ', 'background:#b91c1c;color:#fff;font-weight:700;');
-    console.log('  P65.fechar()      fecha a forca qualquer janela travada');
-    console.log('  P65.listar()      mostra o que esta aberto agora');
-    console.log('  P65.botao()       liga um botao "Fechar tudo" no canto da tela');
-    console.log('  P65.botao(false)  desliga esse botao');
-    console.log('  P65.desfazer()    devolve o que o ultimo fechamento escondeu');
-    console.log('  Atalho no teclado: Ctrl + Shift + X');
     return 'ok';
   }
   P65.ajuda = ajuda;
@@ -30257,7 +30263,6 @@ body #modalPreviewEsquadria.p64-off,
     if (lido(CHAVE_BOTAO) === '1') {
       try { botao(true); } catch (e) { /* ignora */ }
     }
-    console.log('PATCH 65 ativo: digite  P65.fechar()  no console para fechar a forca. P65.ajuda() mostra tudo.');
   }
 
   if (document.readyState === 'loading') {
@@ -34572,7 +34577,6 @@ body #modalPreviewEsquadria.p64-off,
 
   P70.situacao = function () {
     var mesKey = mesAtual();
-    console.log('Patch 70 ativo. Mes em uso: ' + (mesKey || '(nao identificado)'));
     console.log('Gravacao protegida: ' +
       (window.atualizarValorPagoPgto && window.atualizarValorPagoPgto.__p70 ? 'sim' : 'nao'));
     console.log('Resumo ajustado: ' +
@@ -35236,7 +35240,6 @@ body.print-active #containerResumoPgto .p70-eco-papel,
   }
 
   P71.situacao = function () {
-    console.log('Patch 71 ativo. Mes na tela: ' + (mesEscrito() || '(nao identificado)'));
     console.log('Resumo editavel nos Lancamentos: ' +
       (document.querySelector('#p63ResumoTabela input[data-p71]') ? 'sim' : 'ainda sem linhas'));
     console.log('Titulos nas sub-abas: ' +
@@ -37090,10 +37093,6 @@ th.p72-movivel .col-resizer {
   P74.comecar = comecar;
 
   P74.situacao = function () {
-    console.log('Patch 74 ativo. Mes escrito: ' + (mesEscrito() || '(nao identificado)'));
-    console.log('Titulo dos dois blocos: ' + textoDoTitulo());
-    console.log('Campos de Valor Pago liberados: ' + liberarTodos());
-    console.log('Total pago somado agora: ' + dinheiro(P74.ultimoTotal || 0));
     console.log('Quadros de totais encontrados: ' +
       (porId('containerTotaisPgto') ? 'Resumo sim' : 'Resumo nao') + ', ' +
       (porId('p63ResumoTotais') ? 'Lancamentos sim' : 'Lancamentos nao'));
@@ -37494,14 +37493,10 @@ th.p72-movivel .col-resizer {
       var caixa = porId(QUADROS[q]);
       if (caixa && caixa.querySelector('tr[data-p75tg]')) totais++;
     }
-    console.log('[P75] faixas de obra com metragem e custo: ' + faixas);
-    console.log('[P75] quadros com linha TOTAL GERAL: ' + totais);
     return true;
   };
 
   P75.ajuda = function () {
-    console.log('[P75] P75.aplicar() refaz a aparencia agora');
-    console.log('[P75] P75.situacao() mostra o que esta arrumado');
     return true;
   };
 
@@ -37529,7 +37524,6 @@ th.p72-movivel .col-resizer {
     }(HORAS[h]));
   }
 
-  console.log('PATCH 75 ativo: faixa da obra com Metragem e Custo na mesma linha, quadros sem zebra e TOTAL GERAL em amarelo. Use P75.ajuda().');
 })();
 </script>
 
@@ -38098,18 +38092,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var itens = obra && Array.isArray(obra.itens) ? obra.itens.length : 0;
     var vindos = obra && Array.isArray(obra.recebimentos) ? obra.recebimentos.filter(ehDoPatch).length : 0;
     var total = obra && Array.isArray(obra.recebimentos) ? obra.recebimentos.length : 0;
-    console.log('[P76] itens no Painel Geral: ' + itens);
-    console.log('[P76] recebimentos vindos do Painel Geral: ' + vindos);
-    console.log('[P76] recebimentos no total: ' + total);
-    console.log('[P76] botao na tela: ' + (porId('p76BtnImportar') ? 'sim' : 'nao'));
     return true;
   };
 
   P76.ajuda = function () {
-    console.log('[P76] P76.importarDoPainel() traz os itens do Painel Geral');
-    console.log('[P76] P76.limparImportados() apaga so o que veio do Painel Geral');
-    console.log('[P76] P76.situacao() mostra a contagem atual');
-    console.log('[P76] P76.aplicar() recoloca o botao na aba');
     return true;
   };
 
@@ -38137,7 +38123,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     }(HORAS[h]));
   }
 
-  console.log('PATCH 76 ativo: botao "Importar do Painel Geral" na aba Recebimento de Materiais. Use P76.ajuda().');
 })();
 </script>
 
@@ -39283,12 +39268,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function vigiarBarra() {
-    try {
-      var mo = new MutationObserver(function () { mover(); });
-      mo.observe(document.documentElement, { childList: true, subtree: true });
-    } catch (e) {}
-    setInterval(mover, 900);
     mover();
+    window.__varreduraUnica(mover);
   }
 
   /* ---------------------------------------------------------------- *
@@ -40296,11 +40277,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotao();
-    try {
-      var mo = new MutationObserver(function () { colocarBotao(); });
-      mo.observe(document.documentElement, { childList: true, subtree: true });
-    } catch (e) {}
-    setInterval(colocarBotao, 1200);
+    window.__varreduraUnica(colocarBotao);
   }
 
   window.abrirUnificarDuplicados = abrir;
@@ -41836,7 +41813,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotao();
-    setInterval(colocarBotao, 2000);
+    window.__varreduraUnica(colocarBotao);
   }
 
   window.p84AbrirDiario = function () { abrir(); };
@@ -42863,7 +42840,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotao();
-    setInterval(colocarBotao, 2000);
+    window.__varreduraUnica(colocarBotao);
   }
 
   window.p83AbrirBoletim = function () { abrir(); };
@@ -43316,7 +43293,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     varrer();
-    setInterval(varrer, 1500);
+    window.__varreduraUnica(varrer);
   }
 
   window.p85SalvarPdfBoletim = function () {
@@ -46423,7 +46400,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           '<img src="' + esc(f.url) + '" alt="foto" data-a="lupa" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '">' +
           '<input class="p92-leg" data-l="foto" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '" value="' + esc(f.leg || '') + '" placeholder="Legenda da foto">' +
           '<div class="p92-fx">' +
-            '<button class="p92-btn p92-btn-mini" type="button" data-p95b="editar" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '" title="Editar, cortar, pintar e marcar">Editar</button>' +
             '<button class="p92-btn p92-btn-mini" type="button" data-a="fmover" data-d="-1" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '"' + (i === 0 ? ' disabled' : '') + '>&#9664;</button>' +
             '<button class="p92-btn p92-btn-mini" type="button" data-a="fmover" data-d="1" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '"' + (i === fotos.length - 1 ? ' disabled' : '') + '>&#9654;</button>' +
             '<button class="p92-btn p92-btn-mini p92-btn-no" type="button" data-a="fapagar" data-alvo="' + esc(alvo) + '" data-i="' + esc(f.id) + '">Excluir</button>' +
@@ -47866,7 +47842,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotao();
-    setInterval(colocarBotao, 2000);
+    window.__varreduraUnica(colocarBotao);
   }
 
   window.p92AbrirFpdo = function () { abrir(); };
@@ -47982,6 +47958,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
   function fecharJanela() {
     var f = janela();
+    /* PATCH_TELA_EDICAO_AMPLIADA_OK: o editor de fotos agora e um
+       overlay proprio (nao mais filho do relatorio), entao precisa
+       ser fechado explicitamente junto com o relatorio. */
+    try { window.p95FecharEditor && window.p95FecharEditor(); } catch (e0) {}
     if (!f) { limparSobras(); return; }
     try { f.style.display = 'none'; } catch (e) {}
     if (f.classList) { f.classList.add(CLASSE_OCULTO); }
@@ -48130,7 +48110,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
   function iniciar() {
     estilo();
-    window.setInterval(vigiar, 1200);
+    window.__varreduraUnica(vigiar);
   }
 
   window.p93FecharFpdo = function () { fecharJanela(); };
@@ -49186,7 +49166,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotoes();
-    setInterval(colocarBotoes, 1500);
+    window.__varreduraUnica(colocarBotoes);
   }
 
   window.p94SalvarPptx = function () { gerarPptx(null); };
@@ -49219,6 +49199,43 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   var MAXLADO = 1600;      /* maior lado da imagem gravada, em pontos  */
   var QUAL = 0.86;         /* qualidade do jpeg gravado                */
   var MAXHIST = 12;        /* quantos passos o "Desfazer" guarda       */
+
+  /* ================================================================ *
+   * PATCH_RECORTE_PROPORCIONAL_OK
+   * Formatos de recorte que casam exatamente com o tamanho da caixa
+   * de foto usada ao montar o PowerPoint/PDF (ver montarSlides() e
+   * faixaFotos() no patch PATCH94_FPDO_PPTX_OK). Os numeros abaixo sao
+   * os mesmos % de largura/altura do slide usados la, so que aqui
+   * viram uma razao largura/altura para travar o recorte na tela.
+   * Assim a foto recortada preenche a caixa do slide sem sobrar
+   * espaco vazio (letterbox) nem cortar a foto de forma inesperada
+   * na hora de gerar o relatorio. */
+  var POL_L95 = 13.333, POL_A95 = 7.5; /* mesmo tamanho de slide do PATCH94 (16:9, 13.333" x 7.5") */
+  function proporcao(wPct, hPct) { return (wPct * POL_L95) / (hPct * POL_A95); }
+  var FORMATOS_RECORTE = [
+    { id: 'livre', rotulo: 'Recorte livre', razao: null },
+    { id: 'elev', rotulo: 'Elevacao (mes a mes)', razao: proporcao(42.3, 60.0) },
+    { id: 'inst', rotulo: 'Item instalado', razao: proporcao(46.0, 71.5) },
+    { id: 'capa', rotulo: 'Capa do relatorio', razao: proporcao(49.0, 84.0) },
+    { id: 'faixa1', rotulo: 'Pendencia/final - 1 foto', razao: proporcao(46.0, 63.5) },
+    { id: 'faixa2', rotulo: 'Pendencia/final - 2 fotos', razao: proporcao(45.0, 63.5) },
+    { id: 'faixa3', rotulo: 'Pendencia/final - 3 fotos', razao: proporcao(30.0, 63.5) }
+  ];
+  function formatoPorId(id) {
+    var i;
+    for (i = 0; i < FORMATOS_RECORTE.length; i++) { if (FORMATOS_RECORTE[i].id === id) { return FORMATOS_RECORTE[i]; } }
+    return FORMATOS_RECORTE[0];
+  }
+  /* adivinha o formato certo a partir do mesmo texto de "alvo" que
+     grupoFotos() usa no PATCH92 (ex.: "elev:123:antes", "inst:456") */
+  function formatoPorAlvo(alvo) {
+    var p = String(alvo || '').split(':');
+    if (p[0] === 'elev') { return formatoPorId('elev'); }
+    if (p[0] === 'inst') { return formatoPorId('inst'); }
+    if (p[0] === 'capa') { return formatoPorId('capa'); }
+    if (p[0] === 'pend' || p[0] === 'fim') { return formatoPorId('faixa2'); } /* melhor palpite: a maioria tem 2 fotos por linha */
+    return formatoPorId('livre');
+  }
 
   /* ================================================================ *
    * utilidades simples
@@ -49434,32 +49451,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
    * imagens: carregar e gravar
    * ================================================================ */
   function carregarImagem(url, ok, falhou) {
-    var src = String(url || '');
-    var tentouSemCors = false;
-    function erro() {
-      if (falhou) { falhou(); }
-    }
-    function tentar(comCors) {
-      var im = new Image();
-      if (comCors) { try { im.crossOrigin = 'anonymous'; } catch (e) {} }
-      im.onload = function () {
-        if (!im.naturalWidth && !im.width) { erro(); return; }
-        ok(im);
-      };
-      im.onerror = function () {
-        /* Algumas imagens antigas foram salvas como data/blob URL e falham
-           quando crossOrigin é aplicado. Tente novamente sem esse atributo. */
-        if (comCors && !tentouSemCors) {
-          tentouSemCors = true;
-          tentar(false);
-          return;
-        }
-        erro();
-      };
-      im.src = src;
-    }
-    if (!src) { erro(); return; }
-    tentar(/^https?:\\/\\//i.test(src));
+    var im = new Image();
+    try { im.crossOrigin = 'anonymous'; } catch (e) {}
+    im.onload = function () { ok(im); };
+    im.onerror = function () { if (falhou) { falhou(); } };
+    im.src = String(url || '');
   }
 
   function canvasParaUrl(cv) {
@@ -49496,10 +49492,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '#p95Aviso.p95-bom{background:#065f46;color:#ecfdf5}',
       '#p95Aviso.p95-ruim{background:#7f1d1d;color:#fef2f2}',
 
-      '#p95Fundo{position:relative;inset:auto;background:#f8fafc;z-index:10;display:none;',
-      'overflow:visible;padding:0;margin:14px 0;font:14px/1.4 system-ui,Arial;border-top:1px solid #cbd5e1}',
-      '#p95Cx{max-width:1120px;margin:0 auto;background:#ffffff;border:1px solid #cbd5e1;border-radius:14px;',
-      'color:#0f172a;overflow:hidden}',
+      '#p95Fundo{position:fixed;inset:0;z-index:2147483300;background:rgba(2,6,23,.82);display:none;',
+      'align-items:center;justify-content:center;padding:14px;overflow:auto;font:14px/1.4 system-ui,Arial}',
+      '#p95Cx{width:100%;max-width:1600px;height:94vh;margin:0 auto;background:#ffffff;border:1px solid #cbd5e1;border-radius:14px;',
+      'color:#0f172a;overflow:hidden;display:flex;flex-direction:column}',
       '#p95Cx header{display:flex;gap:8px;align-items:center;justify-content:space-between;background:#0f172a;',
       'padding:10px 14px;border-bottom:1px solid #334155;flex-wrap:wrap}',
       '#p95Cx header h4{margin:0;font-size:16px;color:#f8fafc}',
@@ -49518,7 +49514,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.p95-palco{position:relative;display:block;margin:0 auto;background:#020617;line-height:0;max-width:100%}',
       '.p95-palco canvas{display:block;max-width:100%;height:auto;touch-action:none}',
       '.p95-palco canvas.p95-ov{position:absolute;left:0;top:0;width:100%;height:100%;cursor:crosshair}',
-      '.p95-area{padding:10px;max-height:58vh;overflow:auto;background:#f8fafc}',
+      '.p95-area{padding:10px;flex:1;min-height:0;overflow:auto;background:#f8fafc}',
       '.p95-pe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-top:1px solid #334155}',
       '.p95-in{background:#ffffff;border:1px solid #94a3b8;color:#0f172a;border-radius:8px;padding:7px 9px;',
       'font:14px system-ui,Arial;min-width:200px;flex:1}',
@@ -49531,7 +49527,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.p95-num{position:absolute;top:5px;left:5px;background:#22c55e;color:#052e16;font:700 12px system-ui;',
       'border-radius:999px;width:22px;height:22px;display:flex;align-items:center;justify-content:center}',
       '.p95-esp{flex:1}',
-      '@media (max-width:640px){.p95-in{min-width:120px}.p95-area{max-height:46vh}}'
+      '@media (max-width:640px){.p95-in{min-width:120px}#p95Cx{height:98vh;border-radius:8px}#p95Fundo{padding:4px}}'
     ].join('');
     var s = document.createElement('style');
     s.id = 'p95Estilo';
@@ -49548,10 +49544,14 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       f = document.createElement('div');
       f.id = 'p95Fundo';
       f.innerHTML = '<div id="p95Cx"></div>';
-      var host = document.getElementById('p92Corpo') || document.body;
-      host.appendChild(f);
+      /* PATCH_TELA_EDICAO_AMPLIADA_OK: antes ficava dentro de #p92Corpo
+         (rolagem interna do relatorio), entao a tela de edicao aparecia
+         "la embaixo" do painel e passava despercebida. Agora e um
+         overlay de tela cheia preso ao body, igual aos outros modais
+         do sistema (p92Fundo, p84Fundo, etc.), sempre visivel na hora. */
+      document.body.appendChild(f);
     }
-    f.style.display = 'block';
+    f.style.display = 'flex';
     return document.getElementById('p95Cx');
   }
 
@@ -49607,6 +49607,12 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '<div class="p95-barra">' +
         '<b>Imagem</b>' +
         '<button class="p95-bt" type="button" data-p95="fer" data-f="recorte">Recortar</button>' +
+        '<span class="p95-rot">Formato</span>' +
+        '<select class="p95-fai" id="p95Prop">' +
+          FORMATOS_RECORTE.map(function (f) {
+            return '<option value="' + f.id + '">' + esc(f.rotulo) + '</option>';
+          }).join('') +
+        '</select>' +
         '<button class="p95-bt" type="button" data-p95="cortar">Aplicar recorte</button>' +
         '<button class="p95-bt" type="button" data-p95="girar" data-d="-1">Girar &#8630;</button>' +
         '<button class="p95-bt" type="button" data-p95="girar" data-d="1">Girar &#8631;</button>' +
@@ -49639,6 +49645,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var cv = document.getElementById('p95Cv');
     var ov = document.getElementById('p95Ov');
 
+    var formatoInicial = formatoPorAlvo(cfg.alvo);
+
     editor = {
       cfg: cfg,
       cv: cv,
@@ -49649,9 +49657,18 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       hist: [],
       base: null,          /* imagem de partida do ajuste de brilho */
       recorte: null,
+      recorteRazao: formatoInicial.razao, /* PATCH_RECORTE_PROPORCIONAL_OK: null = recorte livre, numero = largura/altura travada */
       arrasta: null,
       original: null
     };
+
+    var selProp = document.getElementById('p95Prop');
+    if (selProp) {
+      selProp.value = formatoInicial.id;
+      if (formatoInicial.id !== 'livre') {
+        dica('Formato "' + formatoInicial.rotulo + '" selecionado automaticamente, do mesmo tamanho usado nesse tipo de foto no relatorio. Arraste para recortar, ou troque o formato acima.');
+      }
+    }
 
     function medir(im) {
       cv.width = im.width;
@@ -49850,6 +49867,24 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       ev.preventDefault();
       var p = ponto(ev);
       var a = editor.arrasta;
+
+      /* PATCH_RECORTE_PROPORCIONAL_OK: com formato travado, o retangulo
+         de recorte cresce mantendo a razao largura/altura escolhida,
+         em vez de seguir o ponteiro livremente. */
+      if (editor.fer === 'recorte' && editor.recorteRazao) {
+        var razao = editor.recorteRazao;
+        var sx = (p.x < a.x) ? -1 : 1;
+        var sy = (p.y < a.y) ? -1 : 1;
+        var w = Math.max(Math.abs(p.x - a.x), Math.abs(p.y - a.y) * razao);
+        var h = w / razao;
+        /* nao deixa o recorte passar da borda da imagem */
+        if (a.x + sx * w > editor.cv.width) { w = (sx > 0 ? editor.cv.width - a.x : a.x); h = w / razao; }
+        if (a.x + sx * w < 0) { w = a.x; h = w / razao; }
+        if (a.y + sy * h > editor.cv.height) { h = (sy > 0 ? editor.cv.height - a.y : a.y); w = h * razao; }
+        if (a.y + sy * h < 0) { h = a.y; w = h * razao; }
+        p = { x: a.x + sx * w, y: a.y + sy * h };
+      }
+
       a.x2 = p.x;
       a.y2 = p.y;
 
@@ -50053,6 +50088,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           titulo: 'Comparacao antes x depois',
           canvas: cv,
           leg: (rotE || 'ANTES') + ' x ' + (rotD || 'DEPOIS'),
+          alvo: alvo,
           rotSalvar: 'Adicionar ao relatorio',
           aoSalvar: function (url, leg) { adicionarFoto(alvo, url, leg, 'Comparacao adicionada ao relatorio.'); }
         });
@@ -50096,6 +50132,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         abrirEditor({
           titulo: 'Imagem nova',
           url: url,
+          alvo: alvo,
           rotSalvar: 'Adicionar ao relatorio',
           aoSalvar: function (u, leg) { adicionarFoto(alvo, u, leg, 'Imagem adicionada ao relatorio.'); }
         });
@@ -50142,6 +50179,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     abrirEditor({
       titulo: 'Imagem nova',
       canvas: cv,
+      alvo: alvo,
       rotSalvar: 'Adicionar ao relatorio',
       aoSalvar: function (u, leg) { adicionarFoto(alvo, u, leg, 'Imagem adicionada ao relatorio.'); }
     });
@@ -50217,6 +50255,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       titulo: 'Editar foto do relatorio',
       url: url,
       leg: leg || '',
+      alvo: alvo,
       rotSalvar: 'Salvar nesta foto',
       aoSalvar: function (u, lg) { trocarFoto(alvo, idFoto, u, lg); },
       aoSalvarNova: function (u, lg) { copiarFoto(alvo, idFoto, u, lg); }
@@ -50299,13 +50338,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (a === 'salvar' || a === 'salvarNova') {
       if (editor.base) { aviso('Confirme ou cancele o ajuste de brilho antes de salvar.', 'erro'); return; }
       var leg = (document.getElementById('p95Leg') || {}).value || '';
-      var url;
-      try {
-        url = canvasParaUrl(editor.cv);
-      } catch (ex) {
-        aviso('Esta imagem nao permite exportacao pelo navegador. Salve-a novamente pela galeria e tente editar outra vez.', 'erro');
-        return;
-      }
+      var url = canvasParaUrl(editor.cv);
       var cfg = editor.cfg;
       if (a === 'salvarNova' && cfg.aoSalvarNova) { cfg.aoSalvarNova(url, leg); return; }
       if (cfg.aoSalvar) { cfg.aoSalvar(url, leg); }
@@ -50317,6 +50350,17 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   document.addEventListener('input', function (ev) {
     var id = ev.target && ev.target.id;
     if (id === 'p95Bri' || id === 'p95Con' || id === 'p95Sat') { verLuz(); }
+  }, true);
+
+  /* PATCH_RECORTE_PROPORCIONAL_OK: troca do formato de recorte */
+  document.addEventListener('change', function (ev) {
+    if (!ev.target || ev.target.id !== 'p95Prop' || !editor) { return; }
+    var f = formatoPorId(ev.target.value);
+    editor.recorteRazao = f.razao;
+    editor.recorte = null;
+    limparOverlay();
+    dica(f.razao ? ('Formato "' + f.rotulo + '" travado. Arraste sobre a foto para recortar.')
+                 : 'Recorte livre: arraste sobre a foto do jeito que quiser.');
   }, true);
 
   /* ================================================================ *
@@ -50399,7 +50443,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function iniciar() {
     estilo();
     colocarBotoes();
-    setInterval(colocarBotoes, 1200);
+    window.__varreduraUnica(colocarBotoes);
   }
 
   window.p95CriarImagem = function (alvo) { telaCriar(alvo || 'capa'); };

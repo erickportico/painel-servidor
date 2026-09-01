@@ -2887,6 +2887,19 @@ div:empty,
     <style id="ctm-print-clean-v2">
       @media print {
         @page { size: A4 portrait; margin: 10mm; }
+        /* Isolamento absoluto: nenhum elemento geral do painel entra na impressão. */
+        body.print-cad-mode * { visibility: hidden !important; }
+        body.print-cad-mode #cadBatchPrintContainer,
+        body.print-cad-mode #cadBatchPrintContainer * { visibility: visible !important; }
+        body.print-cad-mode #cadBatchPrintContainer { position: static !important; display: block !important; }
+        body.print-resumo-mode * { visibility: hidden !important; }
+        body.print-resumo-mode #resumoLotePrintHeader,
+        body.print-resumo-mode #resumoLotePrintHeader *,
+        body.print-resumo-mode #resumoLoteContainer,
+        body.print-resumo-mode #resumoLoteContainer * { visibility: visible !important; }
+        body.print-resumo-mode #resumoLotePrintHeader,
+        body.print-resumo-mode #resumoLoteContainer { position: static !important; display: block !important; }
+
         body.print-cad-mode #ctmPrintHeader,
         body.print-cad-mode #ctmPrintTitle,
         body.print-cad-mode #ctmPrintSubtitle,
@@ -2894,10 +2907,17 @@ div:empty,
         body.print-cad-mode .modal,
         body.print-cad-mode [role="dialog"] { display: none !important; }
         body.print-cad-mode #cadBatchPrintContainer { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print { display: block !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; margin: 0 auto !important; padding: 0 0 8mm !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; overflow: visible !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary { display: block !important; width: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; overflow: visible !important; font-family: Arial, sans-serif !important; color: #000 !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary h1 { margin: 0 0 6mm !important; text-align: center !important; font: 700 15pt Arial, sans-serif !important; color: #000 !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; font: 8pt Arial, sans-serif !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary th,
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary td { border: .25mm solid #555 !important; padding: 1.5mm 1mm !important; text-align: center !important; overflow-wrap: anywhere !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary th { background: #e5e7eb !important; font-weight: 700 !important; }
+        body.print-cad-mode #cadBatchPrintContainer .ctm-print-summary-total { font-weight: 700 !important; background: #f3f4f6 !important; }
+        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print { display: block !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; margin: 0 auto !important; padding: 0 0 5mm !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; overflow: visible !important; }
         body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print:last-child { page-break-after: auto !important; break-after: auto !important; }
-        body.print-cad-mode #cadBatchPrintContainer canvas { display: block !important; width: 170mm !important; max-width: 100% !important; height: auto !important; max-height: 225mm !important; margin: 0 auto !important; object-fit: contain !important; }
-        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print > div { text-align: center !important; color: #000 !important; font-size: 9pt !important; }
+        body.print-cad-mode #cadBatchPrintContainer canvas { display: block !important; width: 186mm !important; max-width: 100% !important; height: auto !important; max-height: 240mm !important; margin: 0 auto !important; object-fit: contain !important; }
+        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print > div { text-align: center !important; color: #000 !important; font-size: 8.5pt !important; }
         body.print-resumo-mode #ctmPrintHeader,
         body.print-resumo-mode #ctmPrintTitle,
         body.print-resumo-mode #ctmPrintSubtitle,
@@ -13886,14 +13906,22 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     // ---- DXF ENTITIES-ONLY (with offset + TEXT metadata) ----
                     function generateDXFEntitiesCTM(ref, type, L, H, profW, hasBottom, scope, offsetX, offsetY){
                         var lines = [];
+                        L = Number(L); H = Number(H); profW = Number(profW); offsetX = Number(offsetX) || 0; offsetY = Number(offsetY) || 0;
+                        if(!Number.isFinite(L) || !Number.isFinite(H) || L <= 0 || H <= 0){ return lines; }
+                        if(!Number.isFinite(profW) || profW <= 0){ profW = 33; }
                         var releasedQty = Number(arguments[10] || 0);
                         var GREEN = 3, RED = 1, BLACK = 7;
                         function line(layer, x1, y1, x2, y2, color){
                             lines.push('0','LINE','8',layer,'62',String(color),'10',String(x1),'20',String(y1),'11',String(x2),'21',String(y2));
                         }
-                        function text(layer, value, x, y, height, color, center){
-                            lines.push('0','TEXT','8',layer,'62',String(color),'10',String(x),'20',String(y),'40',String(height),'1',String(value));
+                        function text(layer, value, x, y, height, color, center, rotation){
+                            /* DXF R12: códigos em ordem compatível e texto sem quebras de linha. */
+                            value = String(value == null ? '' : value).replace(/[\\r\\n]+/g, ' ');
+                            x = Number(x) || 0; y = Number(y) || 0; height = Number(height) || 1;
+                            lines.push('0','TEXT','8',layer,'62',String(color),'10',String(x),'20',String(y),'40',String(height));
                             if(center){ lines.push('72','1','11',String(x),'21',String(y),'73','0'); }
+                            if(Number.isFinite(Number(rotation))){ lines.push('50',String(rotation)); }
+                            lines.push('1',value);
                         }
                         function hdim(x1, x2, y, label){
                             var a = Math.max(H * 0.08, 80);
@@ -13907,8 +13935,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                             line('CTM_DIM', offsetX, y1, x, y1, RED); line('CTM_DIM', offsetX, y2, x, y2, RED); line('CTM_DIM', x, y1, x, y2, RED);
                             line('CTM_DIM', x, y1, x+a*.35, y1+a, RED); line('CTM_DIM', x, y1, x-a*.35, y1+a, RED);
                             line('CTM_DIM', x, y2, x+a*.35, y2-a, RED); line('CTM_DIM', x, y2, x-a*.35, y2-a, RED);
-                            text('CTM_DIM', label, x-Math.max(L*.04,45), (y1+y2)/2, Math.max(H*.035,45), RED, true);
-                            lines.push('50','90');
+                            text('CTM_DIM', label, x-Math.max(L*.04,45), (y1+y2)/2, Math.max(H*.035,45), RED, true, 90);
                         }
                         var pw = Number(profW) || 33;
                         var innerL = L - 2*pw, innerH = hasBottom ? H - 2*pw : H-pw;
@@ -13932,6 +13959,8 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         var headerLines = [];
                         headerLines.push('0'); headerLines.push('SECTION');
                         headerLines.push('2'); headerLines.push('HEADER');
+                        /* DXF R12/AC1009: cabeçalho mínimo para máxima compatibilidade. */
+                        headerLines.push('9'); headerLines.push('$ACADVER'); headerLines.push('1'); headerLines.push('AC1009');
                         headerLines.push('0'); headerLines.push('ENDSEC');
                         headerLines.push('0'); headerLines.push('SECTION');
                         headerLines.push('2'); headerLines.push('ENTITIES');
@@ -13952,37 +13981,48 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         // Single HEADER section
                         allLines.push('0'); allLines.push('SECTION');
                         allLines.push('2'); allLines.push('HEADER');
+                        /* DXF R12/AC1009: cabeçalho mínimo para máxima compatibilidade. */
+                        allLines.push('9'); allLines.push('$ACADVER'); allLines.push('1'); allLines.push('AC1009');
                         allLines.push('0'); allLines.push('ENDSEC');
                         allLines.push('0'); allLines.push('SECTION');
                         allLines.push('2'); allLines.push('ENTITIES');
-                        // Smart auto-layout offsets
-                        var cursorX = 0;
-                        var cursorY = 0;
-                        var maxRowH = 0;
-                        var gapX = 1200;
-                        var gapY = 1200;
-                        var colLimit = 6000;
-                        var col = 0;
-                        chks.forEach(function(chk, idx){
+                        // Layout em grade: no máximo 5 linhas por coluna e colunas ilimitadas.
+                        // O espaçamento de 1300 mm é aplicado tanto para baixo quanto para o lado.
+                        var gapX = 1300;
+                        var gapY = 1300;
+                        var maxRows = 5;
+                        var selectedBatch = [];
+                        chks.forEach(function(chk){
                             var ref = chk.getAttribute('data-ref');
                             var spec = specs.find(function(s){ return s.ref === ref; });
                             if(!spec) return;
                             var pL = spec.L, pH = spec.H;
                             if(mType === 'fora'){ pL += 28; pH += 28; } else if(mType === 'dentro'){ pL -= 4; pH -= 4; }
-                            var profW = spec.ctmProfile === 'estreito' ? 20 : 33;
-                            // Auto-layout: wrap columns if exceeding limit
-                            if(cursorX + pL + 400 > colLimit && col > 0){
-                                cursorX = 0;
-                                cursorY -= (maxRowH + gapY);
-                                maxRowH = 0;
-                                col = 0;
-                            }
-                            allLines.push('0'); allLines.push('COMMENT'); allLines.push('1'); allLines.push('--- CTM: ' + ref + ' ---');
-                            var entityLines = generateDXFEntitiesCTM(ref, spec.type, pL, pH, profW, spec.hasBottom, 'full', cursorX, cursorY, getReleasedQtyForRefCTM(ref));
+                            selectedBatch.push({ref: ref, spec: spec, pL: pL, pH: pH});
+                        });
+                        var rowHeights = [0, 0, 0, 0, 0];
+                        var colWidths = [];
+                        selectedBatch.forEach(function(item, idx){
+                            var row = idx % maxRows;
+                            var col = Math.floor(idx / maxRows);
+                            rowHeights[row] = Math.max(rowHeights[row], item.pH);
+                            colWidths[col] = Math.max(colWidths[col] || 0, item.pL);
+                        });
+                        var rowY = [];
+                        for(var r = 0; r < maxRows; r++){
+                            rowY[r] = -(r ? rowY[r - 1] + rowHeights[r - 1] + gapY : 0);
+                        }
+                        var colX = [];
+                        for(var c = 0; c < colWidths.length; c++){
+                            colX[c] = c ? colX[c - 1] + colWidths[c - 1] + gapX : 0;
+                        }
+                        selectedBatch.forEach(function(item, idx){
+                            var row = idx % maxRows;
+                            var col = Math.floor(idx / maxRows);
+                            var profW = item.spec.ctmProfile === 'estreito' ? 20 : 33;
+                            /* Comentários não são entidades válidas na seção ENTITIES de DXF; não os gravar. */
+                            var entityLines = generateDXFEntitiesCTM(item.ref, item.spec.type, item.pL, item.pH, profW, item.spec.hasBottom, 'full', colX[col], rowY[row], getReleasedQtyForRefCTM(item.ref));
                             for(var e = 0; e < entityLines.length; e++) allLines.push(entityLines[e]);
-                            cursorX += (pL + gapX);
-                            if(pH > maxRowH) maxRowH = pH;
-                            col++;
                         });
                         // Single ENDSEC + EOF
                         allLines.push('0'); allLines.push('ENDSEC');
@@ -14251,6 +14291,37 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         var mType = document.getElementById('batchCadMeasureType').value;
                         var container = document.getElementById('cadBatchPrintContainer');
                         container.innerHTML = '';
+                        /* O botão Imprimir agora leva o resumo junto, como primeira página. */
+                        var resumo = document.createElement('section');
+                        resumo.className = 'ctm-print-summary';
+                        var tituloResumo = document.createElement('h1');
+                        tituloResumo.textContent = 'RESUMO DO LOTE CAD';
+                        resumo.appendChild(tituloResumo);
+                        var tabelaResumo = document.createElement('table');
+                        tabelaResumo.innerHTML = '<thead><tr><th>REF</th><th>TIPO</th><th>MODELO CTM</th><th>L (mm)</th><th>H (mm)</th><th>QTD</th><th>LIBERADO</th><th>SALDO</th></tr></thead><tbody></tbody>';
+                        var corpoResumo = tabelaResumo.querySelector('tbody');
+                        var totalQtdResumo = 0, totalLibResumo = 0;
+                        chks.forEach(function(chk){
+                            var refResumo = chk.getAttribute('data-ref');
+                            var specResumo = specs.find(function(s){ return s.ref === refResumo; });
+                            if(!specResumo) return;
+                            var lResumo = specResumo.L, hResumo = specResumo.H;
+                            if(mType === 'fora'){ lResumo += 28; hResumo += 28; } else if(mType === 'dentro'){ lResumo -= 4; hResumo -= 4; }
+                            var liberadoResumo = getReleasedQtyForRefCTM(refResumo);
+                            totalQtdResumo += Number(specResumo.qty) || 0;
+                            totalLibResumo += Number(liberadoResumo) || 0;
+                            var trResumo = document.createElement('tr');
+                            [refResumo, specResumo.type, specResumo.ctmProfile, lResumo, hResumo, specResumo.qty, liberadoResumo, (Number(specResumo.qty) || 0) - (Number(liberadoResumo) || 0)].forEach(function(valor){
+                                var td = document.createElement('td'); td.textContent = String(valor == null ? '' : valor); trResumo.appendChild(td);
+                            });
+                            corpoResumo.appendChild(trResumo);
+                        });
+                        var trTotalResumo = document.createElement('tr');
+                        trTotalResumo.className = 'ctm-print-summary-total';
+                        trTotalResumo.innerHTML = '<td colspan="5">TOTAL</td><td>' + totalQtdResumo + '</td><td>' + totalLibResumo + '</td><td>' + (totalQtdResumo - totalLibResumo) + '</td>';
+                        corpoResumo.appendChild(trTotalResumo);
+                        resumo.appendChild(tabelaResumo);
+                        container.appendChild(resumo);
                         chks.forEach(function(chk){
                             var ref = chk.getAttribute('data-ref');
                             var spec = specs.find(function(s){ return s.ref === ref; });

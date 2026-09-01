@@ -45836,7 +45836,24 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       proximasPortico: '',
       proximasCliente: '',
       encerramento: 'PÓRTICO ESQUADRIAS',
-      fotosFinal: []
+      fotosFinal: [],
+      codigoObra: '',
+      contrato: '',
+      periodoInicio: '',
+      periodoFim: '',
+      cidadeUf: '',
+      fiscalCliente: '',
+      equipeResponsavel: '',
+      statusObra: '',
+      percentualPrevisto: '',
+      percentualRealizado: '',
+      previsaoConclusao: '',
+      destaquesMes: '',
+      riscos: '',
+      decisoes: '',
+      proximosMarcos: '',
+      observacoesGerais: '',
+      slidesCustomizados: []
     };
     if (base) {
       d.titulo = base.titulo;
@@ -45884,6 +45901,35 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     d.elevacoes = d.elevacoes || [];
     d.itens = d.itens || [];
     d.pendencias = d.pendencias || [];
+    d.slidesCustomizados = d.slidesCustomizados || [];
+    d.codigoObra = d.codigoObra || '';
+    d.contrato = d.contrato || '';
+    d.periodoInicio = d.periodoInicio || '';
+    d.periodoFim = d.periodoFim || '';
+    d.cidadeUf = d.cidadeUf || '';
+    d.fiscalCliente = d.fiscalCliente || '';
+    d.equipeResponsavel = d.equipeResponsavel || '';
+    d.statusObra = d.statusObra || '';
+    d.percentualPrevisto = d.percentualPrevisto || '';
+    d.percentualRealizado = d.percentualRealizado || '';
+    d.previsaoConclusao = d.previsaoConclusao || '';
+    d.destaquesMes = d.destaquesMes || '';
+    d.riscos = d.riscos || '';
+    d.decisoes = d.decisoes || '';
+    d.proximosMarcos = d.proximosMarcos || '';
+    d.observacoesGerais = d.observacoesGerais || '';
+    d.slidesCustomizados.forEach(function (s) {
+      s.id = s.id || novoId('slide');
+      s.titulo = s.titulo || '';
+      s.texto = s.texto || '';
+      s.imagemUrl = s.imagemUrl || '';
+      s.cor = s.cor || '0F172A';
+      s.layout = s.layout || 'imagem-direita';
+      s.imageL = isFinite(Number(s.imageL)) ? Number(s.imageL) : 64;
+      s.imageT = isFinite(Number(s.imageT)) ? Number(s.imageT) : 24;
+      s.imageW = isFinite(Number(s.imageW)) ? Number(s.imageW) : 31;
+      s.imageH = isFinite(Number(s.imageH)) ? Number(s.imageH) : 58;
+    });
     d.elevacoes.forEach(function (e) {
       e.fotosAntes = e.fotosAntes || [];
       e.fotosDepois = e.fotosDepois || [];
@@ -46461,6 +46507,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           '<button class="p92-btn" type="button" data-a="copiarMes">Copiar do mês anterior</button>' +
           '<button class="p92-btn" type="button" data-a="imprimir">Imprimir / PDF</button>' +
           '<button class="p92-btn" type="button" data-a="pdf">Salvar PDF</button>' +
+          '<button class="p92-btn" type="button" data-a="editorVisual">Editor visual 16:9</button>' +
           '<button class="p92-btn" type="button" data-a="exportar">Exportar arquivo</button>' +
           '<button class="p92-btn" type="button" data-a="importar">Importar arquivo</button>' +
           '<button class="p92-btn p92-btn-no" type="button" data-a="excluir">Excluir</button>' +
@@ -46556,6 +46603,30 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         '<div class="p92-lin" style="margin-top:10px">' +
           '<button class="p92-btn p92-btn-mini" type="button" data-a="puxarObra">Puxar dados da obra aberta</button>' +
         '</div>' +
+      '</div>';
+
+      h += '<div class="p92-sec"><h4>Informações complementares da obra</h4>' +
+        '<div class="p92-g p92-g3">' +
+          campo('Código da obra', 'codigoObra', d.codigoObra, 'Ex.: P07324') +
+          campo('Contrato', 'contrato', d.contrato, 'Número ou referência do contrato') +
+          campo('Cidade / UF', 'cidadeUf', d.cidadeUf, 'Ex.: João Pessoa / PB') +
+          campo('Período inicial', 'periodoInicio', d.periodoInicio, 'Data inicial') +
+          campo('Período final', 'periodoFim', d.periodoFim, 'Data final') +
+          campo('Fiscal do cliente', 'fiscalCliente', d.fiscalCliente, 'Nome do fiscal') +
+          campo('Equipe responsável', 'equipeResponsavel', d.equipeResponsavel, 'Equipe ou responsável') +
+          campo('Status da obra', 'statusObra', d.statusObra, 'Ex.: Em andamento') +
+          campo('Previsão de conclusão', 'previsaoConclusao', d.previsaoConclusao, 'Ex.: Agosto 2026') +
+          campo('% previsto', 'percentualPrevisto', d.percentualPrevisto, 'Ex.: 80') +
+          campo('% realizado', 'percentualRealizado', d.percentualRealizado, 'Ex.: 74') +
+        '</div>' +
+        '<div class="p92-g p92-g2">' +
+          area('DESTAQUES DO MÊS', 'destaquesMes', d.destaquesMes, 'Um destaque por linha') +
+          area('RISCOS / PONTOS DE ATENÇÃO', 'riscos', d.riscos, 'Um risco por linha') +
+          area('DECISÕES E OBSERVAÇÕES', 'decisoes', d.decisoes, 'Decisões tomadas no período') +
+          area('PRÓXIMOS MARCOS', 'proximosMarcos', d.proximosMarcos, 'Um marco por linha') +
+        '</div>' +
+        '<label class="p92-c" style="margin-top:8px"><span>Observações gerais para o relatório</span>' +
+          '<textarea class="p92-ta" data-k="observacoesGerais" placeholder="Informações adicionais da obra">' + esc(d.observacoesGerais || '') + '</textarea></label>' +
       '</div>';
 
       h += '<div class="p92-sec"><h4>Encerramento</h4>' +
@@ -46681,6 +46752,22 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           area('CLIENTE / OBRA', 'proximasCliente', d.proximasCliente, 'Uma etapa por linha') +
         '</div>' +
       '</div>';
+      h += '<div class="p92-sec"><h4>Slides livres personalizados</h4>' +
+        '<div class="p92-lin"><button class="p92-btn p92-btn-mini" type="button" data-a="slideMais">Adicionar slide livre</button>' +
+        '<span style="color:#94a3b8;font-size:12px">Inclua uma página extra com texto, cor e imagem. O slide será gerado em 16:9.</span></div>';
+      if (!d.slidesCustomizados.length) { h += '<div class="p92-vazio">Nenhum slide livre cadastrado.</div>'; }
+      d.slidesCustomizados.forEach(function (s, i) {
+        h += '<div class="p92-item"><div class="p92-item-topo"><b>Slide livre ' + (i + 1) + '</b>' +
+          '<button class="p92-btn p92-btn-mini p92-btn-no" type="button" data-a="slideMenos" data-i="' + esc(s.id) + '">Remover</button></div>' +
+          '<div class="p92-g p92-g2">' +
+            '<label class="p92-c"><span>Título do slide</span><input class="p92-in" data-l="custom" data-i="' + esc(s.id) + '" data-k="titulo" value="' + esc(s.titulo) + '" placeholder="Título livre"></label>' +
+            '<label class="p92-c"><span>Imagem do slide (URL)</span><input class="p92-in" data-l="custom" data-i="' + esc(s.id) + '" data-k="imagemUrl" value="' + esc(s.imagemUrl) + '" placeholder="Cole uma URL de imagem"></label>' +
+          '</div>' +
+          '<label class="p92-c"><span>Texto do slide</span><textarea class="p92-ta" data-l="custom" data-i="' + esc(s.id) + '" data-k="texto" placeholder="Um item por linha">' + esc(s.texto) + '</textarea></label>' +
+          '<label class="p92-c"><span>Cor de destaque em hexadecimal</span><input class="p92-in" data-l="custom" data-i="' + esc(s.id) + '" data-k="cor" value="' + esc(s.cor) + '" placeholder="0F172A"></label>' +
+        '</div>';
+      });
+      h += '</div>';
     }
 
     c.innerHTML = h;
@@ -46740,6 +46827,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (lote === 'pend') {
       var p = achar(atual.pendencias, id);
       if (p && k) { p[k] = valorDe(el); salvarDepois(); }
+      return;
+    }
+    if (lote === 'custom') {
+      var cs = achar(atual.slidesCustomizados, id);
+      if (cs && k) { cs[k] = valorDe(el); salvarDepois(); }
       return;
     }
     if (lote === 'foto') {
@@ -47277,6 +47369,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (a === 'salvar') { salvarAgora(); return; }
     if (a === 'imprimir') { imprimir(); return; }
     if (a === 'pdf') { gerarPdf(b); return; }
+    if (a === 'editorVisual') { if (window.p96AbrirEditor) { window.p96AbrirEditor(); } else { aviso('Editor visual ainda carregando.', 'erro'); } return; }
     if (a === 'exportar') { exportar(); return; }
     if (a === 'importar') { importar(); return; }
 
@@ -47381,8 +47474,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       atual.pendencias = atual.pendencias.filter(function (x) { return x.id !== id; });
       salvarDepois(); render(); return;
     }
-    if (a === 'pendMover') { mover(atual.pendencias, id, Number(b.getAttribute('data-d'))); salvarDepois(); render(); return; }
-
+        if (a === 'pendMover') { mover(atual.pendencias, id, Number(b.getAttribute('data-d'))); salvarDepois(); render(); return; }
+    if (a === 'slideMais') {
+      atual.slidesCustomizados.push({ id: novoId('slide'), titulo: 'Novo slide', texto: '', imagemUrl: '', cor: '0F172A' });
+      salvarDepois(); render(); return;
+    }
+    if (a === 'slideMenos') {
+      if (!confirm('Remover este slide personalizado?')) { return; }
+      atual.slidesCustomizados = atual.slidesCustomizados.filter(function (x) { return x.id !== id; });
+      salvarDepois(); render(); return;
+    }
     if (a === 'galeria') {
       escolherImagens(function (itens) {
         var arr = grupoFotos(alvo);
@@ -48000,6 +48101,13 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       ['Local: ', d.local || ''],
       ['Responsavel: ', d.responsavel || ''],
       ['Gestor Portico: ', d.gestor || ''],
+      ['Codigo da obra: ', d.codigoObra || ''],
+      ['Contrato: ', d.contrato || ''],
+      ['Cidade / UF: ', d.cidadeUf || ''],
+      ['Fiscal do cliente: ', d.fiscalCliente || ''],
+      ['Equipe responsavel: ', d.equipeResponsavel || ''],
+      ['Status da obra: ', d.statusObra || ''],
+      ['Previsao de conclusao: ', d.previsaoConclusao || ''],
       ['Data do relatorio: ', dataBonita(d.dataRelatorio)],
       ['Avanco da instalacao: ', (Math.round(c.pct * 10) / 10) + '%']
     ];
@@ -48143,6 +48251,25 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     }
     slideTexto('Atividades Realizadas', d.atividadesPortico, d.atividadesCliente);
     slideTexto('Proximas Etapas', d.proximasPortico, d.proximasCliente);
+    slideTexto('Destaques do Mes', d.destaquesMes, d.riscos);
+    slideTexto('Decisoes e Proximos Marcos', d.decisoes, d.proximosMarcos);
+    (d.slidesCustomizados || []).forEach(function (s) {
+      var linhasSlide = linhas(s.texto || '');
+      if (!s.titulo && !linhasSlide.length && !s.imagemUrl) { return; }
+      var qLivre = nova();
+      var corLivre = /^[0-9A-Fa-f]{6}$/.test(String(s.cor || '')) ? String(s.cor) : '0F172A';
+      var layLivre = s.layout || 'imagem-direita';
+      var gLivre = { il: s.imageL, it: s.imageT, iw: s.imageW, ih: s.imageH, tl: 4, tt: 28, tw: 55 };
+      if (layLivre === 'imagem-esquerda') { gLivre.il = 4; gLivre.it = 24; gLivre.iw = 31; gLivre.ih = 58; gLivre.tl = 40; gLivre.tw = 55; }
+      if (layLivre === 'imagem-inteira') { gLivre.il = 4; gLivre.it = 22; gLivre.iw = 92; gLivre.ih = 66; gLivre.tl = 7; gLivre.tt = 12; gLivre.tw = 86; }
+      if (layLivre === 'imagem-superior') { gLivre.il = 4; gLivre.it = 31; gLivre.iw = 92; gLivre.ih = 55; gLivre.tl = 4; gLivre.tt = 14; gLivre.tw = 92; }
+      if (layLivre === 'texto-duplo') { gLivre.il = 52; gLivre.it = 24; gLivre.iw = 43; gLivre.ih = 58; gLivre.tl = 4; gLivre.tw = 44; }
+      qLivre.push(Q(3.0, 8.0, 94.0, 0.8, corLivre));
+      qLivre.push(T(gLivre.tl, 12.0, gLivre.tw, 8.0, s.titulo || 'Slide personalizado', { s: 24, b: true, c: '0F172A' }));
+      if (s.imagemUrl && layLivre !== 'texto-apenas') { qLivre.push(I(gLivre.il, gLivre.it, gLivre.iw, gLivre.ih, s.imagemUrl, 'cover')); }
+      if (linhasSlide.length) { qLivre.push(P(gLivre.tl, gLivre.tt, gLivre.tw, 58.0, linhasSlide, { s: 16, pt: true, c: '374151' })); }
+      qLivre.push(T(4.0, 91.0, 60.0, 4.0, (d.obra || '').toUpperCase(), { s: 11, b: true, c: '6B7280' }));
+    });
 
     /* --- 8) registros finais ------------------------------------- */
     if ((d.fotosFinal || []).length) {
@@ -49957,5 +50084,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 })();
 </script>
+<script src="fpdo_editor_visual.js"></script>
 </body>
 </html>

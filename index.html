@@ -12364,8 +12364,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('colabEditObraId').value = '';
               document.getElementById('colabInputNome').value = '';
               document.getElementById('colabInputFuncao').value = 'Profissional';
-              document.getElementById('colabInputTelefone').value = '';
-              document.getElementById('colabInputCpf').value = '';
+              document.getElementById('colabInputEmpresa').value = 'PORTICO';
               document.getElementById('colabModalTitle').textContent = 'Novo Colaborador';
               var selObra = document.getElementById('colabInputObra');
               selObra.innerHTML = '';
@@ -12389,8 +12388,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               var editObraId = document.getElementById('colabEditObraId').value;
               var nome = document.getElementById('colabInputNome').value.trim();
               var funcao = _normalizarFuncaoColab(document.getElementById('colabInputFuncao').value); // PATCH 78
-              var telefone = document.getElementById('colabInputTelefone').value.trim();
-              var cpf = document.getElementById('colabInputCpf').value.trim();
+              var empresa = document.getElementById('colabInputEmpresa').value;
               if(!nome){ alert('Informe o nome do colaborador.'); return; }
               if(!obra.colaboradores) obra.colaboradores = [];
               if(editId){
@@ -12404,15 +12402,13 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 if(found){
                   found.nome = nome;
                   found.funcao = funcao;
-                  found.telefone = telefone;
-                  found.cpf = cpf;
+                  found.empresa = empresa;
                 } else {
                   obra.colaboradores.push({
                     id: editId,
                     nome: nome,
                     funcao: funcao,
-                    telefone: telefone,
-                    cpf: cpf
+                    empresa: empresa
                   });
                 }
               } else {
@@ -12420,8 +12416,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                   id: 'colab_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
                   nome: nome,
                   funcao: funcao,
-                  telefone: telefone,
-                  cpf: cpf
+                  empresa: empresa
                 });
               }
               salvarDB();
@@ -12439,8 +12434,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
               document.getElementById('colabEditObraId').value = obraId;
               document.getElementById('colabInputNome').value = c.nome || '';
               document.getElementById('colabInputFuncao').value = _normalizarFuncaoColab(c.funcao); // PATCH 78
-              document.getElementById('colabInputTelefone').value = c.telefone || '';
-              document.getElementById('colabInputCpf').value = c.cpf || '';
+              document.getElementById('colabInputEmpresa').value = c.empresa || 'PORTICO';
               document.getElementById('colabModalTitle').textContent = 'Editar Colaborador';
               var selObra = document.getElementById('colabInputObra');
               selObra.innerHTML = '';
@@ -12472,15 +12466,14 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 return;
               }
               var html = '<table class="lanc-table"><thead><tr>';
-              html += '<th>Nome</th><th>Função</th><th>Telefone</th><th>CPF</th><th>Obra</th><th style="width:80px;">Ações</th>';
+              html += '<th>Nome</th><th>Função</th><th>EMPRESA</th><th>Obra</th><th style="width:80px;">Ações</th>';
               html += '</tr></thead><tbody>';
               db.obras.forEach(function(obra){
                 (obra.colaboradores || []).forEach(function(c){
                   html += '<tr>';
                   html += '<td>' + escaparHTML(c.nome || '-') + '</td>';
                   html += '<td>' + escaparHTML(c.funcao || '-') + '</td>';
-                  html += '<td>' + escaparHTML(c.telefone || '-') + '</td>';
-                  html += '<td>' + escaparHTML(c.cpf || '-') + '</td>';
+                  html += '<td>' + escaparHTML(c.empresa || '-') + '</td>';
                   html += '<td>' + escaparHTML(obra.nome || '-') + '</td>';
                   html += '<td class="lanc-actions">';
                   var eArg = 'editarColaborador(' + "'" + c.id + "','" + obra.id + "'" + ')';
@@ -13193,13 +13186,14 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                 <option value="Ajudante">Ajudante</option>                            
                             </select>
                         </div>
-                        <div>
-                            <label style="font-size:0.82rem;font-weight:600;">Telefone</label>
-                            <input type="text" id="colabInputTelefone" placeholder="(00) 00000-0000" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
-                        </div>
-                        <div>
-                            <label style="font-size:0.82rem;font-weight:600;">CPF</label>
-                            <input type="text" id="colabInputCpf" placeholder="000.000.000-00" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
+                        <div style="grid-column:span 2;">
+                            <label style="font-size:0.82rem;font-weight:600;">EMPRESA</label>
+                            <select id="colabInputEmpresa" style="width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;box-sizing:border-box;">
+                                <option value="PORTICO">PORTICO</option>
+                                <option value="TRAXX">TRAXX</option>
+                                <option value="POLINORDESTE">POLINORDESTE</option>
+                                <option value="POLIMENTAIS">POLIMENTAIS</option>
+                            </select>
                         </div>
                         <div style="grid-column:span 2;">
                             <label style="font-size:0.82rem;font-weight:600;">Obra</label>

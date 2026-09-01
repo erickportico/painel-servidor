@@ -38170,6 +38170,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     { k: "obra",   t: "\uD83C\uDFD7\uFE0F Por Obra" },
     { k: "regiao", t: "\uD83D\uDCCD Por Regi\u00E3o" },
     { k: "colab",  t: "\uD83D\uDC77 Por Colaborador" },
+    { k: "empresa", t: "\uD83C\uDFE2 Por Empresa" },
     { k: "lista",  t: "\uD83D\uDCCB Despesas" }
   ];
 
@@ -38223,6 +38224,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var cResumoObra  = document.getElementById("containerCustoResumoObra");
     var cRegiao      = document.getElementById("containerCustoPorRegiao");
     var cColab       = document.getElementById("containerCustoPorColaborador");
+    var cEmpresa     = document.createElement("div");
+    cEmpresa.id = "containerCustoPorEmpresa";
     var cTabela      = document.getElementById("containerCustoTable");
     var cTotal       = document.getElementById("containerCustoTotal");
 
@@ -38265,6 +38268,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     mover(caixas.obra,   cResumoObra);
     mover(caixas.regiao, cRegiao);
     mover(caixas.colab,  cColab);
+    caixas.empresa.appendChild(cEmpresa);
     mover(caixas.lista,  cTabela);
     mover(caixas.lista,  cTotal);
 
@@ -38287,6 +38291,55 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return true;
   }
 
+  /* consolida os lançamentos por empresa, usando a empresa do lançamento ou do colaborador vinculado */
+  function renderPorEmpresa(custos) {
+    var container = document.getElementById("containerCustoPorEmpresa");
+    if (!container) { return; }
+    custos = Array.isArray(custos) ? custos : [];
+    var empresasColab = {};
+    try {
+      (db.obras || []).forEach(function(o){
+        (o.colaboradores || []).forEach(function(c){
+          if (c && c.nome) { empresasColab[String(c.nome).trim().toLowerCase()] = c.empresa || ""; }
+        });
+        (o.colaboradoresPgto || []).forEach(function(c){
+          if (c && c.nome) { empresasColab[String(c.nome).trim().toLowerCase()] = c.empresa || empresasColab[String(c.nome).trim().toLowerCase()] || ""; }
+        });
+      });
+    } catch(e) {}
+    var mapa = {};
+    var total = 0;
+    custos.forEach(function(c){
+      var nomeColab = String(c.colaborador || "").trim().toLowerCase();
+      var empresa = String(c.empresa || empresasColab[nomeColab] || "SEM EMPRESA").trim().toUpperCase();
+      if (!empresa) { empresa = "SEM EMPRESA"; }
+      if (!mapa[empresa]) { mapa[empresa] = { qtd: 0, valor: 0 }; }
+      mapa[empresa].qtd += 1;
+      mapa[empresa].valor += Number(c.valor) || 0;
+      total += Number(c.valor) || 0;
+    });
+    var ordem = ["PORTICO", "TRAXX", "POLINORDESTE", "POLIMENTAIS"];
+    Object.keys(mapa).forEach(function(k){ if (ordem.indexOf(k) === -1) { ordem.push(k); } });
+    var keys = ordem.filter(function(k){ return mapa[k]; });
+    if (!keys.length) {
+      container.innerHTML = '<div style="padding:16px;color:var(--text-light,#64748b);">Nenhum lançamento de custo para os filtros selecionados.</div>';
+      return;
+    }
+    var maior = keys.reduce(function(a,b){ return mapa[b].valor > mapa[a].valor ? b : a; }, keys[0]);
+    var h = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px;">';
+    h += '<div style="padding:12px;border:1px solid var(--border,#e2e8f0);border-radius:10px;background:var(--card-bg,#fff);"><small>Total lançado</small><strong style="display:block;font-size:1.15rem;margin-top:4px;">' + _fmtBRL(total) + '</strong></div>';
+    h += '<div style="padding:12px;border:1px solid var(--border,#e2e8f0);border-radius:10px;background:var(--card-bg,#fff);"><small>Empresas com lançamento</small><strong style="display:block;font-size:1.15rem;margin-top:4px;">' + keys.length + '</strong></div>';
+    h += '<div style="padding:12px;border:1px solid var(--border,#e2e8f0);border-radius:10px;background:var(--card-bg,#fff);"><small>Maior custo</small><strong style="display:block;font-size:1.05rem;margin-top:4px;">' + escaparHTML(maior) + '</strong></div></div>';
+    h += '<div style="background:var(--card-bg,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;padding:14px;overflow:auto;">';
+    h += '<h4 style="margin:0 0 10px;color:var(--text,#1e293b);">🏢 Custos por Empresa</h4>';
+    h += '<table class="lanc-table"><thead><tr><th>EMPRESA</th><th>Lançamentos</th><th>Valor</th><th>% do Total</th></tr></thead><tbody>';
+    keys.forEach(function(k){
+      var pct = total > 0 ? (mapa[k].valor / total) * 100 : 0;
+      h += '<tr><td><strong>' + escaparHTML(k) + '</strong></td><td>' + mapa[k].qtd + '</td><td>' + _fmtBRL(mapa[k].valor) + '</td><td>' + pct.toFixed(1) + '%</td></tr>';
+    });
+    h += '</tbody><tfoot><tr class="lanc-totals-row"><td><strong>Total</strong></td><td><strong>' + custos.length + '</strong></td><td><strong>' + _fmtBRL(total) + '</strong></td><td><strong>100%</strong></td></tr></tfoot></table></div>';
+    container.innerHTML = h;
+  }
   /* copia o total para a Visao Geral e mostra/esconde os avisos de vazio */
   function sincronizar() {
     var total = document.getElementById("containerCustoTotal");
@@ -38333,6 +38386,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var nova = function () {
       var r = original.apply(this, arguments);
       try { sincronizar(); } catch (e) { /* ignora */ }
+      try { renderPorEmpresa(typeof getCustosFiltered === "function" ? getCustosFiltered() : []); } catch (e2) { /* ignora */ }
       return r;
     };
     nova.__p77 = true;

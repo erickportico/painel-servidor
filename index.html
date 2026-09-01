@@ -2884,6 +2884,31 @@ div:empty,
   }
 }
     </style>
+    <style id="ctm-print-clean-v2">
+      @media print {
+        @page { size: A4 portrait; margin: 10mm; }
+        body.print-cad-mode #ctmPrintHeader,
+        body.print-cad-mode #ctmPrintTitle,
+        body.print-cad-mode #ctmPrintSubtitle,
+        body.print-cad-mode #batchCadModalCTM,
+        body.print-cad-mode .modal,
+        body.print-cad-mode [role="dialog"] { display: none !important; }
+        body.print-cad-mode #cadBatchPrintContainer { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print { display: block !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; margin: 0 auto !important; padding: 0 0 8mm !important; page-break-after: always !important; break-after: page !important; break-inside: avoid !important; overflow: visible !important; }
+        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print:last-child { page-break-after: auto !important; break-after: auto !important; }
+        body.print-cad-mode #cadBatchPrintContainer canvas { display: block !important; width: 170mm !important; max-width: 100% !important; height: auto !important; max-height: 225mm !important; margin: 0 auto !important; object-fit: contain !important; }
+        body.print-cad-mode #cadBatchPrintContainer .cad-sheet-print > div { text-align: center !important; color: #000 !important; font-size: 9pt !important; }
+        body.print-resumo-mode #ctmPrintHeader,
+        body.print-resumo-mode #ctmPrintTitle,
+        body.print-resumo-mode #ctmPrintSubtitle,
+        body.print-resumo-mode #batchCadModalCTM,
+        body.print-resumo-mode .modal,
+        body.print-resumo-mode [role="dialog"] { display: none !important; }
+        body.print-resumo-mode #resumoLoteContainer { display: block !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
+        body.print-resumo-mode #resumoLoteContainer table { width: 100% !important; table-layout: fixed !important; font-size: 8pt !important; page-break-inside: avoid !important; }
+        body.print-resumo-mode #resumoLotePrintHeader { display: block !important; margin: 0 0 5mm !important; }
+      }
+    </style>
     <style id="print-pgto-resumo-css">
         .print-pgto-resumo-mode body > *:not(#panelPgtoResumo) { display:none !important; }
         .print-pgto-resumo-mode #panelPgtoResumo { position:static !important; width:100% !important; margin:0 !important; padding:10px !important; box-shadow:none !important; }
@@ -13230,6 +13255,14 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                             <option value="dentro">Dentro(-4)</option>
                         </select>
                     </div>
+                    <div id="ctmDfxConfig" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0;padding:10px;background:#111827;border:1px solid #374151;border-radius:8px;font-size:11px;color:#cbd5e1;">
+                        <div><b>Formato</b><br>DXF / CAD</div>
+                        <div><b>Unidade</b><br>milímetros (mm)</div>
+                        <div><b>Escala</b><br>1:1 no arquivo</div>
+                        <div><b>Perfil</b><br>Conforme CTM</div>
+                        <div><b>Pranchas</b><br><span id="ctmDfxQtd">0 selecionadas</span></div>
+                        <div><b>Saída</b><br>Entidades editáveis</div>
+                    </div>
                     <div id="batchCadListContainer" style="margin-bottom:10px;"></div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;">
                         <button class="btn-orange" onclick="toggleSelectAllCadBatchCTM()">☑️ Inverter</button>
@@ -13852,94 +13885,48 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     };
                     // ---- DXF ENTITIES-ONLY (with offset + TEXT metadata) ----
                     function generateDXFEntitiesCTM(ref, type, L, H, profW, hasBottom, scope, offsetX, offsetY){
-                        offsetX = offsetX || 0;
-                        offsetY = offsetY || 0;
                         var lines = [];
-                        // Outer frame
-                        lines.push('0'); lines.push('LINE');
-                        lines.push('8'); lines.push('CTM_OUTER');
-                        lines.push('10'); lines.push(offsetX.toString()); lines.push('20'); lines.push(offsetY.toString());
-                        lines.push('11'); lines.push((offsetX + L).toString()); lines.push('21'); lines.push(offsetY.toString());
-                        lines.push('0'); lines.push('LINE');
-                        lines.push('8'); lines.push('CTM_OUTER');
-                        lines.push('10'); lines.push((offsetX + L).toString()); lines.push('20'); lines.push(offsetY.toString());
-                        lines.push('11'); lines.push((offsetX + L).toString()); lines.push('21'); lines.push((offsetY + H).toString());
-                        lines.push('0'); lines.push('LINE');
-                        lines.push('8'); lines.push('CTM_OUTER');
-                        lines.push('10'); lines.push((offsetX + L).toString()); lines.push('20'); lines.push((offsetY + H).toString());
-                        lines.push('11'); lines.push(offsetX.toString()); lines.push('21'); lines.push((offsetY + H).toString());
-                        lines.push('0'); lines.push('LINE');
-                        lines.push('8'); lines.push('CTM_OUTER');
-                        lines.push('10'); lines.push(offsetX.toString()); lines.push('20'); lines.push((offsetY + H).toString());
-                        lines.push('11'); lines.push(offsetX.toString()); lines.push('21'); lines.push(offsetY.toString());
-                        // Inner frame
-                        var pw = profW;
-                        var iL = L - 2 * pw, iH = hasBottom ? H - 2 * pw : H - pw;
-                        if(iL > 0 && iH > 0){
-                            lines.push('0'); lines.push('LINE');
-                            lines.push('8'); lines.push('CTM_INNER');
-                            lines.push('10'); lines.push((offsetX + pw).toString()); lines.push('20'); lines.push((offsetY + pw).toString());
-                            lines.push('11'); lines.push((offsetX + pw + iL).toString()); lines.push('21'); lines.push((offsetY + pw).toString());
-                            lines.push('0'); lines.push('LINE');
-                            lines.push('8'); lines.push('CTM_INNER');
-                            lines.push('10'); lines.push((offsetX + pw + iL).toString()); lines.push('20'); lines.push((offsetY + pw).toString());
-                            lines.push('11'); lines.push((offsetX + pw + iL).toString()); lines.push('21'); lines.push((offsetY + pw + iH).toString());
-                            lines.push('0'); lines.push('LINE');
-                            lines.push('8'); lines.push('CTM_INNER');
-                            lines.push('10'); lines.push((offsetX + pw + iL).toString()); lines.push('20'); lines.push((offsetY + pw + iH).toString());
-                            lines.push('11'); lines.push((offsetX + pw).toString()); lines.push('21'); lines.push((offsetY + pw + iH).toString());
-                            lines.push('0'); lines.push('LINE');
-                            lines.push('8'); lines.push('CTM_INNER');
-                            lines.push('10'); lines.push((offsetX + pw).toString()); lines.push('20'); lines.push((offsetY + pw + iH).toString());
-                            lines.push('11'); lines.push((offsetX + pw).toString()); lines.push('21'); lines.push((offsetY + pw).toString());
+                        var releasedQty = Number(arguments[10] || 0);
+                        var GREEN = 3, RED = 1, BLACK = 7;
+                        function line(layer, x1, y1, x2, y2, color){
+                            lines.push('0','LINE','8',layer,'62',String(color),'10',String(x1),'20',String(y1),'11',String(x2),'21',String(y2));
                         }
-                        // --- TEXT entities (CTM metadata) ---
-                        var txtH = H * 0.04;
-                        var txtLayer = "CTM_LABELS";
-                        var lblX = offsetX - H * 0.35;
-                        var rowGap = txtH * 2.2;
-                        var topY = offsetY + H;
-                        // REF
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push(lblX.toString()); lines.push('20'); lines.push(topY.toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('REF: ' + ref);
-                        // TIPO
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push(lblX.toString()); lines.push('20'); lines.push((topY - rowGap).toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('TIPO: ' + type);
-                        // ESTRUTURA
-                        var estrutura = hasBottom ? "4 LADOS" : "3 LADOS";
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push(lblX.toString()); lines.push('20'); lines.push((topY - 2 * rowGap).toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('ESTRUTURA: ' + estrutura);
-                        // MODELO CTM
-                        var modelo = profW === 20 ? "ESTREITO (20mm)" : "LARGO (33mm)";
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push(lblX.toString()); lines.push('20'); lines.push((topY - 3 * rowGap).toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('MODELO CTM: ' + modelo);
-                        // H label
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push((offsetX - H * 0.15).toString()); lines.push('20'); lines.push((offsetY + H / 2).toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('H=' + H);
-                        // L label
-                        lines.push('0'); lines.push('TEXT');
-                        lines.push('8'); lines.push(txtLayer);
-                        lines.push('10'); lines.push((offsetX + L / 2).toString()); lines.push('20'); lines.push((offsetY - txtH * 1.5).toString());
-                        lines.push('40'); lines.push(txtH.toString());
-                        lines.push('1'); lines.push('L=' + L);
+                        function text(layer, value, x, y, height, color, center){
+                            lines.push('0','TEXT','8',layer,'62',String(color),'10',String(x),'20',String(y),'40',String(height),'1',String(value));
+                            if(center){ lines.push('72','1','11',String(x),'21',String(y),'73','0'); }
+                        }
+                        function hdim(x1, x2, y, label){
+                            var a = Math.max(H * 0.08, 80);
+                            line('CTM_DIM', x1, offsetY, x1, y, RED); line('CTM_DIM', x2, offsetY, x2, y, RED); line('CTM_DIM', x1, y, x2, y, RED);
+                            line('CTM_DIM', x1, y, x1+a, y+a*.35, RED); line('CTM_DIM', x1, y, x1+a, y-a*.35, RED);
+                            line('CTM_DIM', x2, y, x2-a, y+a*.35, RED); line('CTM_DIM', x2, y, x2-a, y-a*.35, RED);
+                            text('CTM_DIM', label, (x1+x2)/2, y+Math.max(H*.045,55), Math.max(H*.035,45), RED, true);
+                        }
+                        function vdim(y1, y2, x, label){
+                            var a = Math.max(L * 0.08, 80);
+                            line('CTM_DIM', offsetX, y1, x, y1, RED); line('CTM_DIM', offsetX, y2, x, y2, RED); line('CTM_DIM', x, y1, x, y2, RED);
+                            line('CTM_DIM', x, y1, x+a*.35, y1+a, RED); line('CTM_DIM', x, y1, x-a*.35, y1+a, RED);
+                            line('CTM_DIM', x, y2, x+a*.35, y2-a, RED); line('CTM_DIM', x, y2, x-a*.35, y2-a, RED);
+                            text('CTM_DIM', label, x-Math.max(L*.04,45), (y1+y2)/2, Math.max(H*.035,45), RED, true);
+                            lines.push('50','90');
+                        }
+                        var pw = Number(profW) || 33;
+                        var innerL = L - 2*pw, innerH = hasBottom ? H - 2*pw : H-pw;
+                        line('CTM_GREEN', offsetX, offsetY, offsetX+L, offsetY, GREEN); line('CTM_GREEN', offsetX+L, offsetY, offsetX+L, offsetY+H, GREEN);
+                        line('CTM_GREEN', offsetX+L, offsetY+H, offsetX, offsetY+H, GREEN); line('CTM_GREEN', offsetX, offsetY+H, offsetX, offsetY, GREEN);
+                        if(innerL > 0 && innerH > 0){
+                            line('CTM_GREEN', offsetX+pw, offsetY+pw, offsetX+pw+innerL, offsetY+pw, GREEN); line('CTM_GREEN', offsetX+pw+innerL, offsetY+pw, offsetX+pw+innerL, offsetY+pw+innerH, GREEN);
+                            line('CTM_GREEN', offsetX+pw+innerL, offsetY+pw+innerH, offsetX+pw, offsetY+pw+innerH, GREEN); line('CTM_GREEN', offsetX+pw, offsetY+pw+innerH, offsetX+pw, offsetY+pw, GREEN);
+                        }
+                        var gap = Math.max(H*.18, 220), cx = offsetX+L/2, th = Math.max(H*.045,55);
+                        hdim(offsetX, offsetX+L, offsetY-gap, 'L = '+L+' mm');
+                        vdim(offsetY, offsetY+H, offsetX-gap, 'H = '+H+' mm');
+                        text('CTM_LABELS', String(ref)+' - '+String(type), cx, offsetY+H+gap*.55, th, GREEN, true);
+                        text('CTM_LABELS', 'LIBERADO: '+releasedQty+' un', cx, offsetY+H+gap*.55+th*1.35, th*.85, GREEN, true);
+                        text('CTM_LABELS', hasBottom ? '4 LADOS' : '3 LADOS', cx, offsetY-gap*1.25, th*.72, GREEN, true);
+                        text('CTM_LABELS', 'CTM '+(pw===20 ? 'ESTREITO (20mm)' : 'LARGO (33mm)'), cx, offsetY-gap*1.55, th*.65, GREEN, true);
                         return lines;
                     }
-                
                     // ---- DXF FULL FILE (single item) ----
                     function generateDXFContentCTM(ref, type, L, H, profW, hasBottom, scope){
                         var headerLines = [];
@@ -13948,7 +13935,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         headerLines.push('0'); headerLines.push('ENDSEC');
                         headerLines.push('0'); headerLines.push('SECTION');
                         headerLines.push('2'); headerLines.push('ENTITIES');
-                        var entityLines = generateDXFEntitiesCTM(ref, type, L, H, profW, hasBottom, scope, 0, 0);
+                        var entityLines = generateDXFEntitiesCTM(ref, type, L, H, profW, hasBottom, scope, 0, 0, getReleasedQtyForRefCTM(ref));
                         var footerLines = [];
                         footerLines.push('0'); footerLines.push('ENDSEC');
                         footerLines.push('0'); footerLines.push('EOF');
@@ -13972,8 +13959,8 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         var cursorX = 0;
                         var cursorY = 0;
                         var maxRowH = 0;
-                        var gapX = 800;
-                        var gapY = 800;
+                        var gapX = 1200;
+                        var gapY = 1200;
                         var colLimit = 6000;
                         var col = 0;
                         chks.forEach(function(chk, idx){
@@ -13991,7 +13978,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                                 col = 0;
                             }
                             allLines.push('0'); allLines.push('COMMENT'); allLines.push('1'); allLines.push('--- CTM: ' + ref + ' ---');
-                            var entityLines = generateDXFEntitiesCTM(ref, spec.type, pL, pH, profW, spec.hasBottom, 'full', cursorX, cursorY);
+                            var entityLines = generateDXFEntitiesCTM(ref, spec.type, pL, pH, profW, spec.hasBottom, 'full', cursorX, cursorY, getReleasedQtyForRefCTM(ref));
                             for(var e = 0; e < entityLines.length; e++) allLines.push(entityLines[e]);
                             cursorX += (pL + gapX);
                             if(pH > maxRowH) maxRowH = pH;
@@ -14068,10 +14055,26 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         var container = document.getElementById('resumoLoteContainer');
                         container.innerHTML = html;
                         document.getElementById('resumoLoteSubtitle').textContent = obraName + ' | Itens: ' + selectedRefs.length + ' | Medida: ' + mType;
+                        var modalResumo = document.getElementById('batchCadModalCTM');
+                        var displayResumoAnterior = modalResumo ? modalResumo.style.display : '';
+                        if (modalResumo) { modalResumo.style.display = 'none'; }
                         document.body.classList.add('print-resumo-mode');
-                        imprimirPagina();
-                        document.body.classList.remove('print-resumo-mode');
-                        container.innerHTML = '';
+                        var restaurarResumoCTM = function () {
+                            document.body.classList.remove('print-resumo-mode');
+                            container.innerHTML = '';
+                            if (modalResumo) { modalResumo.style.display = displayResumoAnterior || 'none'; }
+                            window.removeEventListener('afterprint', restaurarResumoCTM);
+                        };
+                        window.addEventListener('afterprint', restaurarResumoCTM, { once: true });
+                        try {
+                            window.print();
+                        } catch (erroResumo) {
+                            restaurarResumoCTM();
+                            alert('Não foi possível abrir a impressão do resumo CTM.');
+                        }
+                        setTimeout(function () {
+                            if (document.body.classList.contains('print-resumo-mode')) { restaurarResumoCTM(); }
+                        }, 120000);
                     };
                 
                     // ---- EXCEL EXPORT ----
@@ -14232,6 +14235,8 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                         });
                         html += '</div>';
                         container.innerHTML = html;
+                        var indicador = document.getElementById('ctmDfxQtd');
+                        if (indicador) { indicador.textContent = specs.length + ' disponíveis · selecione para exportar'; }
                     }
                     window.toggleSelectAllCadBatchCTM = function(){
                         var chks = document.querySelectorAll('.cad-batch-chk');
@@ -14265,10 +14270,27 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                             container.appendChild(div);
                             renderPrintCanvasCTM(canvas, spec, pL, pH, mType);
                         });
+                        var modalLote = document.getElementById('batchCadModalCTM');
+                        var modalAnterior = modalLote ? modalLote.style.display : '';
+                        if (modalLote) { modalLote.style.display = 'none'; }
                         document.body.classList.add('print-cad-mode');
-                        imprimirPagina();
-                        document.body.classList.remove('print-cad-mode');
-                        container.innerHTML = '';
+                        var restaurarImpressaoCTM = function () {
+                            document.body.classList.remove('print-cad-mode');
+                            container.innerHTML = '';
+                            if (modalLote) { modalLote.style.display = modalAnterior || 'none'; }
+                            window.removeEventListener('afterprint', restaurarImpressaoCTM);
+                        };
+                        window.addEventListener('afterprint', restaurarImpressaoCTM, { once: true });
+                        try {
+                            window.print();
+                        } catch (erroImpressao) {
+                            restaurarImpressaoCTM();
+                            alert('Não foi possível abrir a impressão das pranchas CTM.');
+                        }
+                        /* Alguns navegadores não disparam afterprint em todos os casos. */
+                        setTimeout(function () {
+                            if (document.body.classList.contains('print-cad-mode')) { restaurarImpressaoCTM(); }
+                        }, 120000);
                     };
                     function renderPrintCanvasCTM(canvas, spec, L, H, mType){
                         var ctx = canvas.getContext('2d');

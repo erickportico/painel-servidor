@@ -54858,22 +54858,49 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 </script>
 <!-- PATCH104_FIM -->
 
-<!-- PATCH105_INI -->
+
+
+<!-- PATCH106_INI -->
+<style id="p106Css">
+/* aviso da nuvem: canto de baixo a DIREITA, com prioridade maxima */
+#p104Status{
+  position:fixed !important;
+  left:auto !important;
+  top:auto !important;
+  right:14px !important;
+  bottom:14px !important;
+  z-index:2147483000 !important;
+  font:11px Arial !important;
+  padding:4px 9px !important;
+  border-radius:14px !important;
+  opacity:.80 !important;
+  max-width:230px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  box-shadow:0 1px 5px rgba(0,0,0,.20) !important;
+  cursor:grab !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+#p104Status:hover{ opacity:1 !important; }
+/* quando o usuario arrasta, mando pelo atributo style com prioridade */
+#p104Status[data-p106-livre="1"]{
+  right:auto !important;
+  bottom:auto !important;
+}
+</style>
 <script>
 /* ------------------------------------------------------------------ *
- * PATCH 105 - posicao do aviso "Nuvem: ..."
- * Canto de baixo a DIREITA, discreto e arrastavel.
- * Clique = sincroniza agora | Shift+clique = volta ao canto padrao
+ * PATCH 106 - aviso "Nuvem: ..." fora do caminho do botao de anexo
  * ------------------------------------------------------------------ */
 (function () {
   'use strict';
 
-  var CHAVE = 'p104StatusPos';
   var ID = 'p104Status';
-  var LARG = 150;   /* largura aproximada, usada para nao sair da tela */
-  var ALT = 30;
+  var CHAVE = 'p104StatusPos';
 
-  function guardado() {
+  function lido() {
     try {
       var t = window.localStorage.getItem(CHAVE);
       if (!t) { return null; }
@@ -54883,155 +54910,124 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return null;
   }
 
-  function guardar(x, y) {
+  function grava(x, y) {
     try { window.localStorage.setItem(CHAVE, JSON.stringify({ x: x, y: y })); } catch (e) {}
   }
 
-  function limpar() {
+  function apaga() {
     try { window.localStorage.removeItem(CHAVE); } catch (e) {}
   }
 
-  function dentroDaTela(x, y) {
-    var maxX = Math.max(0, (window.innerWidth || 1000) - LARG);
-    var maxY = Math.max(0, (window.innerHeight || 700) - ALT);
-    return { x: Math.min(Math.max(0, x), maxX), y: Math.min(Math.max(0, y), maxY) };
+  function limites(x, y, larg, alt) {
+    var maxX = Math.max(0, (window.innerWidth || 1000) - larg - 4);
+    var maxY = Math.max(0, (window.innerHeight || 700) - alt - 4);
+    return { x: Math.min(Math.max(4, x), maxX), y: Math.min(Math.max(4, y), maxY) };
   }
 
-  function aplicarPadrao(d) {
-    d.style.left = 'auto';
-    d.style.top = 'auto';
-    d.style.right = '14px';
-    d.style.bottom = '14px';
+  function padrao(d) {
+    d.removeAttribute('data-p106-livre');
+    d.style.setProperty('left', 'auto', 'important');
+    d.style.setProperty('top', 'auto', 'important');
+    d.style.setProperty('right', '14px', 'important');
+    d.style.setProperty('bottom', '14px', 'important');
   }
 
-  function aplicarPosicao(d) {
-    var p = guardado();
-    if (!p) { aplicarPadrao(d); return; }
-    p = dentroDaTela(p.x, p.y);
-    d.style.right = 'auto';
-    d.style.bottom = 'auto';
-    d.style.left = p.x + 'px';
-    d.style.top = p.y + 'px';
+  function livre(d, x, y) {
+    d.setAttribute('data-p106-livre', '1');
+    d.style.setProperty('right', 'auto', 'important');
+    d.style.setProperty('bottom', 'auto', 'important');
+    d.style.setProperty('left', x + 'px', 'important');
+    d.style.setProperty('top', y + 'px', 'important');
   }
 
-  function enfeitar(d) {
-    if (d.getAttribute('data-p105') === '1') { aplicarPosicao(d); return; }
-    d.setAttribute('data-p105', '1');
+  function colocar(d) {
+    var p = lido();
+    if (!p) { padrao(d); return; }
+    var r = d.getBoundingClientRect();
+    var q = limites(p.x, p.y, r.width || 150, r.height || 28);
+    livre(d, q.x, q.y);
+  }
 
-    d.style.position = 'fixed';
-    d.style.zIndex = '2147483000';
-    d.style.font = '11px Arial';
-    d.style.padding = '4px 9px';
-    d.style.borderRadius = '14px';
-    d.style.opacity = '0.80';
-    d.style.cursor = 'grab';
-    d.style.userSelect = 'none';
-    d.style.webkitUserSelect = 'none';
-    d.style.boxShadow = '0 1px 5px rgba(0,0,0,.20)';
-    d.style.pointerEvents = 'auto';
+  function preparar(d) {
+    if (d.getAttribute('data-p106') === '1') { colocar(d); return; }
+    d.setAttribute('data-p106', '1');
     d.setAttribute('title',
       'Situacao da nuvem.\nClique: sincroniza agora\nArraste: muda de lugar\nShift + clique: volta ao canto');
+    colocar(d);
 
-    aplicarPosicao(d);
+    var pegando = false, moveu = false, dx = 0, dy = 0, larg = 150, alt = 28;
 
-    d.onmouseenter = function () { d.style.opacity = '1'; };
-    d.onmouseleave = function () { d.style.opacity = '0.80'; };
+    function pt(ev) { return (ev.touches && ev.touches.length) ? ev.touches[0] : ev; }
 
-    /* ---------------- arrastar ---------------- */
-    var arrastando = false, moveu = false, dx = 0, dy = 0;
-
-    function ponto(ev) {
-      if (ev.touches && ev.touches.length) { return ev.touches[0]; }
-      return ev;
+    function inicio(ev) {
+      var p = pt(ev), r = d.getBoundingClientRect();
+      pegando = true; moveu = false;
+      dx = p.clientX - r.left; dy = p.clientY - r.top;
+      larg = r.width || larg; alt = r.height || alt;
+      d.style.setProperty('cursor', 'grabbing', 'important');
     }
 
-    function comecar(ev) {
-      var p = ponto(ev);
-      var r = d.getBoundingClientRect();
-      arrastando = true;
-      moveu = false;
-      dx = p.clientX - r.left;
-      dy = p.clientY - r.top;
-      LARG = r.width || LARG;
-      ALT = r.height || ALT;
-      d.style.cursor = 'grabbing';
-    }
-
-    function mover(ev) {
-      if (!arrastando) { return; }
-      var p = ponto(ev);
-      var pos = dentroDaTela(p.clientX - dx, p.clientY - dy);
-      if (Math.abs(p.clientX - dx - pos.x) < 999) { moveu = true; }
-      d.style.right = 'auto';
-      d.style.bottom = 'auto';
-      d.style.left = pos.x + 'px';
-      d.style.top = pos.y + 'px';
+    function movendo(ev) {
+      if (!pegando) { return; }
+      var p = pt(ev);
+      var q = limites(p.clientX - dx, p.clientY - dy, larg, alt);
+      moveu = true;
+      livre(d, q.x, q.y);
       if (ev.preventDefault && ev.cancelable) { ev.preventDefault(); }
     }
 
-    function largar() {
-      if (!arrastando) { return; }
-      arrastando = false;
-      d.style.cursor = 'grab';
+    function fim() {
+      if (!pegando) { return; }
+      pegando = false;
+      d.style.setProperty('cursor', 'grab', 'important');
       if (moveu) {
         var r = d.getBoundingClientRect();
-        guardar(Math.round(r.left), Math.round(r.top));
+        grava(Math.round(r.left), Math.round(r.top));
       }
     }
 
-    d.addEventListener('mousedown', comecar, false);
-    document.addEventListener('mousemove', mover, false);
-    document.addEventListener('mouseup', largar, false);
-    d.addEventListener('touchstart', comecar, false);
-    document.addEventListener('touchmove', mover, false);
-    document.addEventListener('touchend', largar, false);
+    d.addEventListener('mousedown', inicio, false);
+    document.addEventListener('mousemove', movendo, false);
+    document.addEventListener('mouseup', fim, false);
+    d.addEventListener('touchstart', inicio, false);
+    document.addEventListener('touchmove', movendo, false);
+    document.addEventListener('touchend', fim, false);
 
-    /* ------- clique: mantem o sincronizar do Patch 104 ------- */
-    var acaoOriginal = d.onclick;
+    var antigo = d.onclick;
     d.onclick = function (ev) {
       if (moveu) { moveu = false; return; }
-      if (ev && ev.shiftKey) {
-        limpar();
-        aplicarPadrao(d);
-        return;
-      }
-      if (typeof acaoOriginal === 'function') { return acaoOriginal.call(d, ev); }
+      if (ev && ev.shiftKey) { apaga(); padrao(d); return; }
+      if (typeof antigo === 'function') { return antigo.call(d, ev); }
     };
   }
 
   function olhar() {
     var d = document.getElementById(ID);
-    if (d) { enfeitar(d); }
+    if (d) { preparar(d); }
   }
 
-  /* o aviso e criado pelo Patch 104 depois; fico de olho */
   function ligar() {
     olhar();
     var n = 0;
-    var t = setInterval(function () {
-      olhar();
-      n++;
-      if (n > 120) { clearInterval(t); }
-    }, 500);
+    var t = setInterval(function () { olhar(); if (++n > 240) { clearInterval(t); } }, 400);
     try {
       if (window.MutationObserver && document.body) {
-        new MutationObserver(olhar).observe(document.body, { childList: true });
+        new MutationObserver(olhar).observe(document.body,
+          { childList: true, attributes: true, attributeFilter: ['style'], subtree: false });
       }
     } catch (e) {}
     window.addEventListener('resize', function () {
       var d = document.getElementById(ID);
-      if (d && guardado()) { aplicarPosicao(d); }
+      if (d) { colocar(d); }
     }, false);
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ligar, false);
-  } else {
-    ligar();
-  }
+  } else { ligar(); }
 })();
 </script>
-<!-- PATCH105_FIM -->
+<!-- PATCH106_FIM -->
 
 </body>
 </html>

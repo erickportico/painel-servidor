@@ -27141,7 +27141,6 @@ body.of-dep-aberto {
           '<input type="text" class="or-busca" id="orBusca" placeholder="Buscar aba..." autocomplete="off">' +
         '</div>' +
         '<div class="or-lista" id="orLista"></div>' +
-        '<div class="or-pe"><kbd>Esc</kbd> fecha ' + SETA + ' <kbd>Enter</kbd> abre a primeira</div>' +
       '</div>';
     document.body.appendChild(g);
 
@@ -27904,7 +27903,6 @@ body.or-aberto { overflow: hidden !important; }
           '<input type="text" class="or-busca" id="orBusca" placeholder="Buscar aba..." autocomplete="off">' +
         '</div>' +
         '<div class="or-lista" id="orLista"></div>' +
-        '<div class="or-pe"><kbd>Esc</kbd> fecha ' + SETA + ' <kbd>Enter</kbd> abre a primeira</div>' +
       '</div>';
     D.body.appendChild(g);
 
@@ -40041,6 +40039,17 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function colocarBotao() {
+    /* patch109: o item "Unificar Duplicados" saiu do menu */
+    try {
+      var p109ant = document.getElementById('ps81Botao');
+      if (p109ant && p109ant.parentNode) {
+        p109ant.parentNode.removeChild(p109ant);
+      }
+    } catch (p109e2) {}
+    return;
+  }
+
+  function p109ColocarBotaoAntigo() {
     var cx = caixaMenu();
     if (!cx) { return; }
     var b = document.getElementById('ps81Botao');
@@ -54434,6 +54443,17 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function badge(txt, cor) {
+    /* patch109: a tarja da nuvem nao aparece mais na tela */
+    try {
+      var p109velho = document.getElementById('p104Status');
+      if (p109velho && p109velho.parentNode) {
+        p109velho.parentNode.removeChild(p109velho);
+      }
+    } catch (p109e) {}
+    return;
+  }
+
+  function p109BadgeAntigo(txt, cor) {
     var d = document.getElementById('p104Status');
     if (!d) {
       d = document.createElement('div');
@@ -55054,5 +55074,13 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 <!-- PATCH107_FIM -->
+<!-- INI PATCH109 LIMPEZA VISUAL -->
+<style>
+/* patch109: esconde as tarjas retiradas, caso algo tente recria-las */
+.or-pe { display: none !important; }
+#p104Status { display: none !important; }
+#ps81Botao { display: none !important; }
+</style>
+<!-- FIM PATCH109 LIMPEZA VISUAL -->
 </body>
 </html>

@@ -55856,5 +55856,321 @@ html body.p111-com-faixa { padding-top: 22px !important; }
 })();
 </script>
 <!-- FIM PATCH112 -->
+<!-- INI PATCH113 -->
+<style id="p113Css">
+@media print {
+
+  /* ---------------------------------------------------------------- *
+   * 1) papel branco: nada de fundo escuro no Plano Mestre
+   * ---------------------------------------------------------------- */
+  html, html body, html body.dark-mode {
+    background: #fff !important;
+    background-color: #fff !important;
+  }
+
+  html body #tab-obraflow,
+  html body #tab-obraflow *,
+  html body.dark-mode #tab-obraflow,
+  html body.dark-mode #tab-obraflow * {
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html body #tab-obraflow,
+  html body #tab-obraflow .of-wrap,
+  html body #tab-obraflow .of-esq,
+  html body #tab-obraflow .of-dir,
+  html body #tab-obraflow .of-gantt,
+  html body #tab-obraflow .of-g-corpo {
+    background: #fff !important;
+    background-color: #fff !important;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 2) titulo e cartoes de indicadores
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-titulo {
+    color: #000 !important;
+    font-size: 15pt !important;
+    padding: 0 !important;
+    margin: 0 0 6px 0 !important;
+  }
+
+  html body #tab-obraflow .of-metricas {
+    gap: 4px !important;
+    margin-bottom: 8px !important;
+  }
+
+  html body #tab-obraflow .of-mcard {
+    background: #fff !important;
+    background-color: #fff !important;
+    border: 1px solid #9aa3ad !important;
+    border-radius: 4px !important;
+    padding: 4px 7px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-mcard span {
+    color: #333 !important;
+    font-size: 7.5pt !important;
+  }
+  html body #tab-obraflow .of-mcard strong {
+    color: #000 !important;
+    font-size: 10pt !important;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 3) cabecalhos da tabela e do calendario: cinza claro
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-cab-esq,
+  html body #tab-obraflow .of-g-cab,
+  html body #tab-obraflow .of-g-meses,
+  html body #tab-obraflow .of-g-dias {
+    background: #e4e7eb !important;
+    background-color: #e4e7eb !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-cab-esq > div,
+  html body #tab-obraflow .of-g-mes,
+  html body #tab-obraflow .of-g-dia {
+    color: #000 !important;
+    border-color: #9aa3ad !important;
+  }
+  html body #tab-obraflow .of-g-dia.of-fds {
+    color: #333 !important;
+    background: #d7dbe0 !important;
+    background-color: #d7dbe0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 4) linhas: brancas, com linhas divisorias visiveis
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-cab > div,
+  html body #tab-obraflow .of-linha > div {
+    border-bottom: 1px solid #b8bfc7 !important;
+    color: #000 !important;
+  }
+  html body #tab-obraflow .of-linha,
+  html body #tab-obraflow .of-g-linha {
+    background: #fff !important;
+    background-color: #fff !important;
+    border-bottom: 1px solid #b8bfc7 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  html body #tab-obraflow .of-linha-resumo,
+  html body #tab-obraflow .of-linha.of-linha-resumo {
+    background: #eceff2 !important;
+    background-color: #eceff2 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-c-wbs,
+  html body #tab-obraflow .of-c-data,
+  html body #tab-obraflow .of-c-dur,
+  html body #tab-obraflow .of-c-pred,
+  html body #tab-obraflow .of-nome-txt { color: #000 !important; }
+
+  html body #tab-obraflow .of-c-pct { color: #10562f !important; font-weight: 700 !important; }
+
+  html body #tab-obraflow .of-resp {
+    background: #eef4fa !important;
+    background-color: #eef4fa !important;
+    color: #0b3d63 !important;
+    border: 1px solid #7ea6c6 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html body #tab-obraflow .of-esq { border-right: 2px solid #6b7280 !important; }
+  html body #tab-obraflow .of-wrap { border: 1px solid #6b7280 !important; }
+
+  /* caminho critico: barra vermelha na lateral, sem fundo escuro */
+  html body #tab-obraflow .of-linha.of-critico {
+    box-shadow: inset 3px 0 0 0 #b91c1c !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-linha.of-critico .of-c-nome .of-nome-txt {
+    color: #8a1010 !important;
+    font-weight: 700 !important;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 5) barras do calendario: mantem a cor, so o fundo fica branco
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-bar,
+  html body #tab-obraflow .of-bar-resumo,
+  html body #tab-obraflow .of-marco,
+  html body #tab-obraflow .of-bar > i,
+  html body #tab-obraflow .of-bar-resumo > i,
+  html body #tab-obraflow .of-base-bar {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-bar {
+    background-color: #2f6fd0 !important;
+    border: 1px solid #1b4b93 !important;
+  }
+  html body #tab-obraflow .of-bar > i {
+    background-color: rgba(0, 0, 0, .38) !important;
+  }
+  html body #tab-obraflow .of-bar-resumo {
+    background-color: #55606d !important;
+    border-left: 3px solid #1f2937 !important;
+    border-right: 3px solid #1f2937 !important;
+  }
+  html body #tab-obraflow .of-bar-resumo > i { background-color: #1c8a4b !important; }
+  html body #tab-obraflow .of-marco {
+    background-color: #e0a020 !important;
+    border: 1px solid #6b3d05 !important;
+  }
+  html body #tab-obraflow .of-base-bar {
+    background-color: #9aa3ad !important;
+    opacity: 1 !important;
+  }
+  html body #tab-obraflow .of-base-fase {
+    background-color: #7b848e !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-base-corte { border-left: 2px dotted #444 !important; }
+  html body #tab-obraflow .of-hoje {
+    background-color: #d61f1f !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-col-fds {
+    background-color: #f0f2f4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-rot { color: #333 !important; }
+
+  /* setas de ligacao entre tarefas */
+  html body #tab-obraflow .of-setas path { stroke: #444 !important; opacity: 1 !important; }
+  html body #tab-obraflow .of-setas polygon { fill: #444 !important; opacity: 1 !important; }
+  html body #tab-obraflow .of-setas .of-erro path { stroke: #b91c1c !important; }
+  html body #tab-obraflow .of-setas .of-erro polygon { fill: #b91c1c !important; }
+
+  /* ---------------------------------------------------------------- *
+   * 6) legenda e custos
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-legenda { color: #000 !important; font-size: 8pt !important; }
+  html body #tab-obraflow .of-lg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-lg-fase { background-color: #55606d !important; border-left: 3px solid #1f2937 !important; }
+  html body #tab-obraflow .of-lg-tar { background-color: #2f6fd0 !important; }
+  html body #tab-obraflow .of-lg-marco { background-color: #e0a020 !important; }
+  html body #tab-obraflow .of-lg-prog { background-color: #555 !important; border: 1px solid #2f6fd0 !important; }
+  html body #tab-obraflow .of-lg-hoje { background-color: #d61f1f !important; }
+
+  html body #tab-obraflow .of-c-custo { color: #000 !important; }
+  html body #tab-obraflow .of-cus-pas { color: #8a1010 !important; font-weight: 700 !important; }
+  html body #tab-obraflow .of-cus-sob { color: #10562f !important; font-weight: 700 !important; }
+
+  /* ---------------------------------------------------------------- *
+   * 7) fora do papel: botoes, avisos e caixas flutuantes
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-acoes,
+  html body #tab-obraflow .of-barra,
+  html body #tab-obraflow .of-c-acoes,
+  html body #tab-obraflow .of-dica,
+  html body #tab-obraflow .of-modal,
+  html body #tab-obraflow .of-dep-barra,
+  html body #tab-obraflow .of-base-barra,
+  html body #tab-obraflow .of-cus-barra,
+  html body #tab-obraflow .of-exp-box,
+  html body #p104Status,
+  html body #ps80Aviso,
+  html body #ps81Botao,
+  html body #p112Aviso,
+  html body #p112Caixa,
+  html body .p111-faixa-topo,
+  html body #modernizacaoStatusPainel {
+    display: none !important;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 8) detalhes: desvio, folga, legenda extra e caminho critico
+   * ---------------------------------------------------------------- */
+  html body #tab-obraflow .of-cab-esq .of-c-desv,
+  html body #tab-obraflow .of-cab-esq .of-c-folga { color: #000 !important; }
+  html body #tab-obraflow .of-c-desv.of-desv-mais,
+  html body #tab-obraflow .of-base-mc strong.of-desv-mais,
+  html body #tab-obraflow .of-base-mc strong.of-crit-num {
+    color: #8a1010 !important; font-weight: 700 !important;
+  }
+  html body #tab-obraflow .of-c-desv.of-desv-menos,
+  html body #tab-obraflow .of-base-mc strong.of-desv-menos {
+    color: #10562f !important; font-weight: 700 !important;
+  }
+  html body #tab-obraflow .of-c-desv.of-desv-zero,
+  html body #tab-obraflow .of-c-desv.of-desv-nada,
+  html body #tab-obraflow .of-c-folga { color: #333 !important; }
+
+  html body #tab-obraflow .of-lg-base {
+    background-color: #9aa3ad !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body #tab-obraflow .of-lg-crit {
+    background-color: transparent !important;
+    border: 2px solid #b91c1c !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html body #tab-obraflow .of-g-linha .of-bar.of-critico,
+  html body #tab-obraflow .of-g-linha .of-bar-resumo.of-critico {
+    outline: 2px solid #b91c1c !important;
+    outline-offset: 1px !important;
+  }
+  html body #tab-obraflow .of-g-linha .of-marco.of-critico {
+    border-color: #b91c1c !important;
+    box-shadow: 0 0 0 2px #b91c1c !important;
+  }
+
+  html body #tab-obraflow .of-base-selo,
+  html body #tab-obraflow .of-cus-selo {
+    color: #000 !important;
+    border: 1px solid #9aa3ad !important;
+  }
+  html body #tab-obraflow .of-cus-lb,
+  html body #tab-obraflow .of-cus-prev,
+  html body #tab-obraflow .of-cus-real { color: #000 !important; }
+  html body #tab-obraflow .of-cus-nada,
+  html body #tab-obraflow .of-cus-zero { color: #444 !important; }
+  html body #tab-obraflow .of-vazio { color: #333 !important; }
+  html body #tab-obraflow .of-seta,
+  html body #tab-obraflow .of-ico { color: #333 !important; }
+
+  /* a lista inteira precisa caber: nada de rolagem cortando conteudo */
+  html body #tab-obraflow .of-wrap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  html body #tab-obraflow .of-dir { overflow: visible !important; }
+
+  /* largura fixa da parte de texto, mesmo imprimindo com Ctrl+P */
+  html body #tab-obraflow .of-esq {
+    flex: 0 0 680px !important;
+    min-width: 680px !important;
+  }
+}
+</style>
+<!-- FIM PATCH113 -->
 </body>
 </html>

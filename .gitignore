@@ -10,3 +10,4 @@ ferramentas_local/
 *.antes_deploy_*
 *.bak_patch*
 deploy_painel.cfg
+*.bak-patch*

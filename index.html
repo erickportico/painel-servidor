@@ -38521,9 +38521,10 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return (h === '' || h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]');
   }
 
-  function perfil() { var s = sessao(); return s ? s.perfil : null; }
+  /* PATCH107: aceita Admin, ADMIN, ' admin ' etc. */
+  function perfil() { var s = sessao(); return s ? String(s.perfil || '').trim().toLowerCase() : null; }
   function ehAdmin() { return perfil() === 'admin'; }
-  function soLeitura() { return perfil() === 'visitante'; }
+  function soLeitura() { var p = perfil(); return p === 'visitante' || p === 'leitor'; }
   function liberado() { return Date.now() < autorizadoAte; }
 
   function podeExcluirAgora() {
@@ -38533,7 +38534,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (c.modo === 'bloqueado' && !noServidor()) { return 'bloqueado'; }
     if (soLeitura()) { return liberado() ? 'ok' : 'senha'; }
     if (liberado()) { return 'ok'; }
-    if (c.modo === 'fora' && noServidor() && s.perfil === 'admin') { return 'ok'; }
+    if (c.modo === 'fora' && noServidor() && ehAdmin()) { return 'ok'; } /* PATCH107 */
     return 'senha';
   }
 
@@ -38741,7 +38742,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var nm = document.createElement('b');
     nm.textContent = s.nome || s.usuario;
     var tg = document.createElement('span');
-    tg.className = 'tag' + (s.perfil === 'admin' ? '' : ' ro');
+    tg.className = 'tag' + (ehAdmin() ? '' : ' ro'); /* PATCH107 */
     tg.textContent = s.perfil;
     b.appendChild(ic);
     b.appendChild(nm);
@@ -38750,7 +38751,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       if (liberado()) { autorizadoAte = 0; toast('Exclusoes bloqueadas novamente.'); barra(); return; }
       modalSenha('Liberar exclusoes por ' + MIN_LIB + ' minutos');
     });
-    if (s.perfil === 'admin') {
+    if (ehAdmin()) { /* PATCH107 */
       botao(b, 'Usuarios', '', function () { modalUsuarios(); });
     }
     botao(b, 'Trocar senha', '', function () { modalTrocarSenha(s.usuario, false); });
@@ -38775,38 +38776,88 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       return;
     }
     var cx = novoModal(titulo || 'Autorizacao do administrador');
-    var iu = campo(cx, 'Usuario administrador', 'text', 'admin');
+    /* PATCH107: ja vem preenchido com quem esta conectado */
+    var s107 = (typeof sessao === 'function') ? sessao() : null;
+    var iu = campo(cx, 'Administrador (usuario ou e-mail da nuvem)', 'text',
+                   (s107 && s107.usuario) ? String(s107.usuario) : 'admin');
     var is = campo(cx, 'Senha', 'password', '');
     var er = document.createElement('div');
     er.className = 'er';
     cx.appendChild(er);
     var d = document.createElement('p');
     d.className = 'dica';
-    d.textContent = 'Depois de liberar, as exclusoes ficam permitidas por ' + MIN_LIB + ' minutos nesta tela.';
+    d.textContent = 'Se voce entrou pelo cadastro na nuvem, use o mesmo e-mail e a mesma senha da entrada. '
+      + 'Depois de liberar, as exclusoes ficam permitidas por ' + MIN_LIB + ' minutos nesta tela.';
     cx.appendChild(d);
     var bt = document.createElement('div');
     bt.className = 'bt';
     cx.appendChild(bt);
     botao(bt, 'Cancelar', '', fecharModal);
 
-    function ok() {
-      var nome = String(iu.value || '').trim().toLowerCase();
-      var senha = String(is.value || '');
-      var lista = usuarios(), achou = null, i;
-      for (i = 0; i < lista.length; i++) {
-        if (String(lista[i].usuario).toLowerCase() === nome && lista[i].perfil === 'admin') { achou = lista[i]; break; }
-      }
-      if (!achou || achou.hash !== hashSenha(nome, senha)) {
-        er.textContent = 'Senha de administrador invalida.';
-        is.value = '';
-        registrar('autorizacao-negada', nome);
-        return;
-      }
+    /* PATCH107: confere na lista deste navegador E tambem no cadastro da nuvem */
+    function liberar107(quemFoi) {
       autorizadoAte = Date.now() + MIN_LIB * 60000;
-      registrar('exclusao-liberada', achou.usuario);
+      registrar('exclusao-liberada', quemFoi);
       fecharModal();
       barra();
       toast('Exclusoes liberadas por ' + MIN_LIB + ' minutos.', 'ok');
+    }
+
+    function ok() {
+      var nome = String(iu.value || '').trim().toLowerCase();
+      var senha = String(is.value || '');
+      var lista = usuarios(), achou = null, i, u107;
+      for (i = 0; i < lista.length; i++) {
+        u107 = String(lista[i].usuario || '').trim().toLowerCase();
+        if (u107 === nome && String(lista[i].perfil || '').trim().toLowerCase() === 'admin') { achou = lista[i]; break; }
+      }
+      if (achou && (achou.hash === hashSenha(nome, senha) ||
+                    achou.hash === hashSenha(String(achou.usuario || ''), senha))) {
+        liberar107(achou.usuario);
+        return;
+      }
+
+      var nuvem107 = window.PainelAuthSupabase;
+      if (nuvem107 && typeof nuvem107.entrarComEmail === 'function' && nome.indexOf('@') >= 1 && senha) {
+        er.textContent = 'Conferindo no cadastro da nuvem...';
+        try {
+          nuvem107.entrarComEmail(nome, senha).then(function (res) {
+            var p107 = (res && res.perfil) ? String(res.perfil.perfil || '').trim().toLowerCase() : '';
+            if (p107 !== 'admin') {
+              er.textContent = 'Este acesso existe, mas nao e de administrador.';
+              is.value = '';
+              registrar('autorizacao-negada', nome);
+              return;
+            }
+            liberar107(res.perfil.usuario || nome);
+          })['catch'](function (erro) {
+            er.textContent = (erro && erro.message) ? erro.message : 'E-mail ou senha invalidos.';
+            is.value = '';
+            registrar('autorizacao-negada', nome);
+          });
+        } catch (e) {
+          er.textContent = 'Nao consegui falar com o cadastro da nuvem agora.';
+        }
+        return;
+      }
+
+      er.textContent = senha
+        ? 'Usuario ou senha de administrador invalidos.'
+        : 'Digite a senha do administrador.';
+      is.value = '';
+      registrar('autorizacao-negada', nome);
+    }
+
+    /* quem ja entrou como administrador libera sem digitar de novo */
+    if (typeof ehAdmin === 'function' && ehAdmin()) {
+      var av107 = document.createElement('p');
+      av107.className = 'dica';
+      av107.textContent = 'Voce esta conectado como administrador. Pode liberar direto no botao abaixo.';
+      cx.insertBefore(av107, bt);
+      botao(bt, 'Sou administrador, liberar', 'pri', function () {
+        var s2 = (typeof sessao === 'function') ? sessao() : null;
+        liberar107((s2 && s2.usuario) ? s2.usuario : 'admin');
+      });
     }
 
     botao(bt, 'Liberar', 'pri', ok);
@@ -44767,7 +44818,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var remoto = Array.isArray(window.__p87ListaSupabase);
     var lista = remoto ? window.__p87ListaSupabase : usuarios();
     var s = sessao();
-    var manda = remoto ? false : podeMexer();
+    /* PATCH107: ser administrador nao depende de a lista vir da nuvem */
+    var souAdmin = podeMexer();
+    var manda = remoto ? false : souAdmin;
     var h = '';
     if (remoto) {
       h += '<p class="sb">Lista centralizada no Supabase. Todos os usuários cadastrados aparecem em qualquer navegador. A senha nunca é exibida.</p>';
@@ -44775,9 +44828,15 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       h += '<p class="sb">A lista local antiga ainda está preservada apenas como backup. O cadastro oficial deve ser feito no Supabase.</p>';
     }
     if (s) {
+      /* PATCH107: frase certa para administrador quando a lista vem da nuvem */
+      var extra107 = '';
+      if (souAdmin && remoto) {
+        extra107 = ' Voc\u00ea \u00e9 administrador. Como esta lista vem da nuvem, trocar tipo de acesso ou senha e feito no cadastro da nuvem.';
+      } else if (!souAdmin) {
+        extra107 = ' Como n\u00e3o \u00e9 administrador, esta tela fica somente para consulta.';
+      }
       h += '<p class="sb">Voc\u00ea est\u00e1 conectado como <b>' + esc(s.nome || s.usuario) +
-           '</b> (' + esc(nomePerfil(s.perfil)) + ').' +
-           (manda ? '' : ' Como n\u00e3o \u00e9 administrador, esta tela fica somente para consulta.') + '</p>';
+           '</b> (' + esc(nomePerfil(s.perfil)) + ').' + extra107 + '</p>';
     }
 
     h += '<div class="p87-novo" id="p87Novo">' +
@@ -44830,7 +44889,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         h += '<button class="p87-btn mini" type="button" data-a="senha" data-i="' + i + '">Trocar senha</button>';
         h += '<button class="p87-btn mini dan" type="button" data-a="excluir" data-i="' + i + '">Excluir</button>';
       } else {
-        h += '<span style="font-size:11px;color:#94a3b8">somente consulta</span>';
+        h += '<span style="font-size:11px;color:#94a3b8">' +
+             (souAdmin ? 'gerenciar na nuvem' : 'somente consulta') + '</span>'; /* PATCH107 */
       }
       h += '</td></tr>';
     });
@@ -55029,5 +55089,47 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 </script>
 <!-- PATCH106_FIM -->
 
+<!-- PATCH107_INI -->
+<script>
+/* Patch 107 - deixa o tipo de acesso guardado sempre em letras minusculas,
+   sem espacos sobrando. Assim o painel reconhece o administrador mesmo que
+   a nuvem tenha devolvido "Admin" ou " ADMIN ". */
+(function () {
+  var CHAVE = 'painel_seg_sessao_v1';
+
+  function arrumar(texto) {
+    if (!texto) { return null; }
+    var s = null;
+    try { s = JSON.parse(texto); } catch (e) { return null; }
+    if (!s || typeof s !== 'object') { return null; }
+    var antes = s.perfil;
+    var limpo = String(antes == null ? '' : antes).trim().toLowerCase();
+    if (limpo === 'administrador' || limpo === 'administrator') { limpo = 'admin'; }
+    if (limpo === 'leitor' || limpo === 'consulta') { limpo = 'visitante'; }
+    if (limpo === String(antes)) { return null; }
+    s.perfil = limpo;
+    return JSON.stringify(s);
+  }
+
+  function limpar(dep) {
+    try {
+      var novo = arrumar(dep.getItem(CHAVE));
+      if (novo) { dep.setItem(CHAVE, novo); }
+    } catch (e) { /* ignora */ }
+  }
+
+  function rodar() {
+    try { limpar(window.sessionStorage); } catch (e) { /* ignora */ }
+    try { limpar(window.localStorage); } catch (e) { /* ignora */ }
+  }
+
+  rodar();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', rodar);
+  }
+  window.setTimeout(rodar, 1200);
+})();
+</script>
+<!-- PATCH107_FIM -->
 </body>
 </html>

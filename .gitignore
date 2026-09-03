@@ -5,3 +5,8 @@ backups/
 "Novo(a) Documento de Texto.txt"
 Novo(a) Documento de Texto.txt
 ferramentas_local/
+
+# copias de seguranca do painel (nao publicar)
+*.antes_deploy_*
+*.bak_patch*
+deploy_painel.cfg

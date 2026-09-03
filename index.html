@@ -1269,7 +1269,6 @@ body, main, .app-container {
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-
         .form-group {
             margin-bottom: 10px;
         }
@@ -1416,7 +1415,6 @@ body, main, .app-container {
             display: block;
         }
 
-
         .sub-tab-btn {
             padding: 10px 20px;
             border: none;
@@ -1450,7 +1448,6 @@ body, main, .app-container {
         .sub-tab-content.active {
             display: block;
         }
-
 
         @media print {
             body,
@@ -1534,7 +1531,6 @@ body, main, .app-container {
                 background: #f0f0f0;
             }
         }
-
 
     
     /* --- Scrollable tab content --- */
@@ -1741,8 +1737,6 @@ body.dark-mode #tab-custo select { background: var(--input-bg,#0f172a); color: v
 body.dark-mode #tab-custo label { color: var(--text-light,#94a3b8); }
 body.dark-mode #tab-custo .custo-dashboard-card { background: var(--card-bg,#1e293b); border-color: var(--border,#334155); }
 
-
-
 /* --- Resumo table --- */
 #tab-pagamento .resumo-table {
     width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0;
@@ -1824,7 +1818,6 @@ body.dark-mode #tab-custo .custo-dashboard-card { background: var(--card-bg,#1e2
 #tab-pagamento.print-active .valor-pago-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
 /* ========== CRONOGRAMA GANTT STYLES ========== */
-
 
     .cronograma-content {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -2708,7 +2701,6 @@ body.dark-mode #modalLancInstalacao .lanc-resumo b {
 }
     </style>
 
-
     <style>
         /* --- ESTILOS DO MENU LATERAL (SIDEBAR) --- */
         .main-wrapper {
@@ -2864,7 +2856,6 @@ body.dark-mode #modalLancInstalacao .lanc-resumo b {
             background: #2563eb;
             color: #fff;
         }
-
 
         /* Remove a largura fixa e o display flex do container pai */
 body > div, 
@@ -5406,9 +5397,6 @@ body.p53-travado { overflow: hidden !important; }
                     </div>
                 </div>
 
-
-
-
                 <!-- TAB 8: CONTRAMARCO (CTM) -->
                 <div id="tab-ctm" class="card" style="display:none;">
                     <div class="card-header">
@@ -5651,7 +5639,6 @@ body.p53-travado { overflow: hidden !important; }
                     </div>
                     <div id="resumoLoteContainer" style="display:none;"></div>
                 </div>
-
 
                 <!-- TAB 3: BOLETIM DE MEDIÇÃO DETALHADO -->
                 <div id="tab-medicoes" class="card" style="display:none;">
@@ -5975,7 +5962,6 @@ body.p53-travado { overflow: hidden !important; }
                 </div>
             </div>
 
-
             <!-- TAB: GESTÃO DE OBRA E EQUIPE (CRONOGRAMA GANTT) -->
             <div id="tab-cronograma" class="card" style="display:none;">
                 <div class="cronograma-content" style="padding:16px;">
@@ -6128,7 +6114,6 @@ body.p53-travado { overflow: hidden !important; }
                 </div>
                 <input type="file" id="importFileCrono" accept=".json" style="display:none;" onchange="handleFileSelectCrono(event)">
             </div>
-
 
             <!-- TAB PAGAMENTO DE PRODUÇÃO -->
             <div id="tab-pagamento" class="card" style="display:none;">
@@ -6330,7 +6315,6 @@ body.p53-travado { overflow: hidden !important; }
                 <div id="containerCustoTable"></div>
                 <div id="containerCustoTotal" style="margin-top:10px;"></div>
             </div>
-
 
             <!-- MODAIS -->
 
@@ -10054,7 +10038,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
                 // === FIM PATCH 28 ===
 
-
             
                 function salvarHeaderMedicao() {
                     const obra = getObraAtual();
@@ -10410,7 +10393,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 }
             })();
 
-
             /* ===================================================================
                PATCH 36: historico de instalacao (varios lancamentos por item)
                item.historicoInstalacao = [{ data: 'AAAA-MM-DD', qtd: N }, ...]
@@ -10757,7 +10739,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 window.fecharLancamentosInstalacao = fechar;
             })();
 
-
             /* ===================================================================
                PATCH 37: fecha o "Menu de Abas" antes de qualquer impressao
                =================================================================== */
@@ -10787,7 +10768,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 
                 window.addEventListener('beforeprint', fecharMenuAbas);
             })();
-
 
             window.addEventListener('DOMContentLoaded', async () => {
                 carregarTemaPreferido();
@@ -13091,7 +13071,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
             }
             </script>
 
-
             <!-- Modal Importar Esquadrias / Lista de Corte -->
             <div class="modal-bg" id="modalInserirListaCorte" style="display:none;">
                 <div class="modal" style="width:90%; max-width:760px;">
@@ -13151,7 +13130,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 </div>
             </div>
 
-
             <!-- MODAL: Colaborador Pgto -->
             <!-- Modal: Editar Lançamento -->
             <div class="modal-bg" id="modalLancamentoPgto" style="display:none;" onclick="if(event.target===this)fecharModalLancamento()">
@@ -13205,8 +13183,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                 </div>
             </div>
 
-
-
             <!-- MODAL: Colaborador -->
             <div class="modal-bg" id="modalColaborador" style="display:none;" onclick="if(event.target===this)fecharModalColaborador()">
                 <div class="modal">
@@ -13246,7 +13222,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     </div>
                 </div>
             </div>
-
 
             <!-- CTM Modals -->
             <div id="newModalCTM" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;align-items:center;justify-content:center;">
@@ -13338,7 +13313,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
                     </div>
                 </div>
             </div>
-
 
             <script>
                 /* ============================================================
@@ -22677,7 +22651,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 }
 </style>
 
-
 <script>
 /* === PATCH 56: OBRAFLOW DEPENDENCIAS (Etapa 2: predecessoras e agendamento) === */
 (function () {
@@ -23688,7 +23661,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 }
 </style>
 
-
 <script>
 /* === PATCH 57: OBRAFLOW LINHA DE BASE E CAMINHO CRITICO (Etapa 3) === */
 (function () {
@@ -24574,7 +24546,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 }
 </style>
 
-
 <script>
 /* === PATCH 58: OBRAFLOW CUSTOS E RECURSOS POR TAREFA (Etapa 4) === */
 (function () {
@@ -25439,7 +25410,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
   #tab-obraflow .of-c-custo { flex: 0 0 70px; font-size: 10px; padding-right: 5px; }
 }
 </style>
-
 
 <script>
 /* === PATCH 59: OBRAFLOW EXPORTACAO DO PLANO (Etapa 5) === */
@@ -26726,7 +26696,6 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
 }
 </style>
 
-
 <script>
 /* === PATCH 60: OBRAFLOW LIGACOES CORRECAO (janela de dependencias) === */
 (function () {
@@ -27012,7 +26981,6 @@ body.of-dep-aberto {
   }
 }
 </style>
-
 
 <script>
 /* === PATCH 61: MENU ESTILO OREATE (gaveta lateral) === */
@@ -27709,7 +27677,6 @@ body.or-aberto { overflow: hidden !important; }
 }
 </style>
 
-
 <script>
 /* === PATCH 62: GAVETA MAIS RAPIDA (carregamento otimizado) === */
 (function () {
@@ -28323,7 +28290,6 @@ body.or-aberto { overflow: hidden !important; }
   .or-launcher { transition: none !important; }
 }
 </style>
-
 
 <script>
 /* === PATCH 63: PREVIEW EDITAVEL, RESUMO NOS LANCAMENTOS E IMPRESSAO === */
@@ -29116,7 +29082,6 @@ body.p63-print-all .p63-titulo-aba {
   }
 }
 </style>
-
 
 <script>
 /* PATCH 64: EDITOR DO DESENHO DA ESQUADRIA */
@@ -29951,7 +29916,6 @@ body #modalPreviewEsquadria.p64-off,
 }
 </style>
 
-
 <script>
 /* PATCH 65: FECHAMENTO FORCADO PELO CONSOLE */
 (function () {
@@ -30315,7 +30279,6 @@ body #modalPreviewEsquadria.p64-off,
   outline-offset: 2px;
 }
 </style>
-
 
 <script>
 /* PATCH 66: MAIS TIPOLOGIAS NO DESENHO E IMAGEM PROPRIA COMO VISTA */
@@ -31992,7 +31955,6 @@ body #modalPreviewEsquadria.p64-off,
 }
 </style>
 
-
 <script>
 /* PATCH 67: SALVAMENTO GARANTIDO DAS CONFIGURACOES E IMAGENS DA VISTA */
 (function () {
@@ -33143,7 +33105,6 @@ body #modalPreviewEsquadria.p64-off,
 }
 </style>
 
-
 <script>
 /* PATCH 68: COMPRESSAO AUTOMATICA DAS IMAGENS DA VISTA */
 (function () {
@@ -34267,8 +34228,6 @@ body #modalPreviewEsquadria.p64-off,
 }
 </style>
 
-
-
 <script>
 /* PATCH 70: VALOR PAGO CERTO E NA IMPRESSAO (Pagamento > Resumo do Mes) */
 (function () {
@@ -34661,7 +34620,6 @@ body.print-active #containerResumoPgto .p70-eco-papel,
   font-weight: 700;
 }
 </style>
-
 
 <script>
 /* PATCH 71: PAGAMENTO EDITAVEL NOS DOIS LADOS E IMPRESSAO POR SECAO */
@@ -35378,7 +35336,6 @@ body.print-active #containerResumoPgto .p70-eco-papel,
   }
 }
 </style>
-
 
 <script>
 /* PATCH 72: ARRASTAR COLUNAS COM O BOTAO ESQUERDO E LEMBRAR ONDE PAROU */
@@ -36190,7 +36147,6 @@ th.p72-movivel .col-resizer {
 }
 </style>
 
-
 <script>
 /* PATCH 73: IMPRIMIR SO A ABA QUE ESTA NA TELA */
 (function () {
@@ -36648,7 +36604,6 @@ th.p72-movivel .col-resizer {
   }
 }
 </style>
-
 
 <script>
 /* PATCH 74: VALOR PAGO VALE NAS DUAS SUB-ABAS E TITULO COM O MES ESCRITO */
@@ -37169,8 +37124,6 @@ th.p72-movivel .col-resizer {
   }
 }
 </style>
-
-
 
 <script>
 /* PATCH 75: APARENCIA DAS SUB-ABAS LANCAMENTOS E RESUMO DE PAGAMENTO */
@@ -37766,8 +37719,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 }
 </style>
 
-
-
 <script>
 /* PATCH 76: IMPORTAR O PAINEL GERAL DE PRODUCAO PARA O RECEBIMENTO DE MATERIAIS */
 (function () {
@@ -38159,7 +38110,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 }
 </style>
 
-
 <!-- ========== PATCH77_SUBABAS_CUSTO_OK ========== -->
 <script>
 /* PATCH 77: divide a aba Centro de Custos em 6 sub-abas.
@@ -38430,7 +38380,6 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   })();
 })();
 </script>
-
 
 <!-- PATCH79_SEGURANCA_OK -->
 <script>
@@ -50461,5 +50410,4628 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 </script>
 <script src="fpdo_editor_visual.js"></script>
 <script src="modernizacao_painel_v1.js"></script>
+
+<!-- PATCH96_ENQ_OK inicio -->
+<script>
+/* ====== PATCH96_ENQ_OK - Enquadrar fotos por slide (Relatorio FPDO) ====== */
+(function () {
+  'use strict';
+  if (window.__PS96) { return; }
+  window.__PS96 = true;
+
+  var BASE = 'p92_fpdo_v1';
+  var LOJA = 'reg';
+  var K_LS = 'p92_fpdo_ls_v1';
+  var K_ULT = 'p92_fpdo_ultimo_v1';
+  var K_CHEIO = 'p96_cheio_v1';
+
+  var MAXLADO = 1600;
+  var QUAL = 0.86;
+  var FUNDO = '#101a2b';
+
+  /* ---------------- utilidades ---------------- */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function espera(ms, fn) { setTimeout(fn, ms); }
+
+  function aviso(msg, tipo) {
+    if (typeof window.mostrarToastPainel === 'function') {
+      try { window.mostrarToastPainel(msg, tipo === 'erro' ? 'erro' : 'ok'); return; } catch (e) {}
+    }
+    var d = document.getElementById('p96Aviso');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = 'p96Aviso';
+      d.style.cssText = 'position:fixed;z-index:2147483000;left:50%;transform:translateX(-50%);' +
+        'bottom:22px;padding:10px 16px;border-radius:10px;font:600 14px system-ui,Arial;color:#fff';
+      document.body.appendChild(d);
+    }
+    d.textContent = String(msg || '');
+    d.style.background = tipo === 'erro' ? '#8c1c1c' : '#14532d';
+    d.style.display = 'block';
+    if (d.__t) { clearTimeout(d.__t); }
+    d.__t = setTimeout(function () { d.style.display = 'none'; }, 4200);
+  }
+
+  /* ---------------- onde o relatorio fica guardado ---------------- */
+  function lsLer() {
+    try { return JSON.parse(localStorage.getItem(K_LS) || '[]') || []; } catch (e) { return []; }
+  }
+
+  function lsGravar(arr) {
+    try { localStorage.setItem(K_LS, JSON.stringify(arr)); return true; } catch (e) { return false; }
+  }
+
+  function abrirBase(ok, falhou) {
+    try {
+      if (!window.indexedDB) { falhou(); return; }
+      var req = window.indexedDB.open(BASE, 1);
+      req.onupgradeneeded = function () {
+        try {
+          var b = req.result;
+          if (!b.objectStoreNames.contains(LOJA)) { b.createObjectStore(LOJA, { keyPath: 'id' }); }
+        } catch (e) {}
+      };
+      req.onsuccess = function () { ok(req.result); };
+      req.onerror = function () { falhou(); };
+    } catch (e) { falhou(); }
+  }
+
+  function carregarTodos(depois) {
+    abrirBase(function (b) {
+      try {
+        var t = b.transaction(LOJA, 'readonly');
+        var r = t.objectStore(LOJA).getAll();
+        r.onsuccess = function () { depois(r.result || []); };
+        r.onerror = function () { depois(lsLer()); };
+      } catch (e) { depois(lsLer()); }
+    }, function () { depois(lsLer()); });
+  }
+
+  function guardarReg(reg, depois) {
+    reg.alterado = new Date().toISOString();
+    abrirBase(function (b) {
+      try {
+        var t = b.transaction(LOJA, 'readwrite');
+        t.objectStore(LOJA).put(reg);
+        t.oncomplete = function () { depois(true); };
+        t.onerror = function () { depois(false); };
+      } catch (e) { depois(false); }
+    }, function () {
+      var arr = lsLer(), achou = false, i;
+      for (i = 0; i < arr.length; i++) { if (arr[i].id === reg.id) { arr[i] = reg; achou = true; break; } }
+      if (!achou) { arr.push(reg); }
+      depois(lsGravar(arr));
+    });
+  }
+
+  function obterDados(depois) {
+    var bs = document.querySelector('#p92Pe [data-a="salvar"]');
+    if (bs) { try { bs.click(); } catch (e) {} }
+    espera(bs ? 520 : 60, function () {
+      carregarTodos(function (arr) {
+        var lst = (arr || []).slice().sort(function (a, b) {
+          return String(b.alterado || b.criado || '').localeCompare(String(a.alterado || a.criado || ''));
+        });
+        var ult = null, reg = null, i;
+        try { ult = localStorage.getItem(K_ULT); } catch (e2) {}
+        for (i = 0; i < lst.length; i++) { if (lst[i].id === ult) { reg = lst[i]; break; } }
+        if (!reg && lst.length) { reg = lst[0]; }
+        if (!reg) {
+          aviso('Abra o Relatorio FPDO e salve uma vez antes de enquadrar as fotos.', 'erro');
+          return;
+        }
+        depois(reg);
+      });
+    });
+  }
+
+  function recarregarTela(regId, depois) {
+    var secAtiva = null;
+    var on = document.querySelector('#p92Nav .p92-nav.on');
+    if (on) { secAtiva = on.getAttribute('data-s'); }
+    var bl = document.querySelector('#p92Fundo [data-a="lista"]');
+    if (!bl) {
+      aviso('Foto enquadrada. Feche e abra o relatorio para ver.', 'ok');
+      if (depois) { depois(); }
+      return;
+    }
+    try { bl.click(); } catch (e) {}
+    espera(560, function () {
+      var ba = document.querySelector('#p92Corpo [data-a="lerReg"][data-i="' + regId + '"]');
+      if (!ba) {
+        aviso('Foto enquadrada. Abra o relatorio na lista para ver.', 'ok');
+        if (depois) { depois(); }
+        return;
+      }
+      try { ba.click(); } catch (e2) {}
+      espera(160, function () {
+        if (secAtiva) {
+          var bn = document.querySelector('#p92Nav [data-a="sec"][data-s="' + secAtiva + '"]');
+          if (bn) { try { bn.click(); } catch (e3) {} }
+        }
+        if (depois) { depois(); }
+      });
+    });
+  }
+
+  /* ---------------- achar o grupo de fotos pelo alvo ---------------- */
+  function porId(lista, id) {
+    var i;
+    for (i = 0; i < (lista || []).length; i++) {
+      if (String(lista[i].id) === String(id)) { return lista[i]; }
+    }
+    return null;
+  }
+
+  function grupoDe(reg, alvo) {
+    var p = String(alvo || '').split(':');
+    if (p[0] === 'capa') { if (!reg.capaFotos) { reg.capaFotos = []; } return reg.capaFotos; }
+    if (p[0] === 'fim') { if (!reg.fotosFinal) { reg.fotosFinal = []; } return reg.fotosFinal; }
+    if (p[0] === 'elev') {
+      var e = porId(reg.elevacoes, p[1]);
+      if (!e) { return null; }
+      if (p[2] === 'antes') { if (!e.fotosAntes) { e.fotosAntes = []; } return e.fotosAntes; }
+      if (!e.fotosDepois) { e.fotosDepois = []; }
+      return e.fotosDepois;
+    }
+    if (p[0] === 'inst') {
+      var it = porId(reg.itens, p[1]);
+      if (!it) { return null; }
+      if (!it.fotos) { it.fotos = []; }
+      return it.fotos;
+    }
+    if (p[0] === 'pend') {
+      var pe = porId(reg.pendencias, p[1]);
+      if (!pe) { return null; }
+      if (!pe.fotos) { pe.fotos = []; }
+      return pe.fotos;
+    }
+    return null;
+  }
+
+  /* proporcao do espaco que a foto ocupa no slide, por tipo de grupo */
+  function razaoDoEspaco(alvo, indice) {
+    var t = String(alvo || '').split(':')[0];
+    if (t === 'capa') { return Number(indice) === 1 ? 0.75 : 1.04; }
+    if (t === 'elev') { return 1.25; }
+    if (t === 'inst') { return 1.14; }
+    return 1.22;
+  }
+
+  /* onde vale a opcao "slide inteiro": capa (1a e 2a foto) e pagina final */
+  function chaveCheio(alvo, indice) {
+    var t = String(alvo || '').split(':')[0];
+    if (t === 'capa') { return Number(indice) === 1 ? 'dados' : (Number(indice) === 0 ? 'capa' : ''); }
+    if (t === 'fim') { return 'fim'; }
+    return '';
+  }
+
+  function lerCheio() {
+    try { return JSON.parse(localStorage.getItem(K_CHEIO) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function gravarCheio(o) {
+    try { localStorage.setItem(K_CHEIO, JSON.stringify(o || {})); } catch (e) {}
+  }
+
+  /* ---------------- imagem: carregar e recortar ---------------- */
+  function carregarImagem(url, ok, falhou) {
+    var im = new Image();
+    try { im.crossOrigin = 'anonymous'; } catch (e) {}
+    im.onload = function () { ok(im); };
+    im.onerror = function () { if (falhou) { falhou(); } };
+    im.src = String(url || '');
+  }
+
+  /* escala base: preencher = cobre tudo; ajustar = cabe inteira */
+  function escalaBase(modo, iw, ih, pw, ph) {
+    if (!iw || !ih) { return 1; }
+    var a = pw / iw, b = ph / ih;
+    return modo === 'ajustar' ? Math.min(a, b) : Math.max(a, b);
+  }
+
+  function gerarUrl(im, est) {
+    var razao = est.razao || 1;
+    var W, H;
+    if (razao >= 1) { W = MAXLADO; H = Math.round(MAXLADO / razao); }
+    else { H = MAXLADO; W = Math.round(MAXLADO * razao); }
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var cx = cv.getContext('2d');
+    cx.fillStyle = FUNDO;
+    cx.fillRect(0, 0, W, H);
+    var iw = im.naturalWidth || im.width;
+    var ih = im.naturalHeight || im.height;
+    var s = escalaBase(est.modo, iw, ih, W, H) * (est.zoom || 1);
+    var dw = iw * s, dh = ih * s;
+    var dx = (W - dw) / 2 + (est.dx || 0) * W;
+    var dy = (H - dh) / 2 + (est.dy || 0) * H;
+    try { cx.imageSmoothingQuality = 'high'; } catch (e) {}
+    cx.drawImage(im, dx, dy, dw, dh);
+    try { return cv.toDataURL('image/jpeg', QUAL); } catch (e2) { return null; }
+  }
+
+  /* ---------------- estilo da janelinha ---------------- */
+  function estilo() {
+    if (document.getElementById('p96Estilo')) { return; }
+    var s = document.createElement('style');
+    s.id = 'p96Estilo';
+    s.textContent = [
+      '#p96Fundo{position:fixed;inset:0;background:rgba(4,8,16,.82);z-index:2147482000;',
+      '  display:flex;align-items:center;justify-content:center;padding:14px}',
+      '#p96Cx{background:#0f172a;color:#e6edf7;border:1px solid #2b3a52;border-radius:14px;',
+      '  max-width:660px;width:100%;max-height:94vh;overflow:auto;padding:16px;',
+      '  font:14px system-ui,Arial,sans-serif;box-shadow:0 18px 50px rgba(0,0,0,.55)}',
+      '#p96Cx h3{margin:0 0 10px 0;font-size:17px}',
+      '#p96Palco{position:relative;overflow:hidden;background:#101a2b;border:1px solid #2b3a52;',
+      '  border-radius:10px;margin:0 auto 12px auto;cursor:move;touch-action:none;user-select:none}',
+      '#p96Palco img{position:absolute;left:0;top:0;display:block;pointer-events:none}',
+      '#p96Cx .p96-l{display:block;margin:8px 0 4px 0;font-weight:600;font-size:13px;color:#a9b8cd}',
+      '#p96Cx input[type=range]{width:100%}',
+      '#p96Cx .p96-lin{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}',
+      '#p96Cx button{background:#1b2a43;color:#e6edf7;border:1px solid #33456180;border-radius:9px;',
+      '  padding:8px 12px;font:600 13px system-ui,Arial;cursor:pointer}',
+      '#p96Cx button.on{background:#2563eb;border-color:#2563eb}',
+      '#p96Cx button.ok{background:#15803d;border-color:#15803d}',
+      '#p96Cx .p96-dica{color:#93a4bd;font-size:12px;line-height:1.5;margin-top:6px}',
+      'figure.p92-foto button[data-p96b]{background:#1d4ed8;color:#fff;border:0;border-radius:8px;',
+      '  padding:4px 8px;font:600 12px system-ui,Arial;cursor:pointer;margin-left:4px}',
+      '.p94-folha .p96-fundo{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0}',
+      '.p94-folha .p96-fundo img{width:100%;height:100%;object-fit:cover;display:block}',
+      '.p94-folha .p96-veu{position:absolute;left:0;top:0;width:100%;height:100%;z-index:1;',
+      '  background:linear-gradient(90deg,rgba(6,12,24,.86) 0%,rgba(6,12,24,.55) 55%,rgba(6,12,24,.30) 100%)}',
+      '.p94-folha .p94-t,.p94-folha .p94-p,.p94-folha .p94-q{position:absolute;z-index:3}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+
+  /* ---------------- janelinha de enquadrar ---------------- */
+  var atual = null;
+
+  function fechar() {
+    var f = document.getElementById('p96Fundo');
+    if (f && f.parentNode) { f.parentNode.removeChild(f); }
+    atual = null;
+  }
+
+  function desenharPreview() {
+    if (!atual) { return; }
+    var palco = document.getElementById('p96Palco');
+    var im = document.getElementById('p96Img');
+    if (!palco || !im) { return; }
+    var pw = palco.clientWidth, ph = palco.clientHeight;
+    var iw = atual.im.naturalWidth || atual.im.width;
+    var ih = atual.im.naturalHeight || atual.im.height;
+    var s = escalaBase(atual.modo, iw, ih, pw, ph) * atual.zoom;
+    var dw = iw * s, dh = ih * s;
+    im.style.width = dw + 'px';
+    im.style.height = dh + 'px';
+    im.style.left = ((pw - dw) / 2 + atual.dx * pw) + 'px';
+    im.style.top = ((ph - dh) / 2 + atual.dy * ph) + 'px';
+  }
+
+  function ajustarPalco() {
+    var palco = document.getElementById('p96Palco');
+    if (!palco || !atual) { return; }
+    var larg = Math.min(560, Math.max(240, (document.getElementById('p96Cx') || {}).clientWidth - 34 || 520));
+    var alt = Math.round(larg / (atual.razao || 1));
+    var max = Math.round(window.innerHeight * 0.46);
+    if (alt > max) { alt = max; larg = Math.round(alt * (atual.razao || 1)); }
+    palco.style.width = larg + 'px';
+    palco.style.height = alt + 'px';
+    desenharPreview();
+  }
+
+  function ligarArraste() {
+    var palco = document.getElementById('p96Palco');
+    if (!palco) { return; }
+    var arrastando = false, x0 = 0, y0 = 0, dx0 = 0, dy0 = 0;
+
+    function ponto(ev) {
+      if (ev.touches && ev.touches.length) { return { x: ev.touches[0].clientX, y: ev.touches[0].clientY }; }
+      return { x: ev.clientX, y: ev.clientY };
+    }
+    function inicio(ev) {
+      if (!atual) { return; }
+      var p = ponto(ev);
+      arrastando = true; x0 = p.x; y0 = p.y; dx0 = atual.dx; dy0 = atual.dy;
+    }
+    function mover(ev) {
+      if (!arrastando || !atual) { return; }
+      var p = ponto(ev);
+      atual.dx = dx0 + (p.x - x0) / palco.clientWidth;
+      atual.dy = dy0 + (p.y - y0) / palco.clientHeight;
+      if (atual.dx > 1) { atual.dx = 1; } if (atual.dx < -1) { atual.dx = -1; }
+      if (atual.dy > 1) { atual.dy = 1; } if (atual.dy < -1) { atual.dy = -1; }
+      desenharPreview();
+      if (ev.cancelable) { ev.preventDefault(); }
+    }
+    function fim() { arrastando = false; }
+
+    palco.addEventListener('mousedown', inicio);
+    palco.addEventListener('touchstart', inicio, { passive: true });
+    document.addEventListener('mousemove', mover);
+    palco.addEventListener('touchmove', mover, { passive: false });
+    document.addEventListener('mouseup', fim);
+    palco.addEventListener('touchend', fim);
+  }
+
+  function marcarModo() {
+    var cx = document.getElementById('p96Cx');
+    if (!cx || !atual) { return; }
+    var bs = cx.querySelectorAll('[data-p96m]'), i;
+    for (i = 0; i < bs.length; i++) {
+      if (bs[i].getAttribute('data-p96m') === atual.modo) { bs[i].className = 'on'; }
+      else { bs[i].className = ''; }
+    }
+  }
+
+  function abrirCaixa(reg, grupo, indice, alvo) {
+    var foto = grupo[indice];
+    if (!foto || !foto.url) { aviso('Nao encontrei essa foto.', 'erro'); return; }
+    if (!foto.orig) { foto.orig = foto.url; }
+
+    var salvo = foto.enq || {};
+    var kCheio = chaveCheio(alvo, indice);
+    var cheios = lerCheio();
+    var cheio = kCheio ? !!cheios[kCheio] : false;
+
+    estilo();
+    fechar();
+
+    var f = document.createElement('div');
+    f.id = 'p96Fundo';
+    f.innerHTML =
+      '<div id="p96Cx">' +
+      '<h3>Enquadrar foto</h3>' +
+      '<div id="p96Palco"><img id="p96Img" alt="foto"></div>' +
+      '<div class="p96-lin">' +
+      '<button type="button" data-p96m="preencher">Preencher o espaco</button>' +
+      '<button type="button" data-p96m="ajustar">Foto inteira (com borda)</button>' +
+      '</div>' +
+      '<label class="p96-l">Aproximar / afastar</label>' +
+      '<input id="p96Zoom" type="range" min="100" max="320" step="2">' +
+      (kCheio
+        ? '<div class="p96-lin"><label><input id="p96Cheio" type="checkbox"> ' +
+          'Esta foto ocupa o slide inteiro (fundo da pagina)</label></div>'
+        : '') +
+      '<div class="p96-lin">' +
+      '<button type="button" data-p96a="centro">Centralizar</button>' +
+      '<button type="button" data-p96a="orig">Voltar ao original</button>' +
+      '<button type="button" class="ok" data-p96a="salvar">Salvar enquadramento</button>' +
+      '<button type="button" data-p96a="sair">Cancelar</button>' +
+      '</div>' +
+      '<div class="p96-dica">Arraste a foto com o dedo ou com o mouse para escolher o pedaco que aparece. ' +
+      'O quadro cinza mostra exatamente o espaco que a foto tem no slide.</div>' +
+      '</div>';
+    document.body.appendChild(f);
+
+    var zoom = document.getElementById('p96Zoom');
+    var chk = document.getElementById('p96Cheio');
+    if (chk) { chk.checked = cheio; }
+
+    carregarImagem(foto.orig, function (im) {
+      atual = {
+        reg: reg, grupo: grupo, indice: indice, alvo: alvo, foto: foto, im: im,
+        modo: salvo.modo === 'ajustar' ? 'ajustar' : 'preencher',
+        zoom: Number(salvo.zoom) > 0 ? Number(salvo.zoom) : 1,
+        dx: Number(salvo.dx) || 0,
+        dy: Number(salvo.dy) || 0,
+        razao: cheio ? (16 / 9) : razaoDoEspaco(alvo, indice),
+        kCheio: kCheio
+      };
+      var vi = document.getElementById('p96Img');
+      if (vi) { vi.src = foto.orig; }
+      if (zoom) { zoom.value = String(Math.round(atual.zoom * 100)); }
+      marcarModo();
+      ajustarPalco();
+      ligarArraste();
+    }, function () {
+      aviso('Nao consegui abrir essa foto.', 'erro');
+      fechar();
+    });
+
+    if (zoom) {
+      zoom.addEventListener('input', function () {
+        if (!atual) { return; }
+        atual.zoom = Math.max(1, Number(zoom.value) / 100);
+        desenharPreview();
+      });
+    }
+
+    if (chk) {
+      chk.addEventListener('change', function () {
+        if (!atual) { return; }
+        atual.razao = chk.checked ? (16 / 9) : razaoDoEspaco(alvo, indice);
+        ajustarPalco();
+      });
+    }
+
+    f.addEventListener('click', function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-p96m],[data-p96a]') : null;
+      if (!b || !atual) { return; }
+      var m = b.getAttribute('data-p96m');
+      if (m) { atual.modo = m; marcarModo(); desenharPreview(); return; }
+      var a = b.getAttribute('data-p96a');
+      if (a === 'sair') { fechar(); return; }
+      if (a === 'centro') { atual.dx = 0; atual.dy = 0; atual.zoom = 1; if (zoom) { zoom.value = '100'; } desenharPreview(); return; }
+      if (a === 'orig') {
+        atual.modo = 'preencher'; atual.dx = 0; atual.dy = 0; atual.zoom = 1;
+        if (zoom) { zoom.value = '100'; }
+        marcarModo(); desenharPreview();
+        return;
+      }
+      if (a === 'salvar') { salvar(chk ? !!chk.checked : false, b); }
+    });
+  }
+
+  function salvar(marcarCheio, botao) {
+    if (!atual) { return; }
+    var est = atual;
+    if (botao) { botao.disabled = true; botao.textContent = 'Salvando...'; }
+    var url = gerarUrl(est.im, est);
+    if (!url) {
+      aviso('Nao consegui gravar a foto enquadrada.', 'erro');
+      if (botao) { botao.disabled = false; botao.textContent = 'Salvar enquadramento'; }
+      return;
+    }
+    est.foto.url = url;
+    est.foto.enq = {
+      modo: est.modo, zoom: est.zoom, dx: est.dx, dy: est.dy,
+      razao: est.razao, cheio: !!marcarCheio
+    };
+    if (est.kCheio) {
+      var c = lerCheio();
+      c[est.kCheio] = !!marcarCheio;
+      gravarCheio(c);
+    }
+    guardarReg(est.reg, function (ok) {
+      fechar();
+      if (!ok) { aviso('Nao consegui salvar no relatorio.', 'erro'); return; }
+      aviso('Enquadramento salvo.', 'ok');
+      recarregarTela(est.reg.id);
+    });
+  }
+
+  /* ---------------- botao "Enquadrar" em cada foto ---------------- */
+  function colocarBotoes() {
+    var imgs = document.querySelectorAll('#p92Fundo img[data-alvo]');
+    var i;
+    for (i = 0; i < imgs.length; i++) {
+      var im = imgs[i];
+      var fig = im.closest ? im.closest('figure') : null;
+      var cx = fig ? fig.querySelector('.p92-fx') : null;
+      if (!cx) { cx = fig; }
+      if (!cx || cx.querySelector('[data-p96b]')) { continue; }
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('data-p96b', '1');
+      b.setAttribute('data-alvo', im.getAttribute('data-alvo') || '');
+      b.setAttribute('data-i', im.getAttribute('data-i') || '0');
+      b.textContent = 'Enquadrar';
+      b.title = 'Escolher o pedaco da foto que aparece no slide';
+      cx.appendChild(b);
+    }
+  }
+
+  document.addEventListener('click', function (ev) {
+    var b = ev.target && ev.target.closest ? ev.target.closest('[data-p96b]') : null;
+    if (!b) { return; }
+    ev.preventDefault();
+    ev.stopPropagation();
+    var alvo = b.getAttribute('data-alvo') || '';
+    var indice = parseInt(b.getAttribute('data-i') || '0', 10) || 0;
+    obterDados(function (reg) {
+      var g = grupoDe(reg, alvo);
+      if (!g || !g[indice]) { aviso('Nao encontrei essa foto no relatorio salvo.', 'erro'); return; }
+      abrirCaixa(reg, g, indice, alvo);
+    });
+  }, true);
+
+  /* ---------------- foto no slide inteiro (folhas na tela / PDF) ---------------- */
+  function fundoCheio(folha, img) {
+    if (!folha || !img) { return; }
+    var d = document.createElement('div');
+    d.className = 'p96-fundo';
+    var novo = document.createElement('img');
+    novo.src = img.getAttribute('src') || img.src || '';
+    novo.alt = 'foto';
+    d.appendChild(novo);
+    var veu = document.createElement('div');
+    veu.className = 'p96-veu';
+    if (folha.firstChild) {
+      folha.insertBefore(d, folha.firstChild);
+      folha.insertBefore(veu, d.nextSibling);
+    } else {
+      folha.appendChild(d);
+      folha.appendChild(veu);
+    }
+  }
+
+  function aplicarCheios() {
+    var c = lerCheio();
+    if (!c || (!c.capa && !c.dados && !c.fim)) { return; }
+    var folhas = document.querySelectorAll('.p94-folha');
+    if (!folhas.length) { return; }
+    var selo = JSON.stringify([!!c.capa, !!c.dados, !!c.fim]);
+    var i, ultimaImg = null;
+
+    for (i = 0; i < folhas.length; i++) {
+      var im = folhas[i].querySelector('.p94-i img');
+      if (im) { ultimaImg = im; }
+    }
+
+    function trata(folha, ligado) {
+      if (!folha) { return; }
+      if (folha.getAttribute('data-p96') === selo) { return; }
+      folha.setAttribute('data-p96', selo);
+      var antigo = folha.querySelector('.p96-fundo');
+      var veuAntigo = folha.querySelector('.p96-veu');
+      if (antigo && antigo.parentNode) { antigo.parentNode.removeChild(antigo); }
+      if (veuAntigo && veuAntigo.parentNode) { veuAntigo.parentNode.removeChild(veuAntigo); }
+      var caixa = folha.querySelector('.p94-i');
+      if (!ligado) {
+        if (caixa) { caixa.style.display = ''; }
+        return;
+      }
+      var origem = caixa ? caixa.querySelector('img') : ultimaImg;
+      if (!origem) { return; }
+      fundoCheio(folha, origem);
+      if (caixa) { caixa.style.display = 'none'; }
+    }
+
+    estilo();
+    trata(folhas[0], !!c.capa);
+    if (folhas.length > 1) { trata(folhas[1], !!c.dados); }
+    if (folhas.length > 2) { trata(folhas[folhas.length - 1], !!c.fim); }
+  }
+
+  setInterval(function () {
+    try { colocarBotoes(); } catch (e) {}
+    try { aplicarCheios(); } catch (e2) {}
+  }, 1200);
+
+  espera(900, function () {
+    try { colocarBotoes(); } catch (e) {}
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && document.getElementById('p96Fundo')) { fechar(); }
+  });
+
+})();
+
+</script>
+<!-- PATCH96_ENQ_OK fim -->
+
+<!-- PATCH97_PPTX_CHEIO_OK inicio -->
+<script>
+/* ====== PATCH97_PPTX_CHEIO_OK - PPTX respeita a foto no slide inteiro (PATCH 96) ====== */
+(function () {
+  'use strict';
+  if (window.__PS97) { return; }
+  window.__PS97 = true;
+
+  var K_CHEIO = 'p96_cheio_v1';
+  var POL_L = 13.333;
+  var POL_A = 7.5;
+
+  /* ---------------- qual foto vai ocupar o slide inteiro ---------------- */
+  function lerCheio() {
+    try {
+      var o = JSON.parse(localStorage.getItem(K_CHEIO) || '{}');
+      return o && typeof o === 'object' ? o : {};
+    } catch (e) { return {}; }
+  }
+
+  /* ---------------- veu escuro (mesmo degrade da tela) ---------------- */
+  var veuCache = null;
+
+  function veuUrl() {
+    if (veuCache !== null) { return veuCache; }
+    veuCache = '';
+    try {
+      var cv = document.createElement('canvas');
+      cv.width = 1280;
+      cv.height = 720;
+      var cx = cv.getContext('2d');
+      if (!cx) { return veuCache; }
+      var g = cx.createLinearGradient(0, 0, cv.width, 0);
+      g.addColorStop(0, 'rgba(6,12,24,0.86)');
+      g.addColorStop(0.55, 'rgba(6,12,24,0.55)');
+      g.addColorStop(1, 'rgba(6,12,24,0.30)');
+      cx.fillStyle = g;
+      cx.fillRect(0, 0, cv.width, cv.height);
+      veuCache = cv.toDataURL('image/png');
+    } catch (e2) { veuCache = ''; }
+    return veuCache;
+  }
+
+  /* ---------------- folha de rascunho: guarda as pecas do slide ---------------- */
+  function rascunho() {
+    var b = { fundo: null, ops: [] };
+    b.addImage = function (o) { b.ops.push(['img', o]); return b; };
+    b.addShape = function (t, o) { b.ops.push(['shape', t, o]); return b; };
+    b.addText = function (t, o) { b.ops.push(['text', t, o]); return b; };
+    b.addTable = function (t, o) { b.ops.push(['table', t, o]); return b; };
+    b.addChart = function (t, d, o) { b.ops.push(['chart', t, d, o]); return b; };
+    b.addNotes = function (t) { b.ops.push(['notes', t]); return b; };
+    b.addMedia = function (o) { b.ops.push(['media', o]); return b; };
+    try {
+      Object.defineProperty(b, 'background', {
+        configurable: true,
+        get: function () { return b.fundo; },
+        set: function (v) { b.fundo = v; }
+      });
+    } catch (e) {}
+    return b;
+  }
+
+  function fonteDaImagem(o) {
+    if (!o) { return ''; }
+    return String(o.data || o.path || '');
+  }
+
+  function tocar(real, op) {
+    if (op[0] === 'img') { real.addImage(op[1]); return; }
+    if (op[0] === 'shape') { real.addShape(op[1], op[2]); return; }
+    if (op[0] === 'text') { real.addText(op[1], op[2]); return; }
+    if (op[0] === 'table') { real.addTable(op[1], op[2]); return; }
+    if (op[0] === 'chart') { real.addChart(op[1], op[2], op[3]); return; }
+    if (op[0] === 'notes') { real.addNotes(op[1]); return; }
+    if (op[0] === 'media') { real.addMedia(op[1]); return; }
+  }
+
+  /* ---------------- monta de verdade, na ordem certa ---------------- */
+  function montar(inv) {
+    if (inv.__pronto) { return; }
+    inv.__pronto = true;
+
+    var folhas = inv.__folhas;
+    var n = folhas.length;
+    var c = lerCheio();
+
+    var marca = [];
+    var i, j;
+    for (i = 0; i < n; i++) { marca.push(false); }
+    if (n > 0) { marca[0] = !!c.capa; }
+    if (n > 1) { marca[1] = !!c.dados; }
+    if (n > 2) { marca[n - 1] = !!c.fim; }
+
+    /* ultima foto do relatorio: serve para a pagina de encerramento */
+    var ultima = '';
+    for (i = 0; i < n; i++) {
+      for (j = 0; j < folhas[i].ops.length; j++) {
+        if (folhas[i].ops[j][0] === 'img') {
+          var f = fonteDaImagem(folhas[i].ops[j][1]);
+          if (f) { ultima = f; }
+        }
+      }
+    }
+
+    for (i = 0; i < n; i++) {
+      var b = folhas[i];
+      var real;
+      try { real = inv.__r.addSlide(); } catch (e) { continue; }
+      if (b.fundo) { try { real.background = b.fundo; } catch (e1) {} }
+
+      var cheio = marca[i];
+      var propria = '';
+      for (j = 0; j < b.ops.length; j++) {
+        if (b.ops[j][0] === 'img') {
+          propria = fonteDaImagem(b.ops[j][1]);
+          if (propria) { break; }
+        }
+      }
+      var url = propria || ultima;
+      var esconder = false;
+
+      if (cheio && url) {
+        try {
+          real.addImage({
+            data: url, x: 0, y: 0, w: POL_L, h: POL_A,
+            sizing: { type: 'cover', w: POL_L, h: POL_A }
+          });
+          var v = veuUrl();
+          if (v) { real.addImage({ data: v, x: 0, y: 0, w: POL_L, h: POL_A }); }
+          esconder = !!propria;
+        } catch (e2) { esconder = false; }
+      }
+
+      for (j = 0; j < b.ops.length; j++) {
+        if (esconder && b.ops[j][0] === 'img') { continue; }
+        try { tocar(real, b.ops[j]); } catch (e3) {}
+      }
+    }
+  }
+
+  /* ---------------- capa por cima do gerador de PowerPoint ---------------- */
+  function embrulhar(Base) {
+    if (!Base || Base.__p97) { return Base; }
+
+    function P97() {
+      this.__r = new Base();
+      this.__folhas = [];
+      this.__pronto = false;
+    }
+
+    P97.__p97 = true;
+    P97.__base = Base;
+
+    P97.prototype.addSlide = function (a) {
+      try { if (a) { this.__r.__p97arg = a; } } catch (e) {}
+      var b = rascunho();
+      this.__folhas.push(b);
+      return b;
+    };
+
+    P97.prototype.addSection = function (o) {
+      try { return this.__r.addSection(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.defineLayout = function (o) {
+      try { return this.__r.defineLayout(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.defineSlideMaster = function (o) {
+      try { return this.__r.defineSlideMaster(o); } catch (e) { return null; }
+    };
+
+    P97.prototype.writeFile = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.writeFile(o);
+    };
+
+    P97.prototype.write = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.write(o);
+    };
+
+    P97.prototype.stream = function (o) {
+      var eu = this;
+      try { montar(eu); } catch (e) {}
+      return eu.__r.stream(o);
+    };
+
+    ['layout', 'author', 'title', 'subject', 'company', 'revision', 'rtlMode', 'theme'].forEach(function (nome) {
+      try {
+        Object.defineProperty(P97.prototype, nome, {
+          configurable: true,
+          get: function () { try { return this.__r[nome]; } catch (e) { return undefined; } },
+          set: function (v) { try { this.__r[nome] = v; } catch (e) {} }
+        });
+      } catch (e2) {}
+    });
+
+    /* atalhos que a biblioteca expoe na classe */
+    try {
+      ['ShapeType', 'SchemeColor', 'AlignH', 'AlignV', 'ChartType', 'OutputType', 'version'].forEach(function (k) {
+        if (Base[k] !== undefined) { P97[k] = Base[k]; }
+      });
+    } catch (e3) {}
+
+    return P97;
+  }
+
+  /* ---------------- entrar no lugar da biblioteca, na hora que ela chegar ---------------- */
+  var guardado = {};
+
+  function instalarNome(nome) {
+    var atual;
+    try { atual = window[nome]; } catch (e) { atual = undefined; }
+
+    function pegar() {
+      var b = guardado[nome];
+      if (!b) { return undefined; }
+      if (!b.__w) { b.__w = embrulhar(b.real); }
+      return b.__w;
+    }
+
+    try {
+      Object.defineProperty(window, nome, {
+        configurable: true,
+        get: pegar,
+        set: function (v) {
+          if (v && v.__p97) { return; }
+          guardado[nome] = { real: v, __w: null };
+        }
+      });
+    } catch (e2) {
+      if (typeof atual === 'function' && !atual.__p97) {
+        try { window[nome] = embrulhar(atual); } catch (e3) {}
+      }
+      return;
+    }
+
+    if (typeof atual === 'function' && !atual.__p97) {
+      guardado[nome] = { real: atual, __w: null };
+    }
+  }
+
+  instalarNome('PptxGenJS');
+  instalarNome('pptxgen');
+
+  /* rede de seguranca: se por algum motivo a troca acima nao valer, tenta de novo */
+  setInterval(function () {
+    ['PptxGenJS', 'pptxgen'].forEach(function (nome) {
+      try {
+        var v = window[nome];
+        if (typeof v === 'function' && !v.__p97) { window[nome] = embrulhar(v); }
+      } catch (e) {}
+    });
+  }, 1500);
+
+})();
+
+</script>
+<!-- PATCH97_PPTX_CHEIO_OK fim -->
+
+<!-- === PATCH 98: janela de enquadrar na frente + destrava do painel === -->
+<script>
+/* ===================================================================
+   PATCH 98 - duas correcoes de uso do painel
+
+   1) A janelinha "Enquadrar foto" (PATCH 96) estava abrindo ATRAS da
+      janela do Relatorio FPDO (PATCH 92), porque a camada dela era
+      mais baixa. Aqui ela sobe para a frente de tudo.
+
+   2) Ao fechar telas de cadastro/dados o painel ficava "travado":
+      sobrava uma trava de rolagem no corpo da pagina e/ou uma camada
+      invisivel na frente engolindo os cliques. Aqui existe uma faxina
+      que solta a pagina de novo assim que nao ha mais janela aberta.
+
+   Nada do que ja existe e apagado: so ajusta camada e destrava.
+   =================================================================== */
+(function () {
+  'use strict';
+
+  if (window.__patch98) { return; }
+  window.__patch98 = true;
+
+  var P98 = {};
+  window.P98 = P98;
+
+  /* seletores das janelas conhecidas do painel */
+  var SEL_JANELAS = [
+    '.modal-bg',
+    '#p96Fundo',
+    '#p92Fundo',
+    '#p84Fundo',
+    '#p83Fundo',
+    '#modalParcelasInstalacao',
+    '#modalLancInstalacao',
+    'dialog[open]'
+  ].join(',');
+
+  /* travas de rolagem que varias telas colocam no corpo da pagina */
+  var TRAVAS = [
+    'p52-travado', 'p53-travado', 'ag-modal-aberto', 'of-dep-aberto',
+    'or-aberto', 'modal-open', 'modal-aberto', 'no-scroll', 'sem-scroll',
+    'overflow-hidden', 'travado'
+  ];
+
+  /* ------------------------------------------------------------------
+     1) camada da janelinha de enquadrar foto
+     ------------------------------------------------------------------ */
+  function estilo() {
+    if (document.getElementById('p98Estilo')) { return; }
+    var s = document.createElement('style');
+    s.id = 'p98Estilo';
+    s.textContent = [
+      /* a janelinha de enquadrar sempre na frente do relatorio FPDO */
+      'html body div#p96Fundo{position:fixed !important;inset:0 !important;',
+      '  z-index:2147483600 !important;display:flex !important;',
+      '  align-items:center !important;justify-content:center !important;',
+      '  pointer-events:auto !important;visibility:visible !important;opacity:1 !important}',
+      'html body div#p96Fundo>#p96Cx{pointer-events:auto !important;z-index:1 !important}',
+      /* camadas escondidas nunca devem engolir clique */
+      'html body .p98-solta{pointer-events:none !important}',
+      '@media print{html body div#p96Fundo{display:none !important}}'
+    ].join('');
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  /* ------------------------------------------------------------------
+     2) faxina anti-travamento
+     ------------------------------------------------------------------ */
+  function visivel(el) {
+    if (!el || !el.getBoundingClientRect) { return false; }
+    try {
+      var cs = window.getComputedStyle(el);
+      if (!cs) { return false; }
+      if (cs.display === 'none') { return false; }
+      if (cs.visibility === 'hidden' || cs.visibility === 'collapse') { return false; }
+      var r = el.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) { return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function janelasAbertas() {
+    var abertas = [];
+    var lista;
+    try { lista = document.querySelectorAll(SEL_JANELAS); } catch (e) { return abertas; }
+    for (var i = 0; i < lista.length; i++) {
+      if (visivel(lista[i])) { abertas.push(lista[i]); }
+    }
+    return abertas;
+  }
+
+  /* escondida de verdade: display:none (nao conta animacao de abertura) */
+  function escondidaDeVerdade(el) {
+    try {
+      var cs = window.getComputedStyle(el);
+      if (!cs) { return false; }
+      if (cs.display === 'none') { return true; }
+      if (cs.visibility === 'hidden' || cs.visibility === 'collapse') { return true; }
+      return false;
+    } catch (e) { return false; }
+  }
+
+  /* camada escondida (ou marcada como morta) nao pode barrar o clique */
+  function neutralizarCamadas() {
+    var lista;
+    try {
+      lista = document.querySelectorAll(SEL_JANELAS + ',.p65-morto,[id$="Fundo"]');
+    } catch (e) { return; }
+    for (var i = 0; i < lista.length; i++) {
+      var el = lista[i];
+      var morto = escondidaDeVerdade(el);
+      if (morto) {
+        if (!el.classList.contains('p98-solta')) { el.classList.add('p98-solta'); }
+      } else if (el.classList.contains('p98-solta')) {
+        el.classList.remove('p98-solta');
+      }
+    }
+  }
+
+  /* se o relatorio FPDO foi fechado, a janelinha de enquadrar nao pode ficar sozinha na tela */
+  function limparEnquadrarOrfao() {
+    var f = document.getElementById('p96Fundo');
+    if (!f) { return; }
+    var pai = document.getElementById('p92Fundo');
+    if (pai && visivel(pai)) { return; }
+    /* o dono da janelinha e o relatorio FPDO: sem ele, ela vira bloqueio */
+    try {
+      if (window.P96 && typeof window.P96.fechar === 'function') { window.P96.fechar(); }
+    } catch (e) { /* ignora */ }
+    f = document.getElementById('p96Fundo');
+    if (f && f.parentNode) {
+      try { f.parentNode.removeChild(f); } catch (e2) { /* ignora */ }
+    }
+  }
+
+  function soltarPagina() {
+    var alvos = [document.body, document.documentElement];
+    for (var i = 0; i < alvos.length; i++) {
+      var el = alvos[i];
+      if (!el) { continue; }
+      try {
+        for (var t = 0; t < TRAVAS.length; t++) { el.classList.remove(TRAVAS[t]); }
+        if (el.style) {
+          if (el.style.overflow) { el.style.overflow = ''; }
+          if (el.style.overflowY) { el.style.overflowY = ''; }
+          if (el.style.position === 'fixed') { el.style.position = ''; }
+          if (el.style.height) { el.style.height = ''; }
+          if (el.style.top) { el.style.top = ''; }
+          if (el.style.pointerEvents) { el.style.pointerEvents = ''; }
+        }
+        el.removeAttribute('inert');
+        if (el.getAttribute('aria-hidden') === 'true') { el.removeAttribute('aria-hidden'); }
+      } catch (e) { /* ignora */ }
+    }
+  }
+
+  function precisaSoltar() {
+    var b = document.body, h = document.documentElement;
+    if (!b) { return false; }
+    for (var i = 0; i < TRAVAS.length; i++) {
+      if (b.classList.contains(TRAVAS[i])) { return true; }
+      if (h && h.classList.contains(TRAVAS[i])) { return true; }
+    }
+    if (b.style && (b.style.overflow === 'hidden' || b.style.position === 'fixed')) { return true; }
+    if (h && h.style && h.style.overflow === 'hidden') { return true; }
+    if (b.hasAttribute('inert') || b.getAttribute('aria-hidden') === 'true') { return true; }
+    return false;
+  }
+
+  function faxina() {
+    try {
+      limparEnquadrarOrfao();
+      neutralizarCamadas();
+      if (janelasAbertas().length === 0 && precisaSoltar()) { soltarPagina(); }
+    } catch (e) { /* ignora */ }
+  }
+  P98.destravar = function () {
+    limparEnquadrarOrfao();
+    neutralizarCamadas();
+    soltarPagina();
+    return true;
+  };
+  P98.faxina = faxina;
+
+  /* faxina agrupada: nunca corre mais de uma vez por vez */
+  var pendente = null;
+  function agendar(ms) {
+    if (pendente) { return; }
+    pendente = setTimeout(function () { pendente = null; faxina(); }, ms || 120);
+  }
+
+  /* ------------------------------------------------------------------
+     gatilhos: depois de clicar/teclar e um vigia leve de segurança
+     ------------------------------------------------------------------ */
+  document.addEventListener('click', function () { agendar(140); }, true);
+  document.addEventListener('keyup', function (ev) {
+    if (ev && (ev.key === 'Escape' || ev.key === 'Enter')) { agendar(140); }
+  }, true);
+  window.addEventListener('pageshow', function () { agendar(200); });
+
+  /* embrulha os fechadores conhecidos para a faxina rodar junto */
+  function embrulhar(nome) {
+    try {
+      var f = window[nome];
+      if (typeof f !== 'function' || f.__p98) { return; }
+      var novo = function () {
+        var r;
+        try { r = f.apply(this, arguments); } finally { agendar(60); }
+        return r;
+      };
+      novo.__p98 = true;
+      window[nome] = novo;
+    } catch (e) { /* ignora */ }
+  }
+  function embrulharTodos() {
+    var nomes = ['fecharModais', 'fecharModal', 'fecharTodosModais', 'closeModal', 'fecharPopup'];
+    for (var i = 0; i < nomes.length; i++) { embrulhar(nomes[i]); }
+  }
+
+  /* vigia: so age quando ha sinal de trava, entao pesa quase nada */
+  var vigia = null;
+  function ligarVigia() {
+    if (vigia) { return; }
+    vigia = setInterval(function () {
+      try {
+        if (document.getElementById('p96Fundo') || precisaSoltar()) { faxina(); }
+      } catch (e) { /* ignora */ }
+    }, 1200);
+  }
+
+  function iniciar() {
+    estilo();
+    embrulharTodos();
+    ligarVigia();
+    agendar(300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar);
+  } else {
+    iniciar();
+  }
+  setTimeout(embrulharTodos, 2500);
+})();
+
+</script>
+<!-- === FIM PATCH 98 === -->
+<!-- PATCH99_EDITOR_LIVRE_FPDO INICIO -->
+<script>
+/* ====== PATCH99_EDITOR_LIVRE_FPDO - mover, redimensionar e editar tudo nos slides ====== */
+(function () {
+  'use strict';
+  if (window.__PS99) { return; }
+  window.__PS99 = true;
+
+  /* ---------------- medidas do slide (iguais ao patch 94) ---------------- */
+  var LARG = 1280;
+  var ALT = 720;
+  var PT = ALT / 540;              /* 1 ponto do PowerPoint em px */
+  var POL_L = 13.333;
+  var POL_A = 7.5;
+
+  var K_ULT = 'p92_fpdo_ultimo_v1';
+  var LS_AJ = 'p99_ajustes_v1';
+  var DB = 'p99_ajustes_v1';
+  var LOJA = 'aj';
+
+  var TOL = 1.2;                   /* folga total (%) para reconhecer a peca */
+  var MAXLADO = 1400;
+  var QUAL = 0.82;
+
+  var AJ = {};                     /* { idRelatorio: { p:[pecas], x:[extras] } } */
+  var SELO = 1;                    /* muda a cada alteracao, obriga a redesenhar */
+  var editando = false;
+  var sel = null;
+  var pilha = [];
+  var arraste = null;
+
+  /* ---------------- utilidades ---------------- */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function n1(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) { return 0; }
+    return Math.round(n * 10) / 10;
+  }
+
+  function aviso(msg, tipo) {
+    if (typeof window.mostrarToastPainel === 'function') {
+      try { window.mostrarToastPainel(msg, tipo === 'erro' ? 'erro' : 'ok'); return; } catch (e) {}
+    }
+    var d = document.getElementById('p99Aviso');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = 'p99Aviso';
+      document.body.appendChild(d);
+    }
+    d.textContent = String(msg || '');
+    d.className = tipo === 'erro' ? 'p99-ruim' : 'p99-bom';
+    d.style.display = 'block';
+    if (d.__t) { clearTimeout(d.__t); }
+    d.__t = setTimeout(function () { d.style.display = 'none'; }, 3600);
+  }
+
+  /* ---------------- onde guardar (banco do navegador + copia simples) ---------------- */
+  function idb(ok, falhou) {
+    try {
+      if (!window.indexedDB) { falhou(); return; }
+      var r = window.indexedDB.open(DB, 1);
+      r.onupgradeneeded = function () {
+        try { r.result.createObjectStore(LOJA, { keyPath: 'id' }); } catch (e) {}
+      };
+      r.onsuccess = function () { ok(r.result); };
+      r.onerror = function () { falhou(); };
+    } catch (e2) { falhou(); }
+  }
+
+  function lsLer() {
+    try { return JSON.parse(localStorage.getItem(LS_AJ) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function carregar(depois) {
+    var base = lsLer();
+    function fim() { AJ = base || {}; if (depois) { depois(); } }
+    idb(function (b) {
+      try {
+        var t = b.transaction(LOJA, 'readonly');
+        var r = t.objectStore(LOJA).getAll();
+        r.onsuccess = function () {
+          (r.result || []).forEach(function (it) {
+            if (it && it.id) { base[it.id] = { p: it.p || [], x: it.x || [] }; }
+          });
+          fim();
+        };
+        r.onerror = fim;
+      } catch (e) { fim(); }
+    }, fim);
+  }
+
+  function idAtual() {
+    try { return localStorage.getItem(K_ULT) || 'sem_id'; } catch (e) { return 'sem_id'; }
+  }
+
+  function ajAtual() {
+    var id = idAtual();
+    if (!AJ[id]) { AJ[id] = { p: [], x: [] }; }
+    if (!AJ[id].p) { AJ[id].p = []; }
+    if (!AJ[id].x) { AJ[id].x = []; }
+    return AJ[id];
+  }
+
+  function gravar() {
+    var id = idAtual();
+    var a = ajAtual();
+    idb(function (b) {
+      try {
+        var t = b.transaction(LOJA, 'readwrite');
+        t.objectStore(LOJA).put({ id: id, p: a.p, x: a.x });
+      } catch (e) {}
+    }, function () {});
+    try {
+      var todo = lsLer();
+      todo[id] = a;
+      localStorage.setItem(LS_AJ, JSON.stringify(todo));
+    } catch (e2) {}
+  }
+
+  function guardaPassado() {
+    var a = ajAtual();
+    try { pilha.push(JSON.stringify(a)); } catch (e) { return; }
+    if (pilha.length > 40) { pilha.shift(); }
+  }
+
+  function desfazer() {
+    if (!pilha.length) { aviso('Nao tem mais nada para desfazer.', 'erro'); return; }
+    var s = pilha.pop();
+    var id = idAtual();
+    try { AJ[id] = JSON.parse(s); } catch (e) { return; }
+    gravar();
+    mudou();
+    aviso('Desfeito.');
+  }
+
+  function mudou() {
+    SELO++;
+    aplicarTudo();
+    if (sel && !document.body.contains(sel)) { selecionar(null); }
+    marcarSel();
+  }
+
+  /* ---------------- ler / escrever a posicao de uma peca ---------------- */
+  function geomDe(el) {
+    var s = el.getAttribute('style') || '';
+    function v(nome) {
+      var m = new RegExp(nome + '\\s*:\\s*(-?[0-9.]+)%').exec(s);
+      return m ? n1(m[1]) : 0;
+    }
+    return { l: v('left'), t: v('top'), w: v('width'), h: v('height') };
+  }
+
+  function porGeom(el, g) {
+    el.style.left = g.l + '%';
+    el.style.top = g.t + '%';
+    el.style.width = g.w + '%';
+    el.style.height = g.h + '%';
+  }
+
+  function tipoDe(el) {
+    if (el.classList.contains('p94-i')) { return 'img'; }
+    if (el.classList.contains('p94-q')) { return 'quad'; }
+    return 'txt';
+  }
+
+  function chave(s, g) {
+    return s + '|' + n1(g.l) + ',' + n1(g.t) + ',' + n1(g.w) + ',' + n1(g.h);
+  }
+
+  function achar(s, g, criar) {
+    var a = ajAtual();
+    var k = chave(s, g);
+    var i;
+    for (i = 0; i < a.p.length; i++) { if (a.p[i].key === k) { return a.p[i]; } }
+    if (!criar) { return null; }
+    var novo = { key: k, s: s, ol: n1(g.l), ot: n1(g.t), ow: n1(g.w), oh: n1(g.h) };
+    a.p.push(novo);
+    return novo;
+  }
+
+  function acharPerto(s, g) {
+    var a = ajAtual();
+    var i, o, melhor = null, dif, mdif = TOL;
+    for (i = 0; i < a.p.length; i++) {
+      o = a.p[i];
+      if (o.s !== s) { continue; }
+      dif = Math.abs(o.ol - g.l) + Math.abs(o.ot - g.t) + Math.abs(o.ow - g.w) + Math.abs(o.oh - g.h);
+      if (dif <= mdif) { mdif = dif; melhor = o; }
+    }
+    return melhor;
+  }
+
+  /* ---------------- pecas de um slide na tela ---------------- */
+  function pecasDe(folha) {
+    var out = [], i, f = folha.children;
+    for (i = 0; i < f.length; i++) {
+      var c = f[i];
+      if (!c.classList) { continue; }
+      if (c.hasAttribute('data-p99x')) { continue; }
+      if (c.classList.contains('p96-fundo') || c.classList.contains('p96-veu')) { continue; }
+      if (c.classList.contains('p94-t') || c.classList.contains('p94-i') || c.classList.contains('p94-q')) { out.push(c); }
+    }
+    return out;
+  }
+
+  function textoDe(el) {
+    return String(el.textContent || '').replace(/\u00a0/g, ' ');
+  }
+
+  function porTexto(el, txt) {
+    var linhas = String(txt == null ? '' : txt).split(/\r?\n/);
+    if (el.querySelector('.p94-li')) {
+      var pt = el.querySelector('.p94-li.p94-pt') ? ' p94-pt' : '';
+      el.innerHTML = linhas.map(function (l) {
+        return '<div class="p94-li' + pt + '">' + esc(l) + '</div>';
+      }).join('');
+      return;
+    }
+    el.innerHTML = '<span>' + linhas.map(esc).join('<br>') + '</span>';
+  }
+
+  /* ---------------- aplicar os ajustes numa folha desenhada ---------------- */
+  function aplicarFolha(folha, s) {
+    var selo = SELO + ':' + idAtual();
+    if (folha.getAttribute('data-p99') === selo) { return; }
+    folha.setAttribute('data-p99', selo);
+    folha.setAttribute('data-p99s', String(s));
+
+    var a = ajAtual();
+    var pecas = pecasDe(folha);
+
+    pecas.forEach(function (el, i) {
+      if (!el.__p99o) {
+        el.__p99o = {
+          g: geomDe(el),
+          html: el.innerHTML,
+          fs: el.style.fontSize || '',
+          cor: el.style.color || '',
+          bg: el.style.background || ''
+        };
+      }
+      var o0 = el.__p99o;
+      /* volta ao estado original antes de aplicar (deixa tudo previsivel) */
+      porGeom(el, o0.g);
+      if (el.innerHTML !== o0.html) { el.innerHTML = o0.html; }
+      el.style.fontSize = o0.fs;
+      if (o0.cor) { el.style.color = o0.cor; }
+      if (el.__p99hid) { el.__p99hid = false; el.style.display = ''; }
+      el.setAttribute('data-p99i', String(i));
+      el.setAttribute('data-p99k', tipoDe(el));
+
+      var o = achar(s, o0.g, false) || acharPerto(s, o0.g);
+      if (!o) { return; }
+      if (o.del) { el.__p99hid = true; el.style.display = 'none'; return; }
+      porGeom(el, { l: o.l == null ? o0.g.l : o.l, t: o.t == null ? o0.g.t : o.t,
+                    w: o.w == null ? o0.g.w : o.w, h: o.h == null ? o0.g.h : o.h });
+      if (o.fs) { el.style.fontSize = o.fs + 'px'; }
+      if (o.cor) { el.style.color = o.cor; }
+      if (o.v != null && !el.classList.contains('p94-i') && !el.classList.contains('p94-q')) { porTexto(el, o.v); }
+      if (o.u != null && el.classList.contains('p94-i')) {
+        var im = el.querySelector('img');
+        if (im) {
+          im.setAttribute('src', o.u);
+          im.style.objectFit = o.fit || im.style.objectFit || 'contain';
+        }
+      }
+      if (o.fit && el.classList.contains('p94-i')) {
+        var im2 = el.querySelector('img');
+        if (im2) { im2.style.objectFit = o.fit; }
+      }
+      if (o.cor && el.classList.contains('p94-q')) { el.style.background = o.cor; }
+    });
+
+    /* pecas novas criadas pelo usuario */
+    var velhos = folha.querySelectorAll('[data-p99x]');
+    var j;
+    for (j = 0; j < velhos.length; j++) {
+      if (velhos[j].parentNode) { velhos[j].parentNode.removeChild(velhos[j]); }
+    }
+    a.x.forEach(function (o, i) {
+      if (o.s !== s || o.del) { return; }
+      folha.appendChild(elExtra(o, i));
+    });
+  }
+
+  function elExtra(o, i) {
+    var d = document.createElement('div');
+    d.setAttribute('data-p99x', String(i));
+    d.setAttribute('data-p99k', o.k === 'img' ? 'img' : 'txt');
+    d.style.left = o.l + '%';
+    d.style.top = o.t + '%';
+    d.style.width = o.w + '%';
+    d.style.height = o.h + '%';
+    if (o.k === 'img') {
+      d.className = 'p94-i';
+      d.innerHTML = '<img src="' + esc(o.u || '') + '" alt="foto" style="object-fit:' + (o.fit || 'contain') + '">';
+    } else {
+      d.className = 'p94-t p94-top';
+      d.style.color = o.cor || '#FFFFFF';
+      d.style.fontSize = (o.fs || 22) + 'px';
+      d.style.fontWeight = o.b ? '700' : '400';
+      d.style.textAlign = o.al || 'left';
+      d.style.zIndex = '4';
+      porTexto(d, o.v || 'Escreva aqui');
+    }
+    return d;
+  }
+
+  function aplicarTudo() {
+    /* cada area (conferencia, PDF, impressao) conta os slides do zero */
+    var folhas = document.querySelectorAll('.p94-folha');
+    var pais = [], conta = [], i, p, k;
+    for (i = 0; i < folhas.length; i++) {
+      p = folhas[i].parentNode;
+      k = pais.indexOf(p);
+      if (k < 0) { pais.push(p); conta.push(0); k = pais.length - 1; }
+      try { aplicarFolha(folhas[i], conta[k]); } catch (e) {}
+      conta[k] = conta[k] + 1;
+    }
+    if (editando) { marcarEditaveis(); }
+  }
+
+  /* ---------------- aparencia do editor ---------------- */
+  var ID_ESTILO = 'p99Estilo';
+
+  function estilo() {
+    if (document.getElementById(ID_ESTILO)) { return; }
+    var css = [
+      '#p99Aviso{position:fixed;right:16px;bottom:16px;z-index:2147483647;max-width:330px;',
+      'padding:10px 14px;border-radius:10px;font:600 13px Arial,sans-serif;color:#fff;display:none;',
+      'box-shadow:0 10px 26px rgba(0,0,0,.35)}',
+      '#p99Aviso.p99-bom{background:#15803d}',
+      '#p99Aviso.p99-ruim{background:#b91c1c}',
+      '#p94Fundo .p99-bt{border:1px solid #475569;background:#1e293b;color:#e2e8f0;border-radius:8px;',
+      'padding:7px 11px;font:600 12px Arial,sans-serif;cursor:pointer}',
+      '#p94Fundo .p99-bt:hover{background:#334155}',
+      '#p94Fundo .p99-bt.p99-on{background:#15803d;border-color:#22c55e;color:#fff}',
+      '#p94Fundo .p99-linha{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%;',
+      'padding-top:6px;border-top:1px solid #334155;margin-top:2px}',
+      '#p94Fundo .p99-dica{color:#94a3b8;font:400 11px Arial,sans-serif}',
+      '.p99-edit .p94-t,.p99-edit .p94-i,.p99-edit .p94-q{outline:1px dashed rgba(148,163,184,.55);',
+      'outline-offset:-1px;cursor:move}',
+      '.p99-edit .p94-t:hover,.p99-edit .p94-i:hover,.p99-edit .p94-q:hover{outline:1px solid #38bdf8}',
+      '.p99-edit .p94-folha{-webkit-user-select:none;user-select:none}',
+      '.p99-edit [contenteditable="true"]{-webkit-user-select:text;user-select:text;cursor:text;',
+      'outline:2px solid #f59e0b !important;background:rgba(0,0,0,.28)}',
+      '.p99-mk{position:absolute;border:1.5px solid #22c55e;pointer-events:none;z-index:60}',
+      '.p99-h{position:absolute;width:13px;height:13px;background:#22c55e;border:2px solid #fff;',
+      'border-radius:3px;pointer-events:auto;z-index:61}',
+      '.p99-h[data-p99h="nw"]{left:-7px;top:-7px;cursor:nwse-resize}',
+      '.p99-h[data-p99h="ne"]{right:-7px;top:-7px;cursor:nesw-resize}',
+      '.p99-h[data-p99h="sw"]{left:-7px;bottom:-7px;cursor:nesw-resize}',
+      '.p99-h[data-p99h="se"]{right:-7px;bottom:-7px;cursor:nwse-resize}',
+      '@media print{.p99-mk{display:none !important}}'
+    ].join('');
+    var t = document.createElement('style');
+    t.id = ID_ESTILO;
+    t.type = 'text/css';
+    t.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(t);
+  }
+
+  /* ---------------- quem esta selecionado ---------------- */
+  function folhaDe(el) {
+    return el && el.closest ? el.closest('.p94-folha') : null;
+  }
+
+  function slideDe(el) {
+    var f = folhaDe(el);
+    if (!f) { return 0; }
+    var n = parseInt(f.getAttribute('data-p99s') || '0', 10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function ehExtra(el) {
+    return !!(el && el.hasAttribute && el.hasAttribute('data-p99x'));
+  }
+
+  function regDe(el, criar) {
+    if (!el) { return null; }
+    var a = ajAtual();
+    if (ehExtra(el)) {
+      var i = parseInt(el.getAttribute('data-p99x'), 10);
+      return a.x[i] || null;
+    }
+    var o0 = el.__p99o;
+    if (!o0) { return null; }
+    var s = slideDe(el);
+    var r = achar(s, o0.g, false) || acharPerto(s, o0.g);
+    if (r) { return r; }
+    if (!criar) { return null; }
+    return achar(s, o0.g, true);
+  }
+
+  function selecionar(el) {
+    if (sel === el) { marcarSel(); return; }
+    if (sel && sel.classList) { sel.classList.remove('p99-sel'); }
+    sel = el || null;
+    if (sel && sel.classList) { sel.classList.add('p99-sel'); }
+    marcarSel();
+    barraSel();
+  }
+
+  function limparMarcas() {
+    var m = document.querySelectorAll('.p99-mk');
+    var i;
+    for (i = 0; i < m.length; i++) {
+      if (m[i].parentNode) { m[i].parentNode.removeChild(m[i]); }
+    }
+  }
+
+  function marcarSel() {
+    limparMarcas();
+    if (!editando || !sel || !document.body.contains(sel)) { return; }
+    var f = folhaDe(sel);
+    if (!f) { return; }
+    var g = geomDe(sel);
+    var d = document.createElement('div');
+    d.className = 'p99-mk';
+    d.setAttribute('data-html2canvas-ignore', 'true');
+    d.style.left = g.l + '%';
+    d.style.top = g.t + '%';
+    d.style.width = g.w + '%';
+    d.style.height = g.h + '%';
+    d.innerHTML =
+      '<div class="p99-h" data-p99h="nw"></div><div class="p99-h" data-p99h="ne"></div>' +
+      '<div class="p99-h" data-p99h="sw"></div><div class="p99-h" data-p99h="se"></div>';
+    f.appendChild(d);
+  }
+
+  function marcarEditaveis() {
+    var cx = document.getElementById('p94Lupa');
+    if (!cx) { return; }
+    if (editando) { cx.classList.add('p99-edit'); } else { cx.classList.remove('p99-edit'); }
+  }
+
+  /* ---------------- arrastar e redimensionar ---------------- */
+  function caixaFolha(f) {
+    var r = f.getBoundingClientRect();
+    var lg = r.width || LARG;
+    var al = r.height || ALT;
+    if (lg < 40) { lg = LARG; }
+    if (al < 40) { al = ALT; }
+    return { lg: lg, al: al };
+  }
+
+  function limitar(g) {
+    if (g.w < 1.2) { g.w = 1.2; }
+    if (g.h < 1.2) { g.h = 1.2; }
+    if (g.w > 220) { g.w = 220; }
+    if (g.h > 220) { g.h = 220; }
+    if (g.l < -60) { g.l = -60; }
+    if (g.t < -60) { g.t = -60; }
+    if (g.l > 160) { g.l = 160; }
+    if (g.t > 160) { g.t = 160; }
+    g.l = n1(g.l); g.t = n1(g.t); g.w = n1(g.w); g.h = n1(g.h);
+    return g;
+  }
+
+  function comecarArraste(el, ev, canto) {
+    var f = folhaDe(el);
+    if (!f) { return; }
+    var cx = caixaFolha(f);
+    guardaPassado();
+    arraste = {
+      el: el, canto: canto || '', g0: geomDe(el),
+      x0: ev.clientX, y0: ev.clientY,
+      lg: cx.lg, al: cx.al, moveu: false
+    };
+    try { el.setPointerCapture && ev.pointerId != null && el.setPointerCapture(ev.pointerId); } catch (e) {}
+  }
+
+  function andarArraste(ev) {
+    if (!arraste) { return; }
+    var dx = (ev.clientX - arraste.x0) / arraste.lg * 100;
+    var dy = (ev.clientY - arraste.y0) / arraste.al * 100;
+    if (!arraste.moveu && Math.abs(ev.clientX - arraste.x0) + Math.abs(ev.clientY - arraste.y0) < 3) { return; }
+    arraste.moveu = true;
+    var o = arraste.g0;
+    var g = { l: o.l, t: o.t, w: o.w, h: o.h };
+    var c = arraste.canto;
+    if (!c) {
+      g.l = o.l + dx; g.t = o.t + dy;
+    } else {
+      if (c === 'se') { g.w = o.w + dx; g.h = o.h + dy; }
+      if (c === 'ne') { g.w = o.w + dx; g.t = o.t + dy; g.h = o.h - dy; }
+      if (c === 'sw') { g.l = o.l + dx; g.w = o.w - dx; g.h = o.h + dy; }
+      if (c === 'nw') { g.l = o.l + dx; g.w = o.w - dx; g.t = o.t + dy; g.h = o.h - dy; }
+    }
+    porGeom(arraste.el, limitar(g));
+    marcarSel();
+  }
+
+  function terminarArraste() {
+    if (!arraste) { return; }
+    var a = arraste;
+    arraste = null;
+    if (!a.moveu) { pilha.pop(); return; }
+    var g = limitar(geomDe(a.el));
+    var r = regDe(a.el, true);
+    if (r) {
+      r.l = g.l; r.t = g.t; r.w = g.w; r.h = g.h;
+      if (a.canto && !ehExtra(a.el) && a.el.classList.contains('p94-t')) {
+        /* texto esticado: acompanha a altura para nao cortar as letras */
+        var base = a.g0.h || 1;
+        var fs0 = parseFloat(r.fs || (a.el.__p99o && a.el.__p99o.fs) || 0);
+        if (!fs0) { fs0 = parseFloat(window.getComputedStyle(a.el).fontSize) || 0; }
+        if (fs0 && Math.abs(g.h - base) > 0.4) {
+          var novo = fs0 * (g.h / base);
+          if (novo < 7) { novo = 7; }
+          if (novo > 120) { novo = 120; }
+          r.fs = Math.round(novo * 10) / 10;
+        }
+      }
+      gravar();
+    }
+    mudou();
+    selecionar(a.el.parentNode ? a.el : null);
+    aviso('Posicao guardada.');
+  }
+
+  /* ---------------- editar o texto no lugar ---------------- */
+  function abrirTexto(el) {
+    if (!el || el.classList.contains('p94-i') || el.classList.contains('p94-q')) { return; }
+    if (el.getAttribute('contenteditable') === 'true') { return; }
+    el.setAttribute('contenteditable', 'true');
+    el.setAttribute('spellcheck', 'false');
+    try { el.focus(); } catch (e) {}
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(el);
+      var s = window.getSelection();
+      s.removeAllRanges();
+      s.addRange(r);
+    } catch (e2) {}
+    el.__p99txt = textoLimpo(el);
+  }
+
+  function textoLimpo(el) {
+    var lis = el.querySelectorAll('.p94-li');
+    var i, out = [];
+    if (lis.length) {
+      for (i = 0; i < lis.length; i++) { out.push(String(lis[i].textContent || '')); }
+      return out.join('\n').replace(/\u00a0/g, ' ');
+    }
+    return String(el.innerText || el.textContent || '').replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n');
+  }
+
+  function fecharTexto(el) {
+    if (!el || el.getAttribute('contenteditable') !== 'true') { return; }
+    el.removeAttribute('contenteditable');
+    var novo = textoLimpo(el);
+    var velho = el.__p99txt == null ? '' : el.__p99txt;
+    if (novo === velho) { mudou(); return; }
+    guardaPassado();
+    var r = regDe(el, true);
+    if (r) { r.v = novo; gravar(); }
+    mudou();
+    selecionar(el.parentNode ? el : null);
+    aviso('Texto guardado.');
+  }
+
+  function fecharQualquerTexto() {
+    var e = document.querySelector('[contenteditable="true"]');
+    if (e) { fecharTexto(e); }
+  }
+
+  /* ---------------- fotos: escolher do computador e encolher ---------------- */
+  function pedirFoto(depois) {
+    var i = document.getElementById('p99Arq');
+    if (!i) {
+      i = document.createElement('input');
+      i.id = 'p99Arq';
+      i.type = 'file';
+      i.accept = 'image/*';
+      i.style.display = 'none';
+      document.body.appendChild(i);
+      i.addEventListener('change', function () {
+        var f = i.files && i.files[0];
+        var fn = i.__ok;
+        i.value = '';
+        i.__ok = null;
+        if (!f || !fn) { return; }
+        encolher(f, function (u) {
+          if (!u) { aviso('Nao consegui ler essa foto.', 'erro'); return; }
+          fn(u);
+        });
+      });
+    }
+    i.__ok = depois;
+    try { i.click(); } catch (e) { aviso('Nao consegui abrir a escolha de foto.', 'erro'); }
+  }
+
+  function encolher(arq, depois) {
+    try {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var im = new Image();
+        im.onload = function () {
+          try {
+            var k = Math.min(1, MAXLADO / Math.max(im.width || 1, im.height || 1));
+            var lg = Math.max(1, Math.round((im.width || 1) * k));
+            var al = Math.max(1, Math.round((im.height || 1) * k));
+            var cv = document.createElement('canvas');
+            cv.width = lg; cv.height = al;
+            var cx = cv.getContext('2d');
+            cx.drawImage(im, 0, 0, lg, al);
+            depois(cv.toDataURL('image/jpeg', QUAL));
+          } catch (e) { depois(String(fr.result || '')); }
+        };
+        im.onerror = function () { depois(''); };
+        im.src = String(fr.result || '');
+      };
+      fr.onerror = function () { depois(''); };
+      fr.readAsDataURL(arq);
+    } catch (e2) { depois(''); }
+  }
+
+  function trocarFoto() {
+    if (!sel) { aviso('Toque primeiro na foto que quer trocar.', 'erro'); return; }
+    if (!sel.classList.contains('p94-i')) { aviso('Isso nao e uma foto. Escolha uma foto.', 'erro'); return; }
+    var alvo = sel;
+    pedirFoto(function (u) {
+      guardaPassado();
+      var r = regDe(alvo, true);
+      if (r) { r.u = u; r.del = false; gravar(); }
+      mudou();
+      aviso('Foto trocada.');
+    });
+  }
+
+  function slideVisivel() {
+    if (sel) { return slideDe(sel); }
+    var cx = document.getElementById('p94Lupa');
+    if (!cx) { return 0; }
+    var lst = cx.querySelectorAll('.p94-folha');
+    var i, melhor = 0, md = 1e9, r, d;
+    for (i = 0; i < lst.length; i++) {
+      r = lst[i].getBoundingClientRect();
+      d = Math.abs(r.top);
+      if (d < md) { md = d; melhor = i; }
+    }
+    return melhor;
+  }
+
+  function novaFoto() {
+    var s = slideVisivel();
+    pedirFoto(function (u) {
+      guardaPassado();
+      var a = ajAtual();
+      a.x.push({ k: 'img', s: s, l: 30, t: 30, w: 40, h: 40, u: u, fit: 'contain' });
+      gravar();
+      mudou();
+      aviso('Foto colocada no slide ' + (s + 1) + '. Arraste para o lugar certo.');
+    });
+  }
+
+  function novoTexto() {
+    var s = slideVisivel();
+    guardaPassado();
+    var a = ajAtual();
+    a.x.push({ k: 'txt', s: s, l: 20, t: 42, w: 55, h: 12, v: 'Escreva aqui', fs: 26, cor: '#FFFFFF', al: 'left', b: true });
+    gravar();
+    mudou();
+    aviso('Texto novo no slide ' + (s + 1) + '. Toque duas vezes para escrever.');
+  }
+
+  function excluirSel() {
+    if (!sel) { aviso('Toque primeiro no que quer apagar.', 'erro'); return; }
+    guardaPassado();
+    var r = regDe(sel, true);
+    if (r) { r.del = true; gravar(); }
+    selecionar(null);
+    mudou();
+    aviso('Apagado. Use Desfazer se precisar voltar.');
+  }
+
+  function mudarLetra(passo) {
+    if (!sel || sel.classList.contains('p94-i') || sel.classList.contains('p94-q')) {
+      aviso('Escolha um texto primeiro.', 'erro'); return;
+    }
+    guardaPassado();
+    var atual = parseFloat(window.getComputedStyle(sel).fontSize) || 20;
+    var novo = atual + passo;
+    if (novo < 7) { novo = 7; }
+    if (novo > 120) { novo = 120; }
+    var r = regDe(sel, true);
+    if (r) { r.fs = Math.round(novo * 10) / 10; gravar(); }
+    mudou();
+    selecionar(sel && sel.parentNode ? sel : null);
+  }
+
+  function encaixeFoto() {
+    if (!sel || !sel.classList.contains('p94-i')) { aviso('Escolha uma foto primeiro.', 'erro'); return; }
+    var im = sel.querySelector('img');
+    var atual = im ? (im.style.objectFit || 'contain') : 'contain';
+    guardaPassado();
+    var r = regDe(sel, true);
+    if (r) { r.fit = atual === 'cover' ? 'contain' : 'cover'; gravar(); }
+    mudou();
+    selecionar(sel && sel.parentNode ? sel : null);
+    aviso(atual === 'cover' ? 'Foto inteira dentro da moldura.' : 'Foto preenchendo a moldura.');
+  }
+
+  function limparSlide() {
+    var s = slideVisivel();
+    if (!window.confirm('Voltar o slide ' + (s + 1) + ' para como ele era antes das suas mudancas?')) { return; }
+    guardaPassado();
+    var a = ajAtual();
+    a.p = a.p.filter(function (o) { return o.s !== s; });
+    a.x = a.x.filter(function (o) { return o.s !== s; });
+    gravar();
+    selecionar(null);
+    mudou();
+    aviso('Slide ' + (s + 1) + ' voltou ao normal.');
+  }
+
+  function limparTudo() {
+    if (!window.confirm('Apagar TODAS as suas mudancas deste relatorio?')) { return; }
+    guardaPassado();
+    var id = idAtual();
+    AJ[id] = { p: [], x: [] };
+    gravar();
+    selecionar(null);
+    mudou();
+    aviso('Tudo voltou ao normal.');
+  }
+
+  /* ---------------- barra de botoes na conferencia ---------------- */
+  function bt(acao, rot, tit) {
+    return '<button class="p99-bt" type="button" data-p99="' + acao + '" title="' + esc(tit || rot) + '">' + esc(rot) + '</button>';
+  }
+
+  function colocarBarra() {
+    var f = document.getElementById('p94Fundo');
+    if (!f || f.style.display !== 'block') { return; }
+    var b = f.querySelector('.p94-barra');
+    if (!b || b.querySelector('[data-p99]')) { return; }
+    var d = document.createElement('div');
+    d.className = 'p99-linha';
+    d.innerHTML =
+      bt('editar', 'Editar slides', 'Liga e desliga a edicao livre') +
+      bt('texto', '+ Texto', 'Coloca um texto novo no slide') +
+      bt('foto', '+ Foto', 'Coloca uma foto nova no slide') +
+      bt('trocar', 'Trocar foto', 'Troca a foto que voce escolheu') +
+      bt('encaixe', 'Encaixe da foto', 'Foto inteira ou preenchendo a moldura') +
+      bt('maior', 'A+', 'Letra maior') +
+      bt('menor', 'A-', 'Letra menor') +
+      bt('apagar', 'Apagar', 'Apaga o que voce escolheu') +
+      bt('desfazer', 'Desfazer', 'Volta a ultima mudanca') +
+      bt('zerarslide', 'Zerar slide', 'Volta este slide ao normal') +
+      bt('zerartudo', 'Zerar tudo', 'Volta todos os slides ao normal') +
+      '<span class="p99-dica">Ligue a edicao, arraste para mover, use as bolinhas verdes para o tamanho e toque duas vezes para escrever.</span>';
+    b.appendChild(d);
+    pintarBarra();
+  }
+
+  function pintarBarra() {
+    var b = document.querySelector('#p94Fundo [data-p99="editar"]');
+    if (!b) { return; }
+    if (editando) { b.classList.add('p99-on'); b.textContent = 'Edicao ligada'; }
+    else { b.classList.remove('p99-on'); b.textContent = 'Editar slides'; }
+  }
+
+  function barraSel() { pintarBarra(); }
+
+  function ligarEdicao(v) {
+    editando = !!v;
+    if (!editando) { fecharQualquerTexto(); selecionar(null); }
+    marcarEditaveis();
+    marcarSel();
+    pintarBarra();
+    aviso(editando
+      ? 'Edicao ligada: arraste, estique pelas bolinhas verdes e toque duas vezes para escrever.'
+      : 'Edicao desligada. Suas mudancas ficam guardadas.');
+  }
+
+  function acao(a) {
+    if (a === 'editar') { ligarEdicao(!editando); return; }
+    if (a === 'desfazer') { desfazer(); return; }
+    if (a === 'zerarslide') { limparSlide(); return; }
+    if (a === 'zerartudo') { limparTudo(); return; }
+    if (!editando) { ligarEdicao(true); }
+    if (a === 'texto') { novoTexto(); return; }
+    if (a === 'foto') { novaFoto(); return; }
+    if (a === 'trocar') { trocarFoto(); return; }
+    if (a === 'encaixe') { encaixeFoto(); return; }
+    if (a === 'maior') { mudarLetra(2); return; }
+    if (a === 'menor') { mudarLetra(-2); return; }
+    if (a === 'apagar') { excluirSel(); return; }
+  }
+
+  /* ---------------- cliques e toques ---------------- */
+  function ligarEventos() {
+    document.addEventListener('click', function (ev) {
+      var t = ev.target;
+      var b = t && t.closest ? t.closest('[data-p99]') : null;
+      if (!b) { return; }
+      ev.preventDefault();
+      ev.stopPropagation();
+      acao(b.getAttribute('data-p99'));
+    }, true);
+
+    document.addEventListener('pointerdown', function (ev) {
+      if (!editando) { return; }
+      var t = ev.target;
+      if (!t || !t.closest) { return; }
+      if (t.closest('[data-p99]')) { return; }
+      var lupa = t.closest('#p94Lupa');
+      if (!lupa) { return; }
+
+      var h = t.closest('.p99-h');
+      if (h && sel) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        comecarArraste(sel, ev, h.getAttribute('data-p99h'));
+        return;
+      }
+
+      var p = t.closest('.p94-t,.p94-i,.p94-q');
+      if (!p) {
+        fecharQualquerTexto();
+        selecionar(null);
+        return;
+      }
+      if (p.getAttribute('contenteditable') === 'true') { return; }
+      fecharQualquerTexto();
+      ev.preventDefault();
+      ev.stopPropagation();
+      selecionar(p);
+      comecarArraste(p, ev, '');
+    }, true);
+
+    document.addEventListener('pointermove', function (ev) {
+      if (!arraste) { return; }
+      ev.preventDefault();
+      andarArraste(ev);
+    }, true);
+
+    function soltar() { if (arraste) { terminarArraste(); } }
+    document.addEventListener('pointerup', soltar, true);
+    document.addEventListener('pointercancel', soltar, true);
+    window.addEventListener('blur', soltar);
+
+    document.addEventListener('dblclick', function (ev) {
+      if (!editando) { return; }
+      var t = ev.target;
+      if (!t || !t.closest || !t.closest('#p94Lupa')) { return; }
+      var p = t.closest('.p94-t');
+      if (!p) { return; }
+      ev.preventDefault();
+      ev.stopPropagation();
+      selecionar(p);
+      abrirTexto(p);
+    }, true);
+
+    window.addEventListener('keydown', function (ev) {
+      var ed = document.querySelector('[contenteditable="true"]');
+      var tecla = ev.key || '';
+      if (ed) {
+        if (tecla === 'Escape' || ev.keyCode === 27) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          fecharTexto(ed);
+        }
+        if ((tecla === 'Enter' || ev.keyCode === 13) && (ev.ctrlKey || ev.metaKey)) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          fecharTexto(ed);
+        }
+        return;
+      }
+      if (!editando) { return; }
+      var lupa = document.getElementById('p94Lupa');
+      if (!lupa) { return; }
+      if ((ev.ctrlKey || ev.metaKey) && (tecla === 'z' || tecla === 'Z')) {
+        ev.preventDefault(); ev.stopPropagation(); desfazer(); return;
+      }
+      if (!sel) { return; }
+      var passo = ev.shiftKey ? 2 : 0.4;
+      var g = geomDe(sel);
+      var mexeu = false;
+      if (tecla === 'ArrowLeft' || ev.keyCode === 37) { g.l -= passo; mexeu = true; }
+      if (tecla === 'ArrowRight' || ev.keyCode === 39) { g.l += passo; mexeu = true; }
+      if (tecla === 'ArrowUp' || ev.keyCode === 38) { g.t -= passo; mexeu = true; }
+      if (tecla === 'ArrowDown' || ev.keyCode === 40) { g.t += passo; mexeu = true; }
+      if (mexeu) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        guardaPassado();
+        var alvo = sel;
+        var r = regDe(alvo, true);
+        limitar(g);
+        if (r) { r.l = g.l; r.t = g.t; r.w = g.w; r.h = g.h; gravar(); }
+        mudou();
+        selecionar(alvo && alvo.parentNode ? alvo : null);
+        return;
+      }
+      if (tecla === 'Delete' || tecla === 'Backspace' || ev.keyCode === 46) {
+        ev.preventDefault(); ev.stopPropagation(); excluirSel(); return;
+      }
+      if (tecla === 'Escape' || ev.keyCode === 27) {
+        ev.preventDefault(); ev.stopPropagation(); selecionar(null); return;
+      }
+    }, true);
+  }
+
+  /* ---------------- PowerPoint: repetir os mesmos ajustes ---------------- */
+  function polPara(v, total) { return Math.round((v / 100) * total * 1000) / 1000; }
+  function paraPct(v, total) { return n1((v / total) * 100); }
+
+  function opGeom(op) {
+    var o = op[0] === 'img' ? op[1] : (op[0] === 'shape' ? op[2] : op[2]);
+    if (!o) { return null; }
+    if (o.x == null || o.y == null) { return null; }
+    return {
+      o: o,
+      l: paraPct(parseFloat(o.x) || 0, POL_L),
+      t: paraPct(parseFloat(o.y) || 0, POL_A),
+      w: paraPct(parseFloat(o.w) || 0, POL_L),
+      h: paraPct(parseFloat(o.h) || 0, POL_A)
+    };
+  }
+
+  function textoPptx(v, base) {
+    var linhas = String(v == null ? '' : v).split(/\r?\n/);
+    if (linhas.length < 2) { return linhas[0] || ''; }
+    return linhas.map(function (l) {
+      return { text: String(l), options: { breakLine: true, bullet: base && base.__bullet ? { code: '2022' } : false } };
+    });
+  }
+
+  function ajustarOps(ops, s) {
+    var a = ajAtual();
+    var fora = [];
+    var i, j, g, alvo, dif, mdif, o, novo;
+    var saida = [];
+    for (i = 0; i < ops.length; i++) {
+      g = opGeom(ops[i]);
+      if (!g) { saida.push(ops[i]); continue; }
+      alvo = null; mdif = TOL;
+      for (j = 0; j < a.p.length; j++) {
+        o = a.p[j];
+        if (o.s !== s) { continue; }
+        dif = Math.abs(o.ol - g.l) + Math.abs(o.ot - g.t) + Math.abs(o.ow - g.w) + Math.abs(o.oh - g.h);
+        if (dif <= mdif) { mdif = dif; alvo = o; }
+      }
+      if (!alvo) { saida.push(ops[i]); continue; }
+      if (alvo.del) { continue; }
+      novo = {};
+      for (var k in g.o) { if (Object.prototype.hasOwnProperty.call(g.o, k)) { novo[k] = g.o[k]; } }
+      if (alvo.l != null) { novo.x = polPara(alvo.l, POL_L); }
+      if (alvo.t != null) { novo.y = polPara(alvo.t, POL_A); }
+      if (alvo.w != null) { novo.w = polPara(alvo.w, POL_L); }
+      if (alvo.h != null) { novo.h = polPara(alvo.h, POL_A); }
+      if (novo.sizing && novo.sizing.type) {
+        novo.sizing = { type: alvo.fit ? (alvo.fit === 'cover' ? 'cover' : 'contain') : novo.sizing.type, w: novo.w, h: novo.h };
+      }
+      if (alvo.fs && ops[i][0] === 'text') { novo.fontSize = Math.round((alvo.fs / PT) * 10) / 10; }
+      if (alvo.cor && ops[i][0] === 'text') { novo.color = String(alvo.cor).replace('#', ''); }
+      if (alvo.u && ops[i][0] === 'img') { novo.data = alvo.u; try { delete novo.path; } catch (e9) { novo.path = ''; } }
+      if (ops[i][0] === 'img') { saida.push(['img', novo]); continue; }
+      if (ops[i][0] === 'shape') { saida.push(['shape', ops[i][1], novo]); continue; }
+      var conteudo = ops[i][1];
+      if (alvo.v != null) {
+        var bullet = false;
+        if (Object.prototype.toString.call(conteudo) === '[object Array]' && conteudo.length &&
+            conteudo[0] && conteudo[0].options && conteudo[0].options.bullet) { bullet = true; }
+        conteudo = textoPptx(alvo.v, { __bullet: bullet });
+      }
+      saida.push(['text', conteudo, novo]);
+    }
+    /* pecas novas do usuario */
+    a.x.forEach(function (o2) {
+      if (o2.s !== s || o2.del) { return; }
+      var cx = { x: polPara(o2.l, POL_L), y: polPara(o2.t, POL_A), w: polPara(o2.w, POL_L), h: polPara(o2.h, POL_A) };
+      if (o2.k === 'img') {
+        if (!o2.u) { return; }
+        fora.push(['img', { data: o2.u, x: cx.x, y: cx.y, w: cx.w, h: cx.h,
+          sizing: { type: o2.fit === 'cover' ? 'cover' : 'contain', w: cx.w, h: cx.h } }]);
+        return;
+      }
+      fora.push(['text', textoPptx(o2.v || '', null), {
+        x: cx.x, y: cx.y, w: cx.w, h: cx.h,
+        fontSize: Math.round(((o2.fs || 22) / PT) * 10) / 10,
+        color: String(o2.cor || '#FFFFFF').replace('#', ''),
+        bold: !!o2.b, align: o2.al || 'left', valign: 'top', margin: 0,
+        fontFace: 'Calibri', isTextBox: true
+      }]);
+    });
+    return saida.concat(fora);
+  }
+
+  function rascunho99() {
+    var b = { fundo: null, ops: [] };
+    b.addImage = function (o) { b.ops.push(['img', o]); return b; };
+    b.addShape = function (t, o) { b.ops.push(['shape', t, o]); return b; };
+    b.addText = function (t, o) { b.ops.push(['text', t, o]); return b; };
+    b.addTable = function (t, o) { b.ops.push(['table', t, o]); return b; };
+    b.addChart = function (t, d, o) { b.ops.push(['chart', t, d, o]); return b; };
+    b.addNotes = function (t) { b.ops.push(['notes', t]); return b; };
+    b.addMedia = function (o) { b.ops.push(['media', o]); return b; };
+    try {
+      Object.defineProperty(b, 'background', {
+        configurable: true,
+        get: function () { return b.fundo; },
+        set: function (v) { b.fundo = v; }
+      });
+    } catch (e) {}
+    return b;
+  }
+
+  function tocar99(real, op) {
+    if (op[0] === 'img') { real.addImage(op[1]); return; }
+    if (op[0] === 'shape') { real.addShape(op[1], op[2]); return; }
+    if (op[0] === 'text') { real.addText(op[1], op[2]); return; }
+    if (op[0] === 'table') { real.addTable(op[1], op[2]); return; }
+    if (op[0] === 'chart') { real.addChart(op[1], op[2], op[3]); return; }
+    if (op[0] === 'notes') { real.addNotes(op[1]); return; }
+    if (op[0] === 'media') { real.addMedia(op[1]); return; }
+  }
+
+  function montar99(inv) {
+    if (inv.__feito) { return; }
+    inv.__feito = true;
+    var i, j, b, real, ops;
+    for (i = 0; i < inv.__folhas.length; i++) {
+      b = inv.__folhas[i];
+      try { real = inv.__base.addSlide(); } catch (e) { continue; }
+      if (b.fundo) { try { real.background = b.fundo; } catch (e1) {} }
+      ops = b.ops;
+      try { ops = ajustarOps(b.ops, i); } catch (e2) { ops = b.ops; }
+      for (j = 0; j < ops.length; j++) {
+        try { tocar99(real, ops[j]); } catch (e3) {}
+      }
+    }
+  }
+
+  /* ---------------- entrar na frente do gerador de PowerPoint ---------------- */
+  function embrulhar99(Base) {
+    if (!Base || Base.__p99) { return Base; }
+
+    function P99() {
+      this.__base = new Base();
+      this.__folhas = [];
+      this.__feito = false;
+    }
+
+    P99.__p99 = true;
+    P99.__p97 = true;   /* evita que outra camada embrulhe de novo */
+    P99.__real = Base;
+
+    P99.prototype.addSlide = function (a) {
+      var b = rascunho99();
+      b.__arg = a;
+      this.__folhas.push(b);
+      return b;
+    };
+
+    ['addSection', 'defineLayout', 'defineSlideMaster'].forEach(function (nome) {
+      P99.prototype[nome] = function (o) {
+        try { return this.__base[nome](o); } catch (e) { return null; }
+      };
+    });
+
+    ['writeFile', 'write', 'stream'].forEach(function (nome) {
+      P99.prototype[nome] = function (o) {
+        try { montar99(this); } catch (e) {}
+        return this.__base[nome](o);
+      };
+    });
+
+    ['layout', 'author', 'title', 'subject', 'company', 'revision', 'rtlMode', 'theme'].forEach(function (nome) {
+      try {
+        Object.defineProperty(P99.prototype, nome, {
+          configurable: true,
+          get: function () { try { return this.__base[nome]; } catch (e) { return undefined; } },
+          set: function (v) { try { this.__base[nome] = v; } catch (e) {} }
+        });
+      } catch (e2) {}
+    });
+
+    try {
+      ['ShapeType', 'SchemeColor', 'AlignH', 'AlignV', 'ChartType', 'OutputType', 'version'].forEach(function (k) {
+        if (Base[k] !== undefined) { P99[k] = Base[k]; }
+      });
+    } catch (e3) {}
+
+    return P99;
+  }
+
+  function instalarPptx(nome) {
+    var d = null;
+    try { d = Object.getOwnPropertyDescriptor(window, nome); } catch (e) { d = null; }
+    var guardado = d && !d.get ? d.value : undefined;
+    var cache = { de: null, w: null };
+
+    function base() {
+      if (d && d.get) { try { return d.get.call(window); } catch (e) { return undefined; } }
+      return guardado;
+    }
+
+    function pegar() {
+      var b = base();
+      if (typeof b !== 'function') { return b; }
+      if (b.__p99) { return b; }
+      if (cache.de !== b) { cache.de = b; cache.w = embrulhar99(b); }
+      return cache.w;
+    }
+
+    function guardar(v) {
+      if (v && v.__p99) { return; }
+      cache.de = null; cache.w = null;
+      if (d && d.set) { try { d.set.call(window, v); return; } catch (e) {} }
+      guardado = v;
+    }
+
+    try {
+      Object.defineProperty(window, nome, { configurable: true, get: pegar, set: guardar });
+    } catch (e2) {
+      try { if (typeof guardado === 'function') { window[nome] = embrulhar99(guardado); } } catch (e3) {}
+    }
+  }
+
+  /* ---------------- ficar de olho nos slides desenhados ---------------- */
+  function vigiar() {
+    var pendente = false;
+    function correr() {
+      pendente = false;
+      try { aplicarTudo(); } catch (e) {}
+      try { colocarBarra(); } catch (e2) {}
+    }
+    function pedir() {
+      if (pendente) { return; }
+      pendente = true;
+      setTimeout(correr, 60);
+    }
+    try {
+      var mo = new MutationObserver(function (lst) {
+        var i, j, n;
+        for (i = 0; i < lst.length; i++) {
+          for (j = 0; j < lst[i].addedNodes.length; j++) {
+            n = lst[i].addedNodes[j];
+            if (!n || n.nodeType !== 1) { continue; }
+            if (n.classList && (n.classList.contains('p94-folha') || n.id === 'p94Fundo')) { pedir(); return; }
+            if (n.querySelector && n.querySelector('.p94-folha')) { pedir(); return; }
+          }
+        }
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e3) {}
+    setInterval(correr, 1200);
+    pedir();
+  }
+
+  /* ---------------- comecar ---------------- */
+  function iniciar() {
+    estilo();
+    ligarEventos();
+    instalarPptx('PptxGenJS');
+    instalarPptx('pptxgen');
+    carregar(function () { vigiar(); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar);
+  } else {
+    iniciar();
+  }
+
+})();
+
+</script>
+<!-- PATCH99_EDITOR_LIVRE_FPDO FIM -->
+<!-- PATCH100_INI -->
+<script>
+/* ====== PATCH100_DESTRAVA_E_APAGAR_TUDO ======
+   1) Destrava o painel quando voce sai da conferencia dos slides
+      (nao precisa mais apertar F5).
+   2) Deixa apagar QUALQUER coisa dos slides do Relatorio FPDO:
+      textos, fotos, faixas, fundos, veus e blocos inteiros.
+   Nada do que ja existe e apagado: este bloco so acrescenta.
+   ====== */
+(function () {
+  'use strict';
+  if (window.__PS100) { return; }
+  window.__PS100 = true;
+
+  var K_ULT = 'p92_fpdo_ultimo_v1';   /* qual relatorio esta aberto (igual ao patch 92) */
+  var LS = 'p100_apagados_v1';        /* onde ficam os itens apagados por este patch */
+
+  var MODO = false;                   /* modo apagar ligado/desligado */
+  var VERSAO = 1;                     /* muda a cada apagar/voltar: obriga a repassar os slides */
+  var pilha = [];                     /* para o Voltar */
+  var alvoQuente = null;              /* item destacado embaixo do dedo/mouse */
+  var simulando = false;              /* estamos disparando um clique de proposito */
+  var imprimindo = false;
+  var relogios = {};                  /* marca desde quando uma camada esta na tela */
+
+  /* janelas conhecidas do painel (para saber se alguma esta aberta) */
+  var SEL_JANELAS = [
+    '#p94Fundo', '#p96Fundo', '#p92Fundo', '#p84Fundo', '#p83Fundo',
+    '.modal-bg', '#modalParcelasInstalacao', '#modalLancInstalacao', 'dialog[open]'
+  ].join(',');
+
+  /* travas de rolagem que varias telas colocam no corpo da pagina */
+  var TRAVAS = [
+    'p52-travado', 'p53-travado', 'ag-modal-aberto', 'of-dep-aberto', 'or-aberto',
+    'modal-open', 'modal-aberto', 'no-scroll', 'sem-scroll', 'overflow-hidden', 'travado'
+  ];
+
+  /* camadas de espera que podem ficar penduradas */
+  var ESPERAS = ['p92Espera', 'p94Espera', 'p92Impressao', 'p94Impr'];
+
+  /* ---------------- coisas simples ---------------- */
+  function n1(v) {
+    var n = parseFloat(v);
+    if (isNaN(n)) { return 0; }
+    return Math.round(n * 10) / 10;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function aviso(msg, tipo) {
+    if (typeof window.mostrarToastPainel === 'function') {
+      try { window.mostrarToastPainel(msg, tipo === 'erro' ? 'erro' : 'ok'); return; } catch (e) {}
+    }
+    var d = document.getElementById('p100Aviso');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = 'p100Aviso';
+      document.body.appendChild(d);
+    }
+    d.textContent = String(msg || '');
+    d.className = tipo === 'erro' ? 'p100-ruim' : 'p100-bom';
+    d.style.display = 'block';
+    if (d.__t) { clearTimeout(d.__t); }
+    d.__t = setTimeout(function () { d.style.display = 'none'; }, 3600);
+  }
+
+  function visivel(el) {
+    if (!el) { return false; }
+    try {
+      if (el.offsetWidth <= 0 && el.offsetHeight <= 0 && !el.getClientRects().length) { return false; }
+      var st = window.getComputedStyle(el);
+      if (!st) { return false; }
+      return st.display !== 'none' && st.visibility !== 'hidden' && Number(st.opacity || 1) > 0.02;
+    } catch (e) { return false; }
+  }
+
+  function algumaJanelaAberta() {
+    var l, i;
+    try { l = document.querySelectorAll(SEL_JANELAS); } catch (e) { return false; }
+    for (i = 0; i < l.length; i++) { if (visivel(l[i])) { return true; } }
+    return false;
+  }
+
+  function conferenciaAberta() {
+    var f = document.getElementById('p94Fundo');
+    return !!(f && f.style.display === 'block');
+  }
+
+  /* ---------------- onde guardar o que foi apagado ---------------- */
+  function idAtual() {
+    try { return localStorage.getItem(K_ULT) || 'sem_id'; } catch (e) { return 'sem_id'; }
+  }
+
+  function ler() {
+    try { return JSON.parse(localStorage.getItem(LS) || '{}') || {}; } catch (e) { return {}; }
+  }
+
+  function gravar(todo) {
+    try { localStorage.setItem(LS, JSON.stringify(todo || {})); } catch (e) {}
+  }
+
+  function listaAtual() {
+    var todo = ler();
+    var id = idAtual();
+    if (!todo[id] || Object.prototype.toString.call(todo[id]) !== '[object Array]') { todo[id] = []; }
+    return { todo: todo, id: id, lista: todo[id] };
+  }
+
+  function conjunto() {
+    var a = listaAtual();
+    var m = {}, i;
+    for (i = 0; i < a.lista.length; i++) { m[a.lista[i]] = true; }
+    return m;
+  }
+
+  function guardaPassado(tipo) {
+    var a = listaAtual();
+    try { pilha.push({ tipo: tipo || 'nosso', dados: JSON.stringify(a.lista) }); } catch (e) { return; }
+    if (pilha.length > 40) { pilha.shift(); }
+  }
+
+  /* ---------------- aparencia deste patch ---------------- */
+  var ID_EST = 'p100Estilo';
+
+  function estilo() {
+    if (document.getElementById(ID_EST)) { return; }
+    var css = [
+      '#p100Aviso{position:fixed;left:16px;bottom:16px;z-index:2147483647;max-width:330px;',
+      'padding:10px 14px;border-radius:10px;font:600 13px Arial,sans-serif;color:#fff;display:none;',
+      'box-shadow:0 10px 26px rgba(0,0,0,.35)}',
+      '#p100Aviso.p100-bom{background:#0f766e}',
+      '#p100Aviso.p100-ruim{background:#b91c1c}',
+      '#p100Liberar{position:fixed;left:16px;bottom:16px;z-index:2147483646;display:none;',
+      'border:1px solid #f97316;background:#7c2d12;color:#fff;border-radius:10px;padding:9px 13px;',
+      'font:700 13px Arial,sans-serif;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.35)}',
+      '#p94Fundo .p100-bt{border:1px solid #475569;background:#1e293b;color:#e2e8f0;border-radius:8px;',
+      'padding:7px 11px;font:600 12px Arial,sans-serif;cursor:pointer}',
+      '#p94Fundo .p100-bt:hover{background:#334155}',
+      '#p94Fundo .p100-bt.p100-on{background:#c2410c;border-color:#f97316;color:#fff}',
+      '#p94Fundo .p100-linha{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%;',
+      'padding-top:6px;border-top:1px solid #334155}',
+      '#p94Fundo .p100-dica{color:#94a3b8;font:400 11px Arial,sans-serif}',
+      '#p94Lupa.p100-modo .p94-folha,#p94Lupa.p100-modo .p94-folha *{cursor:crosshair !important}',
+      '.p100-quente{outline:3px solid #f97316 !important;outline-offset:-2px}'
+    ].join('');
+    var t = document.createElement('style');
+    t.id = ID_EST;
+    t.type = 'text/css';
+    t.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(t);
+  }
+
+  /* ---------------- desligar a edicao do patch 99 com jeitinho ---------------- */
+  function botaoEditar99() {
+    try { return document.querySelector('#p94Fundo [data-p99="editar"]'); } catch (e) { return null; }
+  }
+
+  function edicao99Ligada() {
+    var b = botaoEditar99();
+    return !!(b && b.classList && b.classList.contains('p99-on'));
+  }
+
+  function desligarEdicao99() {
+    var b = botaoEditar99();
+    if (!b || !edicao99Ligada()) { return false; }
+    simulando = true;
+    try { b.click(); } catch (e) {}
+    simulando = false;
+    return true;
+  }
+
+  /* ---------------- limpar sobras da edicao ---------------- */
+  function limparSobrasEdicao() {
+    var i, l;
+    try {
+      l = document.querySelectorAll('.p99-mk');
+      for (i = 0; i < l.length; i++) { if (l[i].parentNode) { l[i].parentNode.removeChild(l[i]); } }
+    } catch (e) {}
+    try {
+      l = document.querySelectorAll('.p99-sel,.p100-quente');
+      for (i = 0; i < l.length; i++) {
+        l[i].classList.remove('p99-sel');
+        l[i].classList.remove('p100-quente');
+      }
+    } catch (e2) {}
+    try {
+      l = document.querySelectorAll('[contenteditable="true"]');
+      for (i = 0; i < l.length; i++) {
+        if (l[i].closest && (l[i].closest('.p94-folha') || l[i].closest('#p94Fundo'))) {
+          l[i].removeAttribute('contenteditable');
+          try { l[i].blur(); } catch (e3) {}
+        }
+      }
+    } catch (e4) {}
+    try {
+      l = document.querySelectorAll('.p99-edit');
+      for (i = 0; i < l.length; i++) { l[i].classList.remove('p99-edit'); }
+    } catch (e5) {}
+    try {
+      var s = window.getSelection();
+      if (s && s.removeAllRanges) { s.removeAllRanges(); }
+    } catch (e6) {}
+  }
+
+  /* ---------------- soltar a rolagem e as camadas penduradas ---------------- */
+  function soltarCorpo() {
+    var mexeu = false;
+    var b = document.body;
+    var h = document.documentElement;
+    if (!b) { return false; }
+    var i;
+    for (i = 0; i < TRAVAS.length; i++) {
+      if (b.classList.contains(TRAVAS[i])) { b.classList.remove(TRAVAS[i]); mexeu = true; }
+      if (h.classList.contains(TRAVAS[i])) { h.classList.remove(TRAVAS[i]); mexeu = true; }
+    }
+    if (b.classList.contains('p94-imp')) { b.classList.remove('p94-imp'); mexeu = true; }
+    try {
+      if (window.getComputedStyle(b).overflow === 'hidden') { b.style.overflow = 'visible'; b.style.overflowY = 'auto'; mexeu = true; }
+      if (window.getComputedStyle(h).overflow === 'hidden') { h.style.overflow = 'visible'; h.style.overflowY = 'auto'; mexeu = true; }
+      if (window.getComputedStyle(b).position === 'fixed') { b.style.position = 'static'; mexeu = true; }
+    } catch (e) {}
+    if (b.style.pointerEvents === 'none') { b.style.pointerEvents = ''; mexeu = true; }
+    return mexeu;
+  }
+
+  function guardarEsperas() {
+    var mexeu = false, i, el;
+    for (i = 0; i < ESPERAS.length; i++) {
+      el = document.getElementById(ESPERAS[i]);
+      if (!el) { continue; }
+      if (el.id === 'p94Impr' || el.id === 'p92Impressao') {
+        if (el.innerHTML !== '') { el.innerHTML = ''; mexeu = true; }
+        continue;
+      }
+      if (visivel(el)) { el.style.display = 'none'; mexeu = true; }
+    }
+    return mexeu;
+  }
+
+  /* ---------------- achar camadas invisiveis que roubam o clique ---------------- */
+  function ehJanelaConhecida(el) {
+    try { return !!(el.closest && el.closest(SEL_JANELAS)); } catch (e) { return false; }
+  }
+
+  function camadaGrande(el) {
+    var no = el, st, r;
+    var guarda = 0;
+    while (no && no.nodeType === 1 && guarda < 12) {
+      guarda++;
+      try {
+        st = window.getComputedStyle(no);
+        r = no.getBoundingClientRect();
+      } catch (e) { return null; }
+      if (st && (st.position === 'fixed' || st.position === 'absolute') &&
+          r.width >= window.innerWidth * 0.7 && r.height >= window.innerHeight * 0.7) {
+        return no;
+      }
+      no = no.parentElement;
+    }
+    return null;
+  }
+
+  function pareceVazia(el) {
+    if (!el) { return false; }
+    if (el === document.body || el === document.documentElement) { return false; }
+    var txt = String(el.textContent || '').replace(/\s+/g, '');
+    if (txt.length > 2) { return false; }
+    try {
+      if (el.querySelector('button,a,input,select,textarea,img,canvas,svg,table')) { return false; }
+    } catch (e) {}
+    return true;
+  }
+
+  function limparBloqueios() {
+    var pontos = [[0.5, 0.5], [0.25, 0.3], [0.75, 0.3], [0.25, 0.75], [0.75, 0.75]];
+    var mexeu = false, i, x, y, alvo, capa;
+    for (i = 0; i < pontos.length; i++) {
+      x = Math.round(window.innerWidth * pontos[i][0]);
+      y = Math.round(window.innerHeight * pontos[i][1]);
+      try { alvo = document.elementFromPoint(x, y); } catch (e) { alvo = null; }
+      if (!alvo || alvo === document.body || alvo === document.documentElement) { continue; }
+      if (ehJanelaConhecida(alvo)) { continue; }
+      capa = camadaGrande(alvo);
+      if (!capa || ehJanelaConhecida(capa)) { continue; }
+      if (capa.id === 'p100Liberar' || capa.id === 'p100Aviso') { continue; }
+      if (!pareceVazia(capa)) { continue; }
+      capa.style.display = 'none';
+      capa.style.pointerEvents = 'none';
+      mexeu = true;
+    }
+    return mexeu;
+  }
+
+  /* ---------------- destravar de verdade ---------------- */
+  function destravar(forte) {
+    limparSobrasEdicao();
+    var mexeu = false;
+    if (!algumaJanelaAberta()) {
+      if (guardarEsperas()) { mexeu = true; }
+      if (soltarCorpo()) { mexeu = true; }
+      if (forte && limparBloqueios()) { mexeu = true; }
+    }
+    esconderBotaoLiberar();
+    return mexeu;
+  }
+
+  /* ---------------- botao de emergencia "Liberar painel" ---------------- */
+  function botaoLiberar() {
+    var b = document.getElementById('p100Liberar');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'p100Liberar';
+      b.type = 'button';
+      b.textContent = 'Liberar painel';
+      b.title = 'Solta a tela se ela ficou presa depois de fechar os slides';
+      b.setAttribute('data-html2canvas-ignore', 'true');
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        destravar(true);
+        aviso('Painel liberado.');
+      }, true);
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+
+  function mostrarBotaoLiberar() {
+    var b = botaoLiberar();
+    if (b.style.display !== 'block') { b.style.display = 'block'; }
+  }
+
+  function esconderBotaoLiberar() {
+    var b = document.getElementById('p100Liberar');
+    if (b && b.style.display !== 'none') { b.style.display = 'none'; }
+  }
+
+  function pareceTravado() {
+    if (conferenciaAberta() || algumaJanelaAberta()) { return false; }
+    var b = document.body, h = document.documentElement, i;
+    if (!b) { return false; }
+    for (i = 0; i < TRAVAS.length; i++) {
+      if (b.classList.contains(TRAVAS[i]) || h.classList.contains(TRAVAS[i])) { return true; }
+    }
+    if (b.classList.contains('p94-imp')) { return true; }
+    try {
+      if (window.getComputedStyle(b).overflow === 'hidden') { return true; }
+      if (window.getComputedStyle(h).overflow === 'hidden') { return true; }
+      if (window.getComputedStyle(b).pointerEvents === 'none') { return true; }
+    } catch (e) {}
+    for (i = 0; i < ESPERAS.length; i++) {
+      var el = document.getElementById(ESPERAS[i]);
+      if (el && el.id !== 'p94Impr' && el.id !== 'p92Impressao' && visivel(el)) { return true; }
+    }
+    return false;
+  }
+
+  /* ---------------- assinatura de cada pedaco do slide ---------------- */
+  function folhaDe(el) {
+    try { return el && el.closest ? el.closest('.p94-folha') : null; } catch (e) { return null; }
+  }
+
+  function numeroDaFolha(folha) {
+    var p = folha && folha.parentNode;
+    if (!p) { return 0; }
+    var i, n = 0, f = p.children;
+    for (i = 0; i < f.length; i++) {
+      if (f[i] === folha) { return n; }
+      if (f[i].classList && f[i].classList.contains('p94-folha')) { n++; }
+    }
+    return n;
+  }
+
+  function caixaPct(el, folha) {
+    var r, fr;
+    try {
+      r = el.getBoundingClientRect();
+      fr = folha.getBoundingClientRect();
+    } catch (e) { return null; }
+    var lg = fr.width, al = fr.height;
+    if (!lg || !al || lg < 40 || al < 40) { return null; }
+    return {
+      l: Math.round(((r.left - fr.left) / lg) * 100),
+      t: Math.round(((r.top - fr.top) / al) * 100),
+      w: Math.round((r.width / lg) * 100),
+      h: Math.round((r.height / al) * 100)
+    };
+  }
+
+  function classesDe(el) {
+    var c = String(el.className || '');
+    if (!c) { return ''; }
+    var lst = c.split(/\s+/).filter(function (x) {
+      if (!x) { return false; }
+      if (x.indexOf('p99-') === 0 || x.indexOf('p100-') === 0) { return false; }
+      return true;
+    });
+    lst.sort();
+    return lst.join('.');
+  }
+
+  function migalha(el) {
+    var t = String(el.textContent || '').replace(/\s+/g, ' ').replace(/^ | $/g, '');
+    if (t.length > 34) { t = t.slice(0, 34); }
+    var n = 0, i;
+    for (i = 0; i < t.length; i++) { n = ((n * 31) + t.charCodeAt(i)) % 99999989; }
+    return t.length + '_' + n;
+  }
+
+  function assinatura(el, folha) {
+    var g = caixaPct(el, folha);
+    if (!g) { return null; }
+    return numeroDaFolha(folha) + '|' + String(el.tagName || '').toLowerCase() + '|' +
+      classesDe(el) + '|' + g.l + ',' + g.t + ',' + g.w + ',' + g.h + '|' + migalha(el);
+  }
+
+  function ignorar(el) {
+    if (!el || el.nodeType !== 1) { return true; }
+    if (el.classList && (el.classList.contains('p99-mk') || el.classList.contains('p99-h'))) { return true; }
+    if (el.hasAttribute && el.hasAttribute('data-html2canvas-ignore')) { return true; }
+    var t = String(el.tagName || '').toLowerCase();
+    if (t === 'style' || t === 'script' || t === 'br') { return true; }
+    return false;
+  }
+
+  /* ---------------- esconder / devolver os pedacos apagados ---------------- */
+  function selo(folha) {
+    var a = listaAtual();
+    return String(folha.getAttribute('data-p99') || '') + '#' + VERSAO + '#' + a.id + '#' + a.lista.length;
+  }
+
+  function devolverFolha(folha) {
+    var l, i;
+    try { l = folha.querySelectorAll('[data-p100h]'); } catch (e) { return; }
+    for (i = 0; i < l.length; i++) {
+      l[i].removeAttribute('data-p100h');
+      l[i].style.display = l[i].__p100disp || '';
+      l[i].__p100disp = null;
+    }
+  }
+
+  function aplicarFolha(folha, mapa) {
+    devolverFolha(folha);
+    var todos;
+    try { todos = folha.querySelectorAll('*'); } catch (e) { return; }
+    var i, el, sig, achados = [];
+    for (i = 0; i < todos.length; i++) {
+      el = todos[i];
+      if (ignorar(el)) { continue; }
+      sig = assinatura(el, folha);
+      if (sig && mapa[sig]) { achados.push(el); }
+    }
+    for (i = 0; i < achados.length; i++) {
+      el = achados[i];
+      el.__p100disp = el.style.display || '';
+      el.setAttribute('data-p100h', '1');
+      el.style.display = 'none';
+    }
+  }
+
+  function aplicar(forcar) {
+    var folhas;
+    try { folhas = document.querySelectorAll('.p94-folha'); } catch (e) { return; }
+    if (!folhas.length) { return; }
+    var mapa = conjunto();
+    var i, f, s;
+    for (i = 0; i < folhas.length; i++) {
+      f = folhas[i];
+      s = selo(f);
+      if (!forcar && f.getAttribute('data-p100v') === s) { continue; }
+      try { aplicarFolha(f, mapa); } catch (e2) {}
+      f.setAttribute('data-p100v', s);
+    }
+  }
+
+  /* ---------------- escolher o que esta embaixo do dedo ---------------- */
+  function parecidos(a, b) {
+    try {
+      var r1 = a.getBoundingClientRect(), r2 = b.getBoundingClientRect();
+      return Math.abs(r1.width - r2.width) <= 3 && Math.abs(r1.height - r2.height) <= 3 &&
+             Math.abs(r1.left - r2.left) <= 3 && Math.abs(r1.top - r2.top) <= 3;
+    } catch (e) { return false; }
+  }
+
+  function escolher(alvo) {
+    var folha = folhaDe(alvo);
+    if (!folha || alvo === folha) { return null; }
+    var el = alvo, guarda = 0;
+    while (el && el.parentNode && el.parentNode !== folha && guarda < 8) {
+      guarda++;
+      if (!parecidos(el, el.parentNode)) { break; }
+      el = el.parentNode;
+    }
+    if (el === folha) { return null; }
+    if (ignorar(el)) { return null; }
+    return el;
+  }
+
+  function esquentar(el) {
+    if (alvoQuente === el) { return; }
+    if (alvoQuente && alvoQuente.classList) { alvoQuente.classList.remove('p100-quente'); }
+    alvoQuente = el || null;
+    if (alvoQuente && alvoQuente.classList) { alvoQuente.classList.add('p100-quente'); }
+  }
+
+  /* ---------------- apagar, voltar, restaurar ---------------- */
+  function apagar(el) {
+    var folha = folhaDe(el);
+    if (!folha) { aviso('Toque em cima do que voce quer apagar.', 'erro'); return; }
+    var sig = assinatura(el, folha);
+    if (!sig) { aviso('Nao consegui reconhecer este item. Tente de novo.', 'erro'); return; }
+    var a = listaAtual();
+    if (a.lista.indexOf(sig) >= 0) { aviso('Este item ja estava apagado.'); return; }
+    guardaPassado('apagar');
+    a.lista.push(sig);
+    a.todo[a.id] = a.lista;
+    gravar(a.todo);
+    esquentar(null);
+    VERSAO++;
+    aplicar(true);
+    aviso('Apagado. Se errou, clique em "Voltar".');
+  }
+
+  function voltar() {
+    if (!pilha.length) { aviso('Nao tem mais nada para voltar.', 'erro'); return; }
+    var p = pilha.pop();
+    var a = listaAtual();
+    try { a.todo[a.id] = JSON.parse(p.dados); } catch (e) { return; }
+    gravar(a.todo);
+    esquentar(null);
+    VERSAO++;
+    aplicar(true);
+    aviso('Voltei o ultimo item que voce apagou.');
+  }
+
+  function restaurar() {
+    var a = listaAtual();
+    if (!a.lista.length) { aviso('Nao ha nada apagado por aqui.'); return; }
+    if (!window.confirm('Trazer de volta TUDO o que voce apagou neste relatorio?')) { return; }
+    guardaPassado('restaurar');
+    a.todo[a.id] = [];
+    gravar(a.todo);
+    esquentar(null);
+    VERSAO++;
+    aplicar(true);
+    aviso('Tudo voltou para o lugar.');
+  }
+
+  function ligarModo(v) {
+    MODO = !!v;
+    if (MODO) { desligarEdicao99(); }
+    var cx = document.getElementById('p94Lupa');
+    if (cx) {
+      if (MODO) { cx.classList.add('p100-modo'); } else { cx.classList.remove('p100-modo'); }
+    }
+    if (!MODO) { esquentar(null); }
+    pintarBarra();
+    aviso(MODO
+      ? 'Modo apagar ligado: toque em qualquer coisa do slide para tirar. Toque de novo no que sobrou para tirar o bloco maior.'
+      : 'Modo apagar desligado.');
+  }
+
+  /* ---------------- barra de botoes na conferencia ---------------- */
+  function bt(acao, rot, tit) {
+    return '<button class="p100-bt" type="button" data-p100="' + acao + '" title="' + esc(tit || rot) + '">' + esc(rot) + '</button>';
+  }
+
+  function colocarBarra() {
+    if (!conferenciaAberta()) { return; }
+    var f = document.getElementById('p94Fundo');
+    var b = f ? f.querySelector('.p94-barra') : null;
+    if (!b || b.querySelector('[data-p100]')) { return; }
+    var d = document.createElement('div');
+    d.className = 'p100-linha';
+    d.setAttribute('data-html2canvas-ignore', 'true');
+    d.innerHTML =
+      bt('modo', 'Apagar qualquer coisa', 'Liga o modo apagar: toque no que quer tirar do slide') +
+      bt('voltar', 'Voltar', 'Traz de volta o ultimo item apagado') +
+      bt('restaurar', 'Restaurar tudo', 'Traz de volta tudo o que voce apagou neste relatorio') +
+      bt('liberar', 'Liberar painel', 'Solta a tela se ela ficar presa') +
+      '<span class="p100-dica">Ligue o modo apagar e toque no item (texto, foto, faixa, fundo ou bloco). Fica guardado neste navegador.</span>';
+    b.appendChild(d);
+    pintarBarra();
+  }
+
+  function pintarBarra() {
+    var b;
+    try { b = document.querySelector('#p94Fundo [data-p100="modo"]'); } catch (e) { return; }
+    if (!b) { return; }
+    if (MODO) { b.classList.add('p100-on'); b.textContent = 'Modo apagar ligado'; }
+    else { b.classList.remove('p100-on'); b.textContent = 'Apagar qualquer coisa'; }
+  }
+
+  function acao(a) {
+    if (a === 'modo') { ligarModo(!MODO); return; }
+    if (a === 'voltar') { voltar(); return; }
+    if (a === 'restaurar') { restaurar(); return; }
+    if (a === 'liberar') { destravar(true); aviso('Painel liberado.'); return; }
+  }
+
+  /* ---------------- cliques e toques ---------------- */
+  function ligarEventos() {
+    document.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) { return; }
+      var b = t.closest('[data-p100]');
+      if (b) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        acao(b.getAttribute('data-p100'));
+        return;
+      }
+      if (t.closest('[data-p94]') || t.closest('[data-p99]')) {
+        if (MODO && t.closest('[data-p99]')) { ligarModo(false); }
+        return;
+      }
+      if (!MODO || simulando) { return; }
+      var folha = folhaDe(t);
+      if (!folha) { return; }
+      ev.preventDefault();
+      ev.stopPropagation();
+      var el = escolher(t);
+      if (!el) { aviso('Toque em cima do item que quer apagar.', 'erro'); return; }
+      apagar(el);
+    }, true);
+
+    document.addEventListener('pointerdown', function (ev) {
+      if (!MODO || simulando) { return; }
+      var t = ev.target;
+      if (!t || !t.closest) { return; }
+      if (t.closest('[data-p100]') || t.closest('[data-p94]') || t.closest('[data-p99]')) { return; }
+      if (!folhaDe(t)) { return; }
+      ev.preventDefault();
+      ev.stopPropagation();
+    }, true);
+
+    document.addEventListener('pointermove', function (ev) {
+      if (!MODO) { return; }
+      var t = ev.target;
+      if (!t || !t.closest) { return; }
+      if (!folhaDe(t)) { esquentar(null); return; }
+      esquentar(escolher(t));
+    }, true);
+
+    document.addEventListener('keydown', function (ev) {
+      var tecla = ev.key || '';
+      if (!MODO) { return; }
+      var ed = document.querySelector('[contenteditable="true"]');
+      if (ed) { return; }
+      if (tecla === 'Escape' || ev.keyCode === 27) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        ligarModo(false);
+        return;
+      }
+      if ((ev.ctrlKey || ev.metaKey) && (tecla === 'z' || tecla === 'Z')) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        voltar();
+        return;
+      }
+      if ((tecla === 'Delete' || tecla === 'Backspace' || ev.keyCode === 46) && alvoQuente) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        apagar(alvoQuente);
+      }
+    }, true);
+
+    window.addEventListener('beforeprint', function () { imprimindo = true; });
+    window.addEventListener('afterprint', function () {
+      imprimindo = false;
+      setTimeout(function () { destravar(false); }, 400);
+    });
+  }
+
+  /* ---------------- ficar de olho na tela ---------------- */
+  function fechouConferencia() {
+    if (MODO) { ligarModo(false); }
+    limparSobrasEdicao();
+    desligarEdicao99();
+    destravar(true);
+    /* algumas telas soltam a trava um pouco depois: tenta de novo */
+    setTimeout(function () { destravar(true); }, 120);
+    setTimeout(function () { destravar(true); }, 500);
+    setTimeout(function () { destravar(true); }, 1200);
+  }
+
+  function vigiar() {
+    var estavaAberta = conferenciaAberta();
+    var pendente = false;
+
+    function passar() {
+      pendente = false;
+      var aberta = conferenciaAberta();
+      if (aberta) {
+        try { colocarBarra(); } catch (e) {}
+        try { aplicar(false); } catch (e1) {}
+      } else {
+        try { aplicar(false); } catch (e2) {}
+      }
+      if (estavaAberta && !aberta) {
+        estavaAberta = false;
+        fechouConferencia();
+        return;
+      }
+      estavaAberta = aberta;
+      if (!aberta && !imprimindo && pareceTravado()) {
+        destravar(false);
+        if (pareceTravado()) { mostrarBotaoLiberar(); } else { esconderBotaoLiberar(); }
+      } else {
+        esconderBotaoLiberar();
+      }
+    }
+
+    function pedir() {
+      if (pendente) { return; }
+      pendente = true;
+      setTimeout(passar, 70);
+    }
+
+    try {
+      var mo = new MutationObserver(function () { pedir(); });
+      mo.observe(document.body, { childList: true, subtree: true, attributes: true,
+        attributeFilter: ['style', 'class'] });
+    } catch (e3) {}
+
+    setInterval(passar, 900);
+    pedir();
+  }
+
+  /* ---------------- comecar ---------------- */
+  function iniciar() {
+    if (!document.body) { setTimeout(iniciar, 60); return; }
+    estilo();
+    ligarEventos();
+    vigiar();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar);
+  } else {
+    iniciar();
+  }
+
+  /* deixa uma saida manual, caso voce queira liberar pelo console */
+  try {
+    window.p100Liberar = function () { destravar(true); return true; };
+  } catch (e) {}
+
+})();
+
+</script>
+<!-- PATCH100_FIM -->
+<!-- PATCH101_INI -->
+<script>
+/* ====== PATCH101_FERRAMENTAS_NA_FRENTE ======
+   Deixa a barra de botoes da conferencia de slides SEMPRE na frente.
+   Antes ela ficava escondida atras das folhas dos slides.
+   Este bloco so acrescenta: nada do que ja existe e apagado.
+   ====== */
+(function () {
+  'use strict';
+  if (window.__PS101) { return; }
+  window.__PS101 = true;
+
+  var CSS = [
+    /* a barra fica colada no topo e por cima de tudo dentro da janela */
+    'html body #p94Fundo .p94-barra{position:sticky !important;top:0 !important;',
+    '  z-index:2147483047 !important;background:#0b1220 !important;',
+    '  border:1px solid #334155 !important;border-radius:10px !important;',
+    '  box-shadow:0 8px 22px rgba(2,6,23,.85) !important;',
+    '  max-height:42vh !important;overflow:auto !important;',
+    '  margin-bottom:14px !important}',
+
+    /* as linhas de botoes acompanham a barra */
+    'html body #p94Fundo .p94-barra > *{position:relative !important;z-index:2 !important}',
+    'html body #p94Fundo .p99-linha,html body #p94Fundo .p100-linha{',
+    '  position:relative !important;z-index:2 !important}',
+
+    /* os slides ficam numa camada abaixo da barra */
+    'html body #p94Fundo .p94-lupa{position:relative !important;z-index:1 !important}',
+    'html body #p94Fundo .p94-folha{position:relative !important;z-index:0 !important}',
+
+    /* recados e botao de socorro continuam acima de tudo */
+    'html body #p94Aviso,html body #p99Aviso,html body #p100Aviso{z-index:2147483647 !important}',
+    'html body #p100Liberar{z-index:2147483646 !important}',
+
+    /* na impressao a barra nao aparece */
+    '@media print{html body #p94Fundo .p94-barra{display:none !important}}'
+  ].join('\n');
+
+  function estilo() {
+    var s = document.getElementById('p101Estilo');
+    if (!s) {
+      s = document.createElement('style');
+      s.id = 'p101Estilo';
+      (document.head || document.documentElement).appendChild(s);
+    }
+    if (s.textContent !== CSS) { s.textContent = CSS; }
+    /* garante que este estilo seja o ultimo da lista */
+    var h = document.head;
+    if (h && h.lastChild !== s) { h.appendChild(s); }
+  }
+
+  function por(el, nome, valor) {
+    if (!el || !el.style) { return; }
+    try { el.style.setProperty(nome, valor, 'important'); } catch (e) {}
+  }
+
+  function frente() {
+    var f = document.getElementById('p94Fundo');
+    if (!f) { return; }
+    var b = f.querySelector('.p94-barra');
+    if (b) {
+      por(b, 'position', 'sticky');
+      por(b, 'top', '0');
+      por(b, 'z-index', '2147483047');
+      por(b, 'background', '#0b1220');
+    }
+    var l = f.querySelector('.p94-lupa');
+    if (l) {
+      por(l, 'position', 'relative');
+      por(l, 'z-index', '1');
+    }
+  }
+
+  function iniciar() {
+    if (!document.body) { setTimeout(iniciar, 60); return; }
+    estilo();
+    frente();
+    try {
+      var mo = new MutationObserver(function () { estilo(); frente(); });
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+    setInterval(function () { estilo(); frente(); }, 1500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar);
+  } else {
+    iniciar();
+  }
+})();
+
+</script>
+<!-- PATCH101_FIM -->
+<!-- PATCH102_INI -->
+<script>
+
+/* ====== PATCH102_LEVEZA_E_ALCAS ======
+   1) Tira a lentidao ao mexer nos slides: as vigias que ficavam olhando a tela
+      toda hora agora sao seguradas enquanto voce arrasta e trabalham em ritmo
+      calmo quando a edicao esta ligada.
+   2) Devolve as bolinhas verdes: elas voltam a ficar por cima da folha do slide
+      e voltam a aceitar o dedo e o mouse (inclusive no celular).
+   Este bloco so acrescenta: nada do que ja existe e apagado.
+   ====== */
+(function () {
+  'use strict';
+  if (window.__PS102) { return; }
+  window.__PS102 = true;
+
+  var est = { editando: false, arrastando: false, ate: 0 };
+  try { window.__PS102EST = est; } catch (e) {}
+
+  function agora() { return (new Date()).getTime(); }
+
+  function arrastando() {
+    if (!est.arrastando) { return false; }
+    if (est.ate && agora() > est.ate) { est.arrastando = false; est.ate = 0; return false; }
+    return true;
+  }
+
+  /* ---------------- 1) as bolinhas verdes na frente e no dedo ---------------- */
+  var CSS = [
+    /* a folha do slide nao cria mais uma caixa que enterra as alcas */
+    'html body #p94Fundo .p94-lupa .p94-folha{z-index:auto !important}',
+    'html body #p94Lupa .p94-folha{z-index:auto !important}',
+
+    /* a moldura verde da selecao fica por cima de tudo que esta na folha */
+    'html body #p94Fundo .p94-folha .p99-mk,html body #p94Lupa .p94-folha .p99-mk{',
+    '  z-index:2147482000 !important;pointer-events:none !important;',
+    '  border:1.5px solid #22c55e !important}',
+
+    /* as bolinhas de esticar: maiores, por cima e aceitando toque */
+    'html body #p94Fundo .p94-folha .p99-mk .p99-h,html body #p94Lupa .p94-folha .p99-mk .p99-h{',
+    '  z-index:2147482001 !important;pointer-events:auto !important;',
+    '  width:17px !important;height:17px !important;',
+    '  background:#22c55e !important;border:2px solid #ffffff !important;',
+    '  border-radius:4px !important;touch-action:none !important;',
+    '  box-shadow:0 1px 5px rgba(0,0,0,.55) !important}',
+    'html body .p99-mk .p99-h[data-p99h="nw"]{left:-9px !important;top:-9px !important;right:auto !important;bottom:auto !important}',
+    'html body .p99-mk .p99-h[data-p99h="ne"]{right:-9px !important;top:-9px !important;left:auto !important;bottom:auto !important}',
+    'html body .p99-mk .p99-h[data-p99h="sw"]{left:-9px !important;bottom:-9px !important;right:auto !important;top:auto !important}',
+    'html body .p99-mk .p99-h[data-p99h="se"]{right:-9px !important;bottom:-9px !important;left:auto !important;top:auto !important}',
+
+    /* com a edicao ligada o dedo arrasta o item em vez de rolar a pagina */
+    'html body #p94Lupa.p99-edit .p94-folha,html body #p94Lupa.p99-edit .p94-folha *{',
+    '  touch-action:none !important}',
+
+    /* na impressao nada disso aparece */
+    '@media print{html body .p99-mk{display:none !important}}'
+  ].join('\n');
+
+  function estilo() {
+    var s = document.getElementById('p102Estilo');
+    if (!s) {
+      s = document.createElement('style');
+      s.id = 'p102Estilo';
+      s.type = 'text/css';
+      s.appendChild(document.createTextNode(CSS));
+      (document.head || document.documentElement).appendChild(s);
+    }
+  }
+
+  /* ---------------- 2) saber quando a edicao dos slides esta ligada ---------------- */
+  function verEdicao() {
+    var b = null;
+    try { b = document.querySelector('#p94Fundo [data-p99="editar"]'); } catch (e) { b = null; }
+    var lig = !!(b && String(b.className || '').indexOf('p99-on') >= 0);
+    if (lig !== est.editando) { est.editando = lig; }
+    return lig;
+  }
+
+  /* ---------------- 3) saber quando o dedo esta arrastando no slide ---------------- */
+  function dentroDoSlide(t) {
+    if (!t || !t.closest) { return false; }
+    try {
+      if (t.closest('[data-p99]') || t.closest('[data-p100]') || t.closest('[data-p94]')) { return false; }
+      return !!t.closest('.p94-folha');
+    } catch (e) { return false; }
+  }
+
+  document.addEventListener('pointerdown', function (ev) {
+    if (!dentroDoSlide(ev.target)) { return; }
+    est.arrastando = true;
+    est.ate = agora() + 12000;   /* rede de seguranca: nunca segura para sempre */
+  }, true);
+
+  function soltou() {
+    if (!est.arrastando) { return; }
+    est.arrastando = false;
+    est.ate = 0;
+  }
+  document.addEventListener('pointerup', soltou, true);
+  document.addEventListener('pointercancel', soltou, true);
+  document.addEventListener('mouseup', soltou, true);
+  document.addEventListener('touchend', soltou, true);
+  window.addEventListener('blur', soltou);
+
+  /* ---------------- 4) segurar as vigias da tela ---------------- */
+  var MO = window.MutationObserver || window.WebKitMutationObserver;
+
+  function envolver(cb) {
+    var ult = 0;
+    var agendado = false;
+    var fila = [];
+
+    function rodar(obs) {
+      agendado = false;
+      ult = agora();
+      var lote = fila;
+      fila = [];
+      try { cb(lote, obs); } catch (e) {}
+    }
+
+    return function (regs, obs) {
+      var i;
+      if (regs && regs.length) {
+        for (i = 0; i < regs.length; i++) {
+          if (fila.length > 400) { break; }
+          fila.push(regs[i]);
+        }
+      }
+      if (agendado) { return; }
+      agendado = true;
+      var espera = est.editando ? 320 : 90;
+      var falta = espera - (agora() - ult);
+      if (falta < 0) { falta = 0; }
+      var tenta = function () {
+        if (arrastando()) { setTimeout(tenta, 220); return; }
+        rodar(obs);
+      };
+      setTimeout(tenta, falta);
+    };
+  }
+
+  if (typeof MO === 'function') {
+    var Vigia = function (cb) {
+      if (typeof cb !== 'function') { return new MO(cb); }
+      var alvo = null;
+      var envolvido = envolver(cb);
+      alvo = new MO(function (regs) { envolvido(regs, alvo); });
+      return alvo;
+    };
+    try { Vigia.prototype = MO.prototype; } catch (e) {}
+    try {
+      window.MutationObserver = Vigia;
+      window.WebKitMutationObserver = Vigia;
+    } catch (e2) {}
+  }
+
+  /* ---------------- 5) segurar os relogios rapidos durante o arraste ---------------- */
+  var intervaloOrig = window.setInterval;
+  if (typeof intervaloOrig === 'function') {
+    window.setInterval = function (fn, ms) {
+      var tempo = parseFloat(ms);
+      if (typeof fn !== 'function' || isNaN(tempo) || tempo > 3000) {
+        return intervaloOrig.apply(window, arguments);
+      }
+      var extras = Array.prototype.slice.call(arguments, 2);
+      var ult = 0;
+      var bater = function () {
+        if (arrastando()) { return; }
+        if (est.editando && (agora() - ult) < 1000) { return; }
+        ult = agora();
+        try { fn.apply(window, extras); } catch (e) {}
+      };
+      return intervaloOrig(bater, tempo);
+    };
+  }
+
+  /* ---------------- comecar ---------------- */
+  function iniciar() {
+    if (!document.head && !document.documentElement) { setTimeout(iniciar, 40); return; }
+    estilo();
+    verEdicao();
+    intervaloOrig(function () { estilo(); verEdicao(); }, 700);
+  }
+
+  iniciar();
+})();
+
+</script>
+<!-- PATCH102_FIM -->
+<!-- PATCH103_INI -->
+<script>
+
+/* PATCH 103 - Permissoes por usuario e por aba.
+   O administrador escolhe quais abas cada pessoa pode ver.
+   Quem nao tem a aba liberada nem enxerga o botao dela.
+   Nao reescreve nada do painel: apenas acrescenta. */
+(function () {
+  'use strict';
+
+  if (window.__p103) { return; }
+  window.__p103 = true;
+
+  var K_USERS = 'painel_seg_usuarios_v1';
+  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_PERM  = 'painel_seg_permissoes_v1';
+
+  var ABAS = [
+    { id: 'itens',      nome: 'Painel Geral de Producao' },
+    { id: 'liberacao',  nome: 'Avanco de Liberacao' },
+    { id: 'medicoes',   nome: 'Boletim de Medicao (Financeiro)' },
+    { id: 'graficos',   nome: 'Graficos e Relatorios' },
+    { id: 'recebimento',nome: 'Recebimento de Materiais' },
+    { id: 'cronograma', nome: 'Gestao de Obra e Equipe' },
+    { id: 'pagamento',  nome: 'Pagamento de Producao' },
+    { id: 'ctm',        nome: 'Contramarco (CTM)' },
+    { id: 'custo',      nome: 'Centro de Custos' },
+    { id: 'fpdo',       nome: 'Relatorio FPDO' }
+  ];
+
+  /* ================================================================ *
+   * utilidades
+   * ================================================================ */
+  function esc(v) {
+    return String(v === undefined || v === null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function ler(k, def) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
+  }
+
+  function gravar(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+  }
+
+  function aviso(msg, tipo) {
+    try {
+      var d = document.createElement('div');
+      d.className = 'p87-aviso' + (tipo === 'err' ? ' err' : '');
+      d.setAttribute('data-ps79', '1');
+      d.textContent = msg;
+      document.body.appendChild(d);
+      setTimeout(function () { if (d.parentNode) { d.parentNode.removeChild(d); } }, 3600);
+    } catch (e) { /* ignora */ }
+  }
+
+  function sessao() {
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
+    if (!s) { s = ler(K_SESS, null); }
+    if (s && s.exp && Date.now() > s.exp) { s = null; }
+    return s;
+  }
+
+  function chave(usuario) {
+    return String(usuario || '').trim().toLowerCase();
+  }
+
+  function ehAdminPerfil(p) {
+    return String(p || '').toLowerCase() === 'admin';
+  }
+
+  function nomePerfil(p) {
+    var v = String(p || '').toLowerCase();
+    if (v === 'admin') { return 'Administrador'; }
+    if (v === 'editor') { return 'Pode lancar e editar'; }
+    if (v === 'visitante' || v === 'leitor') { return 'Somente consulta'; }
+    return p ? String(p) : 'Sem tipo definido';
+  }
+
+  function rotuloAba(id) {
+    var b = document.getElementById('btn-tab-' + id);
+    var t = b ? String(b.textContent || '').trim() : '';
+    if (t) { return t; }
+    var i;
+    for (i = 0; i < ABAS.length; i++) { if (ABAS[i].id === id) { return ABAS[i].nome; } }
+    return id;
+  }
+
+  /* ================================================================ *
+   * lista de pessoas e mapa de permissoes
+   * ================================================================ */
+  function pessoas() {
+    var l = ler(K_USERS, []);
+    if (!l || !l.length) { l = []; }
+    var saida = [];
+    var vistos = {};
+    var i;
+    for (i = 0; i < l.length; i++) {
+      var u = l[i] || {};
+      var k = chave(u.usuario);
+      if (!k || vistos[k]) { continue; }
+      vistos[k] = true;
+      saida.push({ usuario: u.usuario, nome: u.nome || u.usuario, perfil: u.perfil || 'visitante' });
+    }
+    var rem = window.__p87ListaSupabase;
+    if (rem && rem.length) {
+      for (i = 0; i < rem.length; i++) {
+        var r = rem[i] || {};
+        var kr = chave(r.usuario);
+        if (!kr || vistos[kr]) { continue; }
+        vistos[kr] = true;
+        saida.push({ usuario: r.usuario, nome: r.nome || r.usuario, perfil: r.perfil || 'visitante' });
+      }
+    }
+    var s = sessao();
+    if (s && chave(s.usuario) && !vistos[chave(s.usuario)]) {
+      saida.push({ usuario: s.usuario, nome: s.nome || s.usuario, perfil: s.perfil || 'visitante' });
+    }
+    saida.sort(function (a, b) {
+      return String(a.nome || '').toLowerCase() < String(b.nome || '').toLowerCase() ? -1 : 1;
+    });
+    return saida;
+  }
+
+  function mapa() {
+    var m = ler(K_PERM, null);
+    if (!m || typeof m !== 'object') { m = {}; }
+    return m;
+  }
+
+  function todasIds() {
+    return ABAS.map(function (a) { return a.id; });
+  }
+
+  /* lista de abas liberadas para um usuario.
+     Se nunca foi configurado, tudo liberado (nada quebra). */
+  function liberadasDe(usuario, perfil) {
+    if (ehAdminPerfil(perfil)) { return todasIds(); }
+    var m = mapa();
+    var v = m[chave(usuario)];
+    if (!v || !v.length) { return todasIds(); }
+    var saida = [];
+    var i;
+    for (i = 0; i < v.length; i++) {
+      if (todasIds().indexOf(v[i]) >= 0) { saida.push(v[i]); }
+    }
+    return saida.length ? saida : todasIds();
+  }
+
+  function configurado(usuario) {
+    var m = mapa();
+    var v = m[chave(usuario)];
+    return !!(v && v.length);
+  }
+
+  function minhasAbas() {
+    var s = sessao();
+    if (!s) { return todasIds(); }
+    return liberadasDe(s.usuario, s.perfil);
+  }
+
+  function podeVer(aba) {
+    return minhasAbas().indexOf(String(aba)) >= 0;
+  }
+
+  function souAdmin() {
+    var s = sessao();
+    return !!(s && ehAdminPerfil(s.perfil));
+  }
+
+  /* ================================================================ *
+   * estilo
+   * ================================================================ */
+  function estilo() {
+    if (document.getElementById('p103Estilo')) { return; }
+    var s = document.createElement('style');
+    s.id = 'p103Estilo';
+    s.textContent = [
+      '#p103Botao{background:#b45309;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-weight:600;cursor:pointer;margin:4px;font-size:13px}',
+      '#p103Botao:hover{filter:brightness(1.1)}',
+      '#meu-menu-abas #p103Botao{display:block;width:100%;box-sizing:border-box;margin:3px 0 !important;text-align:left}',
+      '#p103Fundo{position:fixed;inset:0;z-index:2147483350;background:rgba(15,23,42,.62);display:flex;align-items:center;justify-content:center;padding:18px;font-family:Segoe UI,Arial,sans-serif}',
+      '#p103Caixa{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:14px;width:900px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}',
+      '#p103Caixa header{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#16304f;color:#fff;padding:10px 14px}',
+      '#p103Caixa header h3{margin:0;font-size:15px}',
+      '#p103Corpo{padding:14px;overflow:auto}',
+      '#p103Pe{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid #e2e8f0;background:#f8fafc}',
+      '#p103Corpo p.sb{margin:0 0 12px;font-size:12.5px;color:#475569;line-height:1.55}',
+      '#p103Corpo .p103-lin{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:0 0 12px}',
+      '#p103Corpo label.tt{display:block;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:0 0 3px}',
+      '#p103Quem{padding:7px 9px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;min-width:240px;background:#fff;color:#1e293b}',
+      '.p103-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:0 0 12px}',
+      '.p103-item{display:flex;align-items:center;gap:9px;border:1px solid #e2e8f0;border-radius:10px;padding:9px 11px;background:#f8fafc;font-size:13px;color:#1e293b;cursor:pointer}',
+      '.p103-item:hover{border-color:#93c5fd}',
+      '.p103-item.on{background:#eff6ff;border-color:#bfdbfe}',
+      '.p103-item input{width:17px;height:17px;flex:0 0 auto;cursor:pointer}',
+      '.p103-info{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a5f;font-size:12px;line-height:1.55}',
+      '.p103-info.al{background:#fef3c7;border-color:#fcd34d;color:#78350f}',
+      '.p103-res{margin:0 0 10px;font-size:12px;color:#475569}',
+      'body.dark-mode #p103Caixa{background:#0f172a}',
+      'body.dark-mode #p103Corpo p.sb{color:#94a3b8}',
+      'body.dark-mode #p103Pe{background:#111c33;border-color:#334155}',
+      'body.dark-mode .p103-item{background:#111c33;border-color:#334155;color:#e2e8f0}',
+      'body.dark-mode .p103-item.on{background:#12233d;border-color:#1d4ed8}'
+    ].join('\n');
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  /* ================================================================ *
+   * tela do administrador
+   * ================================================================ */
+  var escolhido = '';
+
+  function fecharTela() {
+    var f = document.getElementById('p103Fundo');
+    if (f && f.parentNode) { f.parentNode.removeChild(f); }
+  }
+
+  function abrirPermissoes() {
+    if (!souAdmin()) {
+      aviso('Somente o administrador pode mexer nas permissoes.', 'err');
+      return;
+    }
+    estilo();
+    fecharTela();
+
+    var f = document.createElement('div');
+    f.id = 'p103Fundo';
+    f.setAttribute('data-ps79', '1');
+    f.innerHTML =
+      '<div id="p103Caixa" role="dialog" aria-modal="true" aria-labelledby="p103Tit">' +
+        '<header><h3 id="p103Tit">Permiss\u00f5es de abas por usu\u00e1rio</h3>' +
+        '<button class="p87-btn" type="button" data-a="fechar">Fechar</button></header>' +
+        '<div id="p103Corpo"></div>' +
+        '<div id="p103Pe">' +
+          '<button class="p87-btn pri" type="button" data-a="salvar">Salvar permiss\u00f5es</button>' +
+          '<button class="p87-btn" type="button" data-a="todas">Marcar todas</button>' +
+          '<button class="p87-btn" type="button" data-a="nenhuma">Desmarcar todas</button>' +
+          '<button class="p87-btn" type="button" data-a="liberar">Liberar tudo para todos</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(f);
+
+    f.addEventListener('click', function (ev) { if (ev.target === f) { fecharTela(); } });
+    f.addEventListener('click', aoClicar);
+    f.addEventListener('change', aoTrocar);
+    desenhar();
+  }
+
+  function desenhar() {
+    var c = document.getElementById('p103Corpo');
+    if (!c) { return; }
+    var lista = pessoas();
+
+    if (!lista.length) {
+      c.innerHTML = '<div class="p103-info al">Ainda n\u00e3o existe nenhum usu\u00e1rio cadastrado. ' +
+        'Cadastre as pessoas na tela "Usu\u00e1rios cadastrados" e volte aqui para escolher as abas de cada uma.</div>';
+      return;
+    }
+
+    if (!escolhido) {
+      var i0;
+      for (i0 = 0; i0 < lista.length; i0++) {
+        if (!ehAdminPerfil(lista[i0].perfil)) { escolhido = chave(lista[i0].usuario); break; }
+      }
+      if (!escolhido) { escolhido = chave(lista[0].usuario); }
+    }
+
+    var atual = null;
+    var i;
+    for (i = 0; i < lista.length; i++) {
+      if (chave(lista[i].usuario) === escolhido) { atual = lista[i]; break; }
+    }
+    if (!atual) { atual = lista[0]; escolhido = chave(atual.usuario); }
+
+    var h = '';
+    h += '<p class="sb">Escolha a pessoa e marque as abas que ela pode abrir. ' +
+         'O que ficar desmarcado desaparece do menu dela. ' +
+         'O administrador sempre v\u00ea tudo.</p>';
+
+    h += '<div class="p103-lin"><div><label class="tt">Pessoa</label><select id="p103Quem">';
+    for (i = 0; i < lista.length; i++) {
+      var u = lista[i];
+      var k = chave(u.usuario);
+      h += '<option value="' + esc(k) + '"' + (k === escolhido ? ' selected' : '') + '>' +
+           esc(u.nome || u.usuario) + ' (' + esc(u.usuario) + ') - ' + esc(nomePerfil(u.perfil)) +
+           '</option>';
+    }
+    h += '</select></div></div>';
+
+    if (ehAdminPerfil(atual.perfil)) {
+      h += '<div class="p103-info al"><b>' + esc(atual.nome || atual.usuario) + '</b> \u00e9 administrador, ' +
+           'ent\u00e3o v\u00ea todas as abas sempre. Para limitar as abas, primeiro mude o tipo de acesso dessa ' +
+           'pessoa na tela "Usu\u00e1rios cadastrados".</div>';
+      c.innerHTML = h;
+      return;
+    }
+
+    var lib = liberadasDe(atual.usuario, atual.perfil);
+    h += '<div class="p103-res">' +
+         (configurado(atual.usuario)
+            ? 'Hoje esta pessoa v\u00ea <b>' + lib.length + '</b> de <b>' + ABAS.length + '</b> abas.'
+            : 'Esta pessoa ainda n\u00e3o tem limite: por enquanto ela v\u00ea todas as abas.') +
+         '</div>';
+
+    h += '<div class="p103-grade" id="p103Grade">';
+    for (i = 0; i < ABAS.length; i++) {
+      var a = ABAS[i];
+      var on = lib.indexOf(a.id) >= 0;
+      h += '<label class="p103-item' + (on ? ' on' : '') + '" data-id="' + esc(a.id) + '">' +
+           '<input type="checkbox" data-a="aba" data-id="' + esc(a.id) + '"' + (on ? ' checked' : '') + '>' +
+           '<span>' + esc(rotuloAba(a.id)) + '</span></label>';
+    }
+    h += '</div>';
+
+    h += '<div class="p103-info">Se voc\u00ea desmarcar todas as abas, a pessoa fica sem nada para ver, ' +
+         'ent\u00e3o o painel volta a liberar tudo para ela por seguran\u00e7a. ' +
+         'Aperte <b>Salvar permiss\u00f5es</b> para valer. ' +
+         'Cada pessoa precisa recarregar a p\u00e1gina dela para ver a mudan\u00e7a.</div>';
+    c.innerHTML = h;
+  }
+
+  function aoTrocar(ev) {
+    var el = ev.target;
+    if (!el) { return; }
+    if (el.id === 'p103Quem') {
+      escolhido = String(el.value || '');
+      desenhar();
+      return;
+    }
+    if (el.getAttribute && el.getAttribute('data-a') === 'aba') {
+      var pai = el.parentNode;
+      if (pai && pai.className !== undefined) {
+        pai.className = 'p103-item' + (el.checked ? ' on' : '');
+      }
+    }
+  }
+
+  function marcarTodas(valor) {
+    var g = document.getElementById('p103Grade');
+    if (!g) { return; }
+    var cx = g.querySelectorAll('input[data-a="aba"]');
+    var i;
+    for (i = 0; i < cx.length; i++) {
+      cx[i].checked = !!valor;
+      if (cx[i].parentNode) {
+        cx[i].parentNode.className = 'p103-item' + (valor ? ' on' : '');
+      }
+    }
+  }
+
+  function salvar() {
+    var g = document.getElementById('p103Grade');
+    if (!g) { aviso('Escolha uma pessoa que n\u00e3o seja administrador.', 'err'); return; }
+    var cx = g.querySelectorAll('input[data-a="aba"]');
+    var marcadas = [];
+    var i;
+    for (i = 0; i < cx.length; i++) {
+      if (cx[i].checked) { marcadas.push(String(cx[i].getAttribute('data-id'))); }
+    }
+    var m = mapa();
+    if (!marcadas.length) {
+      delete m[escolhido];
+    } else {
+      m[escolhido] = marcadas;
+    }
+    if (!gravar(K_PERM, m)) {
+      aviso('N\u00e3o consegui salvar neste navegador.', 'err');
+      return;
+    }
+    try {
+      if (window.p88Registrar) { window.p88Registrar('Permissoes de abas', escolhido + ': ' + marcadas.join(', ')); }
+    } catch (e) { /* ignora */ }
+    aviso(marcadas.length
+      ? 'Permiss\u00f5es salvas: ' + marcadas.length + ' aba(s) liberada(s).'
+      : 'Sem limite para esta pessoa: ela volta a ver todas as abas.');
+    aplicar(true);
+    desenhar();
+  }
+
+  function aoClicar(ev) {
+    var el = ev.target;
+    while (el && el !== document && !(el.getAttribute && el.getAttribute('data-a'))) {
+      el = el.parentNode;
+    }
+    if (!el || el === document) { return; }
+    var a = el.getAttribute('data-a');
+    if (a === 'aba') { return; }
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (a === 'fechar') { fecharTela(); return; }
+    if (a === 'salvar') { salvar(); return; }
+    if (a === 'todas') { marcarTodas(true); return; }
+    if (a === 'nenhuma') { marcarTodas(false); return; }
+    if (a === 'liberar') {
+      if (gravar(K_PERM, {})) {
+        escolhido = '';
+        aviso('Todo mundo voltou a ver todas as abas.');
+        aplicar(true);
+        desenhar();
+      } else {
+        aviso('N\u00e3o consegui salvar neste navegador.', 'err');
+      }
+      return;
+    }
+  }
+
+  /* ================================================================ *
+   * aplicar no menu e na troca de abas
+   * ================================================================ */
+  var assinatura = '';
+
+  function assinar() {
+    var s = sessao();
+    return String(s ? chave(s.usuario) + '|' + String(s.perfil || '') : 'sem-login') +
+           '|' + minhasAbas().join(',');
+  }
+
+  function primeiraPermitida() {
+    var lib = minhasAbas();
+    var i;
+    for (i = 0; i < ABAS.length; i++) {
+      if (ABAS[i].id === 'fpdo') { continue; }
+      if (lib.indexOf(ABAS[i].id) >= 0) { return ABAS[i].id; }
+    }
+    return '';
+  }
+
+  function abaAberta() {
+    var i;
+    for (i = 0; i < ABAS.length; i++) {
+      var id = ABAS[i].id;
+      if (id === 'fpdo') { continue; }
+      var el = document.getElementById('tab-' + id);
+      if (el && el.style && el.style.display !== 'none') { return id; }
+    }
+    return '';
+  }
+
+  function esconderBotoes() {
+    var lib = minhasAbas();
+    var i;
+    for (i = 0; i < ABAS.length; i++) {
+      var id = ABAS[i].id;
+      var b = document.getElementById('btn-tab-' + id);
+      if (!b) { continue; }
+      var ok = lib.indexOf(id) >= 0;
+      if (ok) {
+        if (b.getAttribute('data-p103off') === '1') {
+          b.removeAttribute('data-p103off');
+          b.style.display = '';
+        }
+      } else {
+        b.setAttribute('data-p103off', '1');
+        b.style.setProperty('display', 'none', 'important');
+        var pn = document.getElementById('tab-' + id);
+        if (pn && pn.style && pn.style.display !== 'none') { pn.style.display = 'none'; }
+      }
+    }
+  }
+
+  function envolverTroca() {
+    var ant = window.trocarAba;
+    if (typeof ant !== 'function' || ant.__p103) { return; }
+    var nova = function (aba) {
+      var id = String(aba || '');
+      if (!podeVer(id)) {
+        aviso('Voc\u00ea n\u00e3o tem permiss\u00e3o para abrir esta aba.', 'err');
+        try {
+          var m = document.getElementById('meu-menu-abas');
+          if (m) { m.removeAttribute('open'); }
+        } catch (e2) { /* ignora */ }
+        return false;
+      }
+      return ant.apply(this, arguments);
+    };
+    nova.__p103 = true;
+    try { window.trocarAba = nova; } catch (e) { /* ignora */ }
+    if (typeof trocarAba === 'function') {
+      try { trocarAba = nova; } catch (e3) { /* ignora */ }
+    }
+  }
+
+  function envolverFpdo() {
+    var ant = window.p92AbrirFpdo;
+    if (typeof ant !== 'function' || ant.__p103) { return; }
+    var nova = function () {
+      if (!podeVer('fpdo')) {
+        aviso('Voc\u00ea n\u00e3o tem permiss\u00e3o para abrir o Relat\u00f3rio FPDO.', 'err');
+        return false;
+      }
+      return ant.apply(this, arguments);
+    };
+    nova.__p103 = true;
+    try { window.p92AbrirFpdo = nova; } catch (e) { /* ignora */ }
+  }
+
+  function cairNaPrimeira() {
+    var atual = abaAberta();
+    if (atual && podeVer(atual)) { return; }
+    var alvo = primeiraPermitida();
+    if (!alvo) { return; }
+    try {
+      if (typeof window.trocarAba === 'function') { window.trocarAba(alvo); }
+    } catch (e) { /* ignora */ }
+  }
+
+  function aplicar(forcar) {
+    envolverTroca();
+    envolverFpdo();
+    var ass = assinar();
+    if (!forcar && ass === assinatura) {
+      esconderBotoes();
+      return;
+    }
+    assinatura = ass;
+    esconderBotoes();
+    cairNaPrimeira();
+  }
+
+  /* ================================================================ *
+   * botao no menu de abas (somente admin)
+   * ================================================================ */
+  function caixaMenu() {
+    return document.querySelector('#meu-menu-abas .tabs') || null;
+  }
+
+  function colocarBotao() {
+    var existente = document.getElementById('p103Botao');
+    if (!souAdmin()) {
+      if (existente && existente.parentNode) { existente.parentNode.removeChild(existente); }
+      return;
+    }
+    var cx = caixaMenu();
+    var b = existente;
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'p103Botao';
+      b.type = 'button';
+      b.textContent = 'Permiss\u00f5es de abas';
+      b.setAttribute('title', 'Escolher quais abas cada usuario pode ver');
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        abrirPermissoes();
+      });
+    }
+    if (cx) {
+      if (b.parentNode !== cx) { cx.appendChild(b); }
+      b.style.position = '';
+    } else if (!b.parentNode) {
+      b.style.cssText += ';position:fixed;right:14px;bottom:240px;z-index:2147482000;';
+      document.body.appendChild(b);
+    }
+  }
+
+  /* ================================================================ *
+   * inicio
+   * ================================================================ */
+  function iniciar() {
+    try { estilo(); } catch (e) { /* ignora */ }
+    try { colocarBotao(); } catch (e) { /* ignora */ }
+    try { aplicar(true); } catch (e) { /* ignora */ }
+
+    setInterval(function () {
+      try { colocarBotao(); } catch (e) { /* ignora */ }
+      try { aplicar(false); } catch (e) { /* ignora */ }
+    }, 2000);
+
+    document.addEventListener('keydown', function (ev) {
+      var k = ev.key || ev.keyCode;
+      if (k !== 'Escape' && k !== 'Esc' && k !== 27) { return; }
+      if (document.getElementById('p103Fundo')) {
+        ev.stopPropagation();
+        fecharTela();
+      }
+    }, true);
+
+    window.p103Permissoes = function () { abrirPermissoes(); return true; };
+    window.PainelPermissoes = {
+      abrir: abrirPermissoes,
+      abas: ABAS,
+      minhas: minhasAbas,
+      podeVer: podeVer
+    };
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciar);
+  } else {
+    iniciar();
+  }
+  setTimeout(function () { try { aplicar(true); } catch (e) { /* ignora */ } }, 1200);
+  setTimeout(function () { try { aplicar(true); } catch (e) { /* ignora */ } }, 3500);
+})();
+
+</script>
+<!-- PATCH103_FIM -->
+
+<!-- PATCH104_INI -->
+<script>
+/* PATCH 104 - Guardar tudo na nuvem (Supabase).
+   Espelha no servidor: usuarios/senhas, permissoes, agenda (calendario),
+   boletins de inspecao, diarios de obra e relatorios FPDO.
+   A nuvem manda: ao abrir o painel, o que estiver mais novo no servidor
+   entra na maquina; o que voce alterar aqui sobe sozinho.
+   Nao reescreve nenhuma funcao existente: apenas acompanha e sincroniza. */
+(function () {
+  'use strict';
+  if (window.__p104) { return; }
+  window.__p104 = true;
+
+  var TAB_KV  = 'painel_nuvem';
+  var TAB_REG = 'painel_registros';
+
+  var CHAVES = [
+    'painel_seg_usuarios_v1',
+    'painel_seg_permissoes_v1',
+    'painel_seg_config_v1',
+    'painel_seg_presenca_v1',
+    'painel_seg_historico_v1',
+    'painel_seg_log_v1',
+    'painelAgendaObras_v1'
+  ];
+  var SO_ADMIN = { 'painel_seg_usuarios_v1': 1, 'painel_seg_permissoes_v1': 1 };
+
+  var COLECOES = [
+    { nome: 'p83_boletins', base: 'p83_boletins_v1', loja: 'reg', ls: 'p83_boletins_ls_v1' },
+    { nome: 'p84_diarios',  base: 'p84_diarios_v1',  loja: 'reg', ls: 'p84_diarios_ls_v1' },
+    { nome: 'p92_fpdo',     base: 'p92_fpdo_v1',     loja: 'reg', ls: 'p92_fpdo_ls_v1' }
+  ];
+
+  var K_STAMP  = 'p104_stamp_v1';
+  var K_IDS    = 'p104_ids_v1';
+  var K_REMOV  = 'p104_removidos_v1';
+  var F_RELOAD = 'p104_recarregou_v1';
+  var TOLER    = 2000;
+
+  var ocupado = false;
+
+  /* ---------------------------------------------------------------- *
+   * utilidades
+   * ---------------------------------------------------------------- */
+  function sb() {
+    try { return (window._supabase && window._supabase.from) ? window._supabase : null; } catch (e) { return null; }
+  }
+
+  function sessaoPainel() {
+    var v = null;
+    try { v = sessionStorage.getItem('painel_seg_sessao_v1') || localStorage.getItem('painel_seg_sessao_v1'); } catch (e) {}
+    try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  }
+
+  function souAdmin() {
+    var s = sessaoPainel();
+    return !!(s && String(s.perfil || '').toLowerCase() === 'admin');
+  }
+
+  function quem() {
+    var s = sessaoPainel();
+    return s ? String(s.usuario || s.nome || 'painel') : 'painel';
+  }
+
+  function agora() { return new Date().toISOString(); }
+
+  function ms(v) {
+    var t = Date.parse(String(v || ''));
+    return isNaN(t) ? 0 : t;
+  }
+
+  function lerJSON(k, def) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
+  }
+
+  function gravarJSON(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+  }
+
+  function bruto(k) {
+    try { return localStorage.getItem(k); } catch (e) { return null; }
+  }
+
+  function stamps() { return lerJSON(K_STAMP, {}) || {}; }
+  function salvarStamps(m) { gravarJSON(K_STAMP, m); }
+  function idsVistos() { return lerJSON(K_IDS, {}) || {}; }
+  function salvarIds(m) { gravarJSON(K_IDS, m); }
+  function removidos() { return lerJSON(K_REMOV, {}) || {}; }
+  function salvarRemovidos(m) { gravarJSON(K_REMOV, m); }
+
+  /* anota que um registro foi apagado nesta maquina, para sair de todas */
+  function anotarRemocao(colNome, id) {
+    if (!colNome || !id) { return; }
+    var m = removidos();
+    if (!m[colNome]) { m[colNome] = {}; }
+    m[colNome][id] = agora();
+    salvarRemovidos(m);
+  }
+
+  function marcador(txt) {
+    var s = String(txt == null ? '' : txt), h = 5381, i;
+    for (i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; }
+    return s.length + '_' + h;
+  }
+
+  function horaReg(r) {
+    if (!r) { return 0; }
+    return ms(r.alterado || r.alteradoEm || r.criado || 0);
+  }
+
+  function badge(txt, cor) {
+    var d = document.getElementById('p104Status');
+    if (!d) {
+      d = document.createElement('div');
+      d.id = 'p104Status';
+      d.setAttribute('title', 'Situacao da nuvem. Clique para sincronizar agora.');
+      d.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:2147483000;background:#0f172a;' +
+        'color:#fff;font:12px Arial;padding:6px 11px;border-radius:20px;opacity:.92;cursor:pointer;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      d.onclick = function () { sincronizar(true); };
+      if (document.body) { document.body.appendChild(d); }
+    }
+    d.textContent = 'Nuvem: ' + txt;
+    d.style.background = cor || '#0f172a';
+  }
+
+  function aviso(msg) {
+    try {
+      if (typeof window.mostrarToastPainel === 'function') { window.mostrarToastPainel(msg, 'ok'); return; }
+    } catch (e) {}
+    badge(msg, '#166534');
+  }
+
+  /* ---------------------------------------------------------------- *
+   * IndexedDB das colecoes (boletins, diarios, FPDO)
+   * ---------------------------------------------------------------- */
+  function abrirBase(col, ok, falhou) {
+    try {
+      if (!window.indexedDB) { falhou(true); return; }
+      var req = window.indexedDB.open(col.base, 1);
+      req.onupgradeneeded = function () {
+        var d = req.result;
+        if (!d.objectStoreNames.contains(col.loja)) { d.createObjectStore(col.loja, { keyPath: 'id' }); }
+      };
+      req.onsuccess = function () { ok(req.result); };
+      req.onerror = function () { falhou(false); };
+    } catch (e) { falhou(false); }
+  }
+
+  function lerLocais(col, depois) {
+    abrirBase(col, function (d) {
+      try {
+        var t = d.transaction(col.loja, 'readonly');
+        var r = t.objectStore(col.loja).getAll();
+        r.onsuccess = function () { depois(r.result || [], true); };
+        r.onerror = function () { depois(lerJSON(col.ls, []) || [], false); };
+      } catch (e) { depois(lerJSON(col.ls, []) || [], false); }
+    }, function (semBanco) {
+      /* sem IndexedDB neste navegador: a reserva no navegador vale como fonte */
+      depois(lerJSON(col.ls, []) || [], semBanco === true);
+    });
+  }
+
+  function gravarLocais(col, novos, apagar, depois) {
+    if ((!novos || !novos.length) && (!apagar || !apagar.length)) { depois(); return; }
+    abrirBase(col, function (d) {
+      try {
+        var t = d.transaction(col.loja, 'readwrite');
+        var loja = t.objectStore(col.loja), i;
+        for (i = 0; i < novos.length; i++) { loja.put(novos[i]); }
+        for (i = 0; i < apagar.length; i++) { loja.delete(apagar[i]); }
+        t.oncomplete = function () { espelhoLS(col, novos, apagar); depois(); };
+        t.onerror = function () { espelhoLS(col, novos, apagar); depois(); };
+      } catch (e) { espelhoLS(col, novos, apagar); depois(); }
+    }, function () { espelhoLS(col, novos, apagar); depois(); });
+  }
+
+  function espelhoLS(col, novos, apagar) {
+    var arr = lerJSON(col.ls, []) || [], i, j, achou;
+    for (i = 0; i < novos.length; i++) {
+      achou = false;
+      for (j = 0; j < arr.length; j++) {
+        if (arr[j] && arr[j].id === novos[i].id) { arr[j] = novos[i]; achou = true; break; }
+      }
+      if (!achou) { arr.push(novos[i]); }
+    }
+    if (apagar && apagar.length) {
+      arr = arr.filter(function (r) { return apagar.indexOf(r && r.id) < 0; });
+    }
+    gravarJSON(col.ls, arr);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * chaves simples (usuarios, permissoes, agenda, historico...)
+   * ---------------------------------------------------------------- */
+  function juntarListas(a, b) {
+    var saida = [], visto = {}, i, ch;
+    function por(arr) {
+      if (!arr || !arr.length) { return; }
+      for (i = 0; i < arr.length; i++) {
+        try { ch = JSON.stringify(arr[i]); } catch (e) { ch = String(arr[i]); }
+        if (!visto[ch]) { visto[ch] = 1; saida.push(arr[i]); }
+      }
+    }
+    por(a); por(b);
+    if (saida.length > 800) { saida = saida.slice(saida.length - 800); }
+    return saida;
+  }
+
+  function eListaDeEventos(k) {
+    return k === 'painel_seg_log_v1' || k === 'painel_seg_historico_v1' || k === 'painel_seg_presenca_v1';
+  }
+
+  function sincronizarChaves(depois) {
+    var s = sb();
+    if (!s) { depois(false, 'sem conexao'); return; }
+    s.from(TAB_KV).select('chave,valor,marca,atualizado_em').in('chave', CHAVES).then(function (res) {
+      if (res.error) { depois(false, res.error.message || 'erro na nuvem'); return; }
+      var linhas = res.data || [], mapa = {}, i;
+      for (i = 0; i < linhas.length; i++) { mapa[linhas[i].chave] = linhas[i]; }
+
+      var st = stamps(), subir = [], recarrega = false, mudou = false;
+
+      for (i = 0; i < CHAVES.length; i++) {
+        (function (k) {
+          if (SO_ADMIN[k] && !souAdmin()) {
+            var so = mapa[k];
+            if (so && so.valor !== undefined && so.valor !== null) {
+              var textoSo = JSON.stringify(so.valor);
+              if (bruto(k) !== textoSo) {
+                try { localStorage.setItem(k, textoSo); } catch (e) {}
+                st[k] = { marca: marcador(textoSo), at: so.atualizado_em || agora() };
+                mudou = true; recarrega = true;
+              }
+            }
+            return;
+          }
+          var local = bruto(k);
+          var mLocal = local === null ? '' : marcador(local);
+          var ref = st[k] || { marca: '', at: '' };
+          var serv = mapa[k];
+          var mServ = serv ? String(serv.marca || '') : '';
+          var textoServ = serv && serv.valor !== undefined && serv.valor !== null ? JSON.stringify(serv.valor) : null;
+          if (textoServ !== null && !mServ) { mServ = marcador(textoServ); }
+
+          var localMudou = mLocal !== ref.marca;
+          var servMudou = mServ !== ref.marca;
+
+          if (!serv || textoServ === null) {
+            if (local !== null) {
+              subir.push({ chave: k, valor: JSON.parse(local), marca: mLocal });
+              st[k] = { marca: mLocal, at: agora() };
+            }
+            return;
+          }
+          if (mServ === mLocal) { st[k] = { marca: mLocal, at: serv.atualizado_em || agora() }; return; }
+
+          if (localMudou && servMudou && eListaDeEventos(k)) {
+            var juntos, aLocal = null, aServ = null;
+            try { aLocal = JSON.parse(local || '[]'); } catch (e) { aLocal = []; }
+            try { aServ = JSON.parse(textoServ); } catch (e) { aServ = []; }
+            if (aLocal instanceof Array && aServ instanceof Array) {
+              juntos = juntarListas(aServ, aLocal);
+              var textoJ = JSON.stringify(juntos);
+              try { localStorage.setItem(k, textoJ); } catch (e) {}
+              subir.push({ chave: k, valor: juntos, marca: marcador(textoJ) });
+              st[k] = { marca: marcador(textoJ), at: agora() };
+              mudou = true;
+              return;
+            }
+          }
+
+          if (servMudou || !localMudou) {
+            try { localStorage.setItem(k, textoServ); } catch (e) {}
+            st[k] = { marca: mServ, at: serv.atualizado_em || agora() };
+            mudou = true;
+            recarrega = true;
+            return;
+          }
+
+          subir.push({ chave: k, valor: JSON.parse(local), marca: mLocal });
+          st[k] = { marca: mLocal, at: agora() };
+        }(CHAVES[i]));
+      }
+
+      salvarStamps(st);
+
+      function terminar(erro) {
+        depois(!erro, erro, recarrega, mudou);
+      }
+
+      if (!subir.length) { terminar(null); return; }
+      var j, quando = agora(), autor = quem();
+      for (j = 0; j < subir.length; j++) { subir[j].atualizado_em = quando; subir[j].autor = autor; }
+      s.from(TAB_KV).upsert(subir, { onConflict: 'chave' }).then(function (r2) {
+        terminar(r2.error ? (r2.error.message || 'erro ao enviar') : null);
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------------- *
+   * colecoes: boletins, diarios e FPDO (um registro por linha)
+   * ---------------------------------------------------------------- */
+  function sincronizarColecao(col, depois) {
+    var s = sb();
+    if (!s) { depois(false, 'sem conexao'); return; }
+
+    lerLocais(col, function (locais, lidoOk) {
+      s.from(TAB_REG).select('id,colecao,dados,atualizado_em,removido')
+        .eq('colecao', col.nome).then(function (res) {
+        if (res.error) { depois(false, res.error.message || 'erro na nuvem'); return; }
+
+        var linhas = res.data || [];
+        var mapaServ = {}, mapaLocal = {}, i, r;
+        for (i = 0; i < linhas.length; i++) { mapaServ[linhas[i].id] = linhas[i]; }
+        for (i = 0; i < locais.length; i++) { if (locais[i] && locais[i].id) { mapaLocal[locais[i].id] = locais[i]; } }
+
+        var vistos = idsVistos();
+        var jaVi = vistos[col.nome] || {};
+        var apagadosAqui = (removidos()[col.nome] || {});
+        var subir = [], baixar = [], apagarLocal = [], mudou = false, sumiram = [];
+
+        for (i = 0; i < locais.length; i++) {
+          r = locais[i];
+          if (!r || !r.id) { continue; }
+          var serv = mapaServ[r.id];
+          if (serv && serv.removido === true) {
+            if (horaReg(r) > ms(serv.atualizado_em) + TOLER) {
+              subir.push({ id: r.id, colecao: col.nome, dados: r, atualizado_em: agora(), removido: false, autor: quem() });
+            } else {
+              apagarLocal.push(r.id);
+              mudou = true;
+            }
+            continue;
+          }
+          if (!serv) {
+            if (apagadosAqui[r.id]) { apagarLocal.push(r.id); mudou = true; }
+            else { subir.push({ id: r.id, colecao: col.nome, dados: r, atualizado_em: (r.alterado || r.criado || agora()), removido: false, autor: quem() }); }
+            continue;
+          }
+          var hLocal = horaReg(r), hServ = ms(serv.atualizado_em);
+          if (hLocal > hServ + TOLER) {
+            subir.push({ id: r.id, colecao: col.nome, dados: r, atualizado_em: (r.alterado || r.criado || agora()), removido: false, autor: quem() });
+          } else if (hServ > hLocal + TOLER) {
+            baixar.push(serv.dados);
+            mudou = true;
+          }
+        }
+
+        var podeApagarNaNuvem = lidoOk;
+
+        for (i = 0; i < linhas.length; i++) {
+          if (linhas[i].removido === true) { continue; }
+          if (mapaLocal[linhas[i].id]) { continue; }
+          if (podeApagarNaNuvem && (apagadosAqui[linhas[i].id] || jaVi[linhas[i].id])) {
+            /* apagado nesta maquina: tira de todas as maquinas */
+            subir.push({ id: linhas[i].id, colecao: col.nome, dados: null, atualizado_em: agora(), removido: true, autor: quem() });
+            sumiram.push(linhas[i].id);
+            continue;
+          }
+          if (linhas[i].dados) { baixar.push(linhas[i].dados); mudou = true; }
+        }
+
+        var novoJaVi = {};
+        for (i = 0; i < locais.length; i++) { if (locais[i] && locais[i].id) { novoJaVi[locais[i].id] = 1; } }
+        for (i = 0; i < baixar.length; i++) { if (baixar[i] && baixar[i].id) { novoJaVi[baixar[i].id] = 1; } }
+        for (i = 0; i < subir.length; i++) {
+          if (subir[i].removido === true) { delete novoJaVi[subir[i].id]; } else { novoJaVi[subir[i].id] = 1; }
+        }
+        for (i = 0; i < apagarLocal.length; i++) { delete novoJaVi[apagarLocal[i]]; }
+        vistos[col.nome] = novoJaVi;
+        salvarIds(vistos);
+
+        gravarLocais(col, baixar, apagarLocal, function () {
+          if (!subir.length) { limparAnotacoes(); depois(true, null, mudou); return; }
+          s.from(TAB_REG).upsert(subir, { onConflict: 'id' }).then(function (r2) {
+            if (!r2.error) { limparAnotacoes(); }
+            depois(!r2.error, r2.error ? (r2.error.message || 'erro ao enviar') : null, mudou);
+          });
+        });
+
+        /* remocoes ja avisadas a nuvem nao precisam mais ficar anotadas */
+        function limparAnotacoes() {
+          if (!sumiram.length && !apagarLocal.length) { return; }
+          var m = removidos(), j, mexeu = false;
+          if (m[col.nome]) {
+            for (j = 0; j < sumiram.length; j++) { if (m[col.nome][sumiram[j]]) { delete m[col.nome][sumiram[j]]; mexeu = true; } }
+            for (j = 0; j < apagarLocal.length; j++) { if (m[col.nome][apagarLocal[j]]) { delete m[col.nome][apagarLocal[j]]; mexeu = true; } }
+          }
+          if (mexeu) { salvarRemovidos(m); }
+        }
+      });
+    });
+  }
+
+  /* apagou aqui? marca como removido na nuvem, para sair de todas as maquinas */
+  function anunciarRemocao(colNome, id) {
+    anotarRemocao(colNome, id);
+    var s = sb();
+    if (!s || !id) { return; }
+    s.from(TAB_REG).upsert([{ id: id, colecao: colNome, dados: null, atualizado_em: agora(), removido: true, autor: quem() }],
+      { onConflict: 'id' }).then(function () {}, function () {});
+    var v = idsVistos();
+    if (v[colNome]) { delete v[colNome][id]; salvarIds(v); }
+  }
+  window.p104Removeu = anunciarRemocao;
+
+  /* ---------------------------------------------------------------- *
+   * maestro: junta tudo
+   * ---------------------------------------------------------------- */
+  function sincronizar(pedidoManual) {
+    if (ocupado) { return; }
+    var s = sb();
+    if (!s) { badge('sem conexao', '#7f1d1d'); return; }
+    ocupado = true;
+    badge('sincronizando...', '#1d4ed8');
+
+    var erros = [], precisaRecarregar = false, houveMudanca = false;
+
+    sincronizarChaves(function (ok, erro, recarrega, mudou) {
+      if (!ok && erro) { erros.push(erro); }
+      if (recarrega) { precisaRecarregar = true; }
+      if (mudou) { houveMudanca = true; }
+
+      var n = 0;
+      function proxima() {
+        if (n >= COLECOES.length) { fim(); return; }
+        var col = COLECOES[n++];
+        sincronizarColecao(col, function (ok2, erro2, mudou2) {
+          if (!ok2 && erro2) { erros.push(col.nome + ': ' + erro2); }
+          if (mudou2) { houveMudanca = true; precisaRecarregar = true; }
+          proxima();
+        });
+      }
+      proxima();
+
+      function fim() {
+        ocupado = false;
+        if (erros.length) {
+          badge('erro ao salvar', '#7f1d1d');
+          try { console.warn('PATCH104', erros); } catch (e) {}
+        } else {
+          var h = new Date();
+          var hh = ('0' + h.getHours()).slice(-2) + ':' + ('0' + h.getMinutes()).slice(-2);
+          badge('salvo ' + hh, '#166534');
+        }
+        if (pedidoManual && !erros.length) { aviso('Dados sincronizados com a nuvem.'); }
+
+        if (precisaRecarregar && houveMudanca) {
+          var ja = false;
+          try { ja = sessionStorage.getItem(F_RELOAD) === '1'; } catch (e) {}
+          if (!ja || pedidoManual) {
+            try { sessionStorage.setItem(F_RELOAD, '1'); } catch (e) {}
+            badge('atualizando tela...', '#1d4ed8');
+            setTimeout(function () { try { location.reload(); } catch (e) {} }, 700);
+          }
+        }
+      }
+    });
+  }
+  window.p104Sincronizar = function () { sincronizar(true); };
+
+  /* ---------------------------------------------------------------- *
+   * gatilhos
+   * ---------------------------------------------------------------- */
+  var pendente = null;
+  function agendar(atraso) {
+    if (pendente) { clearTimeout(pendente); }
+    pendente = setTimeout(function () { pendente = null; sincronizar(false); }, atraso || 2500);
+  }
+
+  /* mudanca nas chaves simples: sobe logo depois */
+  try {
+    var setOriginal = localStorage.setItem.bind(localStorage);
+    var removeOriginal = localStorage.removeItem.bind(localStorage);
+    localStorage.setItem = function (k, v) {
+      setOriginal(k, v);
+      if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
+    };
+    localStorage.removeItem = function (k) {
+      removeOriginal(k);
+      if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
+    };
+  } catch (e) {}
+
+  /* boletins, diarios e FPDO: confere de tempo em tempo e ao voltar para a aba */
+  setInterval(function () { sincronizar(false); }, 60000);
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { agendar(1200); }
+  });
+
+  window.addEventListener('online', function () { agendar(1000); });
+
+  window.addEventListener('beforeunload', function () {
+    try { sessionStorage.removeItem(F_RELOAD); } catch (e) {}
+  });
+
+  function comecar() {
+    badge('conectando...', '#1d4ed8');
+    if (sb()) { setTimeout(function () { sincronizar(false); }, 300); return; }
+    var tentativas = 0;
+    var t = setInterval(function () {
+      tentativas++;
+      if (sb()) { clearInterval(t); setTimeout(function () { sincronizar(false); }, 300); return; }
+      if (tentativas > 40) { clearInterval(t); badge('sem conexao', '#7f1d1d'); }
+    }, 500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', comecar);
+  } else {
+    comecar();
+  }
+})();
+</script>
+<!-- PATCH104_FIM -->
+
+<!-- PATCH105_INI -->
+<script>
+/* ------------------------------------------------------------------ *
+ * PATCH 105 - posicao do aviso "Nuvem: ..."
+ * Canto de baixo a DIREITA, discreto e arrastavel.
+ * Clique = sincroniza agora | Shift+clique = volta ao canto padrao
+ * ------------------------------------------------------------------ */
+(function () {
+  'use strict';
+
+  var CHAVE = 'p104StatusPos';
+  var ID = 'p104Status';
+  var LARG = 150;   /* largura aproximada, usada para nao sair da tela */
+  var ALT = 30;
+
+  function guardado() {
+    try {
+      var t = window.localStorage.getItem(CHAVE);
+      if (!t) { return null; }
+      var o = JSON.parse(t);
+      if (o && typeof o.x === 'number' && typeof o.y === 'number') { return o; }
+    } catch (e) {}
+    return null;
+  }
+
+  function guardar(x, y) {
+    try { window.localStorage.setItem(CHAVE, JSON.stringify({ x: x, y: y })); } catch (e) {}
+  }
+
+  function limpar() {
+    try { window.localStorage.removeItem(CHAVE); } catch (e) {}
+  }
+
+  function dentroDaTela(x, y) {
+    var maxX = Math.max(0, (window.innerWidth || 1000) - LARG);
+    var maxY = Math.max(0, (window.innerHeight || 700) - ALT);
+    return { x: Math.min(Math.max(0, x), maxX), y: Math.min(Math.max(0, y), maxY) };
+  }
+
+  function aplicarPadrao(d) {
+    d.style.left = 'auto';
+    d.style.top = 'auto';
+    d.style.right = '14px';
+    d.style.bottom = '14px';
+  }
+
+  function aplicarPosicao(d) {
+    var p = guardado();
+    if (!p) { aplicarPadrao(d); return; }
+    p = dentroDaTela(p.x, p.y);
+    d.style.right = 'auto';
+    d.style.bottom = 'auto';
+    d.style.left = p.x + 'px';
+    d.style.top = p.y + 'px';
+  }
+
+  function enfeitar(d) {
+    if (d.getAttribute('data-p105') === '1') { aplicarPosicao(d); return; }
+    d.setAttribute('data-p105', '1');
+
+    d.style.position = 'fixed';
+    d.style.zIndex = '2147483000';
+    d.style.font = '11px Arial';
+    d.style.padding = '4px 9px';
+    d.style.borderRadius = '14px';
+    d.style.opacity = '0.80';
+    d.style.cursor = 'grab';
+    d.style.userSelect = 'none';
+    d.style.webkitUserSelect = 'none';
+    d.style.boxShadow = '0 1px 5px rgba(0,0,0,.20)';
+    d.style.pointerEvents = 'auto';
+    d.setAttribute('title',
+      'Situacao da nuvem.\nClique: sincroniza agora\nArraste: muda de lugar\nShift + clique: volta ao canto');
+
+    aplicarPosicao(d);
+
+    d.onmouseenter = function () { d.style.opacity = '1'; };
+    d.onmouseleave = function () { d.style.opacity = '0.80'; };
+
+    /* ---------------- arrastar ---------------- */
+    var arrastando = false, moveu = false, dx = 0, dy = 0;
+
+    function ponto(ev) {
+      if (ev.touches && ev.touches.length) { return ev.touches[0]; }
+      return ev;
+    }
+
+    function comecar(ev) {
+      var p = ponto(ev);
+      var r = d.getBoundingClientRect();
+      arrastando = true;
+      moveu = false;
+      dx = p.clientX - r.left;
+      dy = p.clientY - r.top;
+      LARG = r.width || LARG;
+      ALT = r.height || ALT;
+      d.style.cursor = 'grabbing';
+    }
+
+    function mover(ev) {
+      if (!arrastando) { return; }
+      var p = ponto(ev);
+      var pos = dentroDaTela(p.clientX - dx, p.clientY - dy);
+      if (Math.abs(p.clientX - dx - pos.x) < 999) { moveu = true; }
+      d.style.right = 'auto';
+      d.style.bottom = 'auto';
+      d.style.left = pos.x + 'px';
+      d.style.top = pos.y + 'px';
+      if (ev.preventDefault && ev.cancelable) { ev.preventDefault(); }
+    }
+
+    function largar() {
+      if (!arrastando) { return; }
+      arrastando = false;
+      d.style.cursor = 'grab';
+      if (moveu) {
+        var r = d.getBoundingClientRect();
+        guardar(Math.round(r.left), Math.round(r.top));
+      }
+    }
+
+    d.addEventListener('mousedown', comecar, false);
+    document.addEventListener('mousemove', mover, false);
+    document.addEventListener('mouseup', largar, false);
+    d.addEventListener('touchstart', comecar, false);
+    document.addEventListener('touchmove', mover, false);
+    document.addEventListener('touchend', largar, false);
+
+    /* ------- clique: mantem o sincronizar do Patch 104 ------- */
+    var acaoOriginal = d.onclick;
+    d.onclick = function (ev) {
+      if (moveu) { moveu = false; return; }
+      if (ev && ev.shiftKey) {
+        limpar();
+        aplicarPadrao(d);
+        return;
+      }
+      if (typeof acaoOriginal === 'function') { return acaoOriginal.call(d, ev); }
+    };
+  }
+
+  function olhar() {
+    var d = document.getElementById(ID);
+    if (d) { enfeitar(d); }
+  }
+
+  /* o aviso e criado pelo Patch 104 depois; fico de olho */
+  function ligar() {
+    olhar();
+    var n = 0;
+    var t = setInterval(function () {
+      olhar();
+      n++;
+      if (n > 120) { clearInterval(t); }
+    }, 500);
+    try {
+      if (window.MutationObserver && document.body) {
+        new MutationObserver(olhar).observe(document.body, { childList: true });
+      }
+    } catch (e) {}
+    window.addEventListener('resize', function () {
+      var d = document.getElementById(ID);
+      if (d && guardado()) { aplicarPosicao(d); }
+    }, false);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ligar, false);
+  } else {
+    ligar();
+  }
+})();
+</script>
+<!-- PATCH105_FIM -->
+
 </body>
 </html>

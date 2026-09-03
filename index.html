@@ -38381,29 +38381,19 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 })();
 </script>
 
-<!-- PATCH79_SEGURANCA_OK -->
+<!-- INI PATCH108 NUCLEO SEGURANCA -->
 <script>
-/* ====== PATCH79_SEGURANCA_OK - login + trava de exclusao ====== */
+/* PATCH108 - nucleo unico de seguranca do painel.
+   Reune o que antes estava copiado em varios trechos:
+   chaves de armazenamento, calculo da senha, leitura da sessao
+   e nome amigavel do tipo de acesso. */
 (function () {
   'use strict';
-  if (window.__PS79) { return; }
-  window.__PS79 = true;
+  if (window.PainelSeg) { return; }
 
   var K_USERS = 'painel_seg_usuarios_v1';
-  var K_CFG   = 'painel_seg_config_v1';
-  var K_LOG   = 'painel_seg_log_v1';
   var K_SESS  = 'painel_seg_sessao_v1';
-  var MIN_LIB = 5;          /* minutos de liberacao apos digitar a senha */
-  var DIAS_LEMBRAR = 30;
 
-  var RE_DEL = /(exclu|apag|delet|remov|lixeira)/i;
-  var RE_RO  = /(exclu|apag|delet|remov|salvar|gravar|adicionar|lancar|lan\u00e7ar|importar|novo\b|nova\b)/i;
-
-  var autorizadoAte = 0;
-
-  /* ---------------------------------------------------------------- *
-   * 1) SHA-256 puro (sem dependencia externa, funciona em http e file)
-   * ---------------------------------------------------------------- */
   var _K = [1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298];
 
   function sha256(str) {
@@ -38452,6 +38442,65 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
   }
 
+  function sessao() {
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
+    if (!s) {
+      try { s = JSON.parse(localStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
+    }
+    if (s && s.exp && Date.now() > s.exp) { s = null; }
+    return s;
+  }
+
+  function nomePerfil(p) {
+    var v = String(p || '').toLowerCase();
+    if (v === 'admin') { return 'Administrador'; }
+    if (v === 'editor') { return 'Pode lançar e editar'; }
+    if (v === 'visitante' || v === 'leitor') { return 'Somente consulta'; }
+    return p ? String(p) : 'Sem tipo definido';
+  }
+
+  window.PainelSeg = {
+    K_USERS: K_USERS,
+    K_SESS: K_SESS,
+    sha256: sha256,
+    hashSenha: hashSenha,
+    sessao: sessao,
+    nomePerfil: nomePerfil
+  };
+})();
+</script>
+<!-- FIM PATCH108 NUCLEO SEGURANCA -->
+
+<!-- PATCH79_SEGURANCA_OK -->
+<script>
+/* ====== PATCH79_SEGURANCA_OK - login + trava de exclusao ====== */
+(function () {
+  'use strict';
+  if (window.__PS79) { return; }
+  window.__PS79 = true;
+
+  var K_USERS = window.PainelSeg.K_USERS;   /* PATCH108 */
+  var K_CFG   = 'painel_seg_config_v1';
+  var K_LOG   = 'painel_seg_log_v1';
+  var K_SESS  = window.PainelSeg.K_SESS;    /* PATCH108 */
+  var MIN_LIB = 5;          /* minutos de liberacao apos digitar a senha */
+  var DIAS_LEMBRAR = 30;
+
+  var RE_DEL = /(exclu|apag|delet|remov|lixeira)/i;
+  var RE_RO  = /(exclu|apag|delet|remov|salvar|gravar|adicionar|lancar|lan\u00e7ar|importar|novo\b|nova\b)/i;
+
+  var autorizadoAte = 0;
+
+  /* ---------------------------------------------------------------- *
+   * 1) SHA-256 puro (sem dependencia externa, funciona em http e file)
+   * ---------------------------------------------------------------- */
+  /* PATCH108: usa o calculo unico de senha do nucleo (window.PainelSeg). */
+  function sha256(str) { return window.PainelSeg.sha256(str); }
+
+  /* PATCH108: codigo da senha vem do nucleo unico. */
+  function hashSenha(usuario, senha) { return window.PainelSeg.hashSenha(usuario, senha); }
+
   /* ---------------------------------------------------------------- *
    * 2) armazenamento
    * ---------------------------------------------------------------- */
@@ -38489,13 +38538,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     } catch (e) {}
   }
 
-  function sessao() {
-    var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) {}
-    if (!s) { s = ler(K_SESS, null); }
-    if (s && s.exp && Date.now() > s.exp) { s = null; }
-    return s;
-  }
+  /* PATCH108: leitura da sessao vem do nucleo unico. */
+  function sessao() { return window.PainelSeg.sessao(); }
   function abrirSessao(u, lembrar) {
     var s = { usuario: u.usuario, nome: u.nome || u.usuario, perfil: u.perfil, em: Date.now() };
     try { sessionStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e) {}
@@ -43326,8 +43370,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
   var PREFS = ['p83', 'p84', 'p86'];
 
-  var K_USERS = 'painel_seg_usuarios_v1';
-  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_USERS = window.PainelSeg.K_USERS;   /* PATCH108 */
+  var K_SESS  = window.PainelSeg.K_SESS;    /* PATCH108 */
 
   /* ================================================================ *
    * utilidades gerais
@@ -43521,54 +43565,12 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   /* ================================================================ *
    * BLOCO B - login por usuario e senha + cadastro publico
    * ================================================================ */
-  var _K = [1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298];
-
-  function sha256(str) {
-    var bytes = [], i, s = encodeURIComponent(String(str));
-    for (i = 0; i < s.length; i++) {
-      if (s.charAt(i) === '%') { bytes.push(parseInt(s.substr(i + 1, 2), 16)); i += 2; }
-      else { bytes.push(s.charCodeAt(i)); }
-    }
-    var l = bytes.length;
-    bytes.push(0x80);
-    while (bytes.length % 64 !== 56) { bytes.push(0); }
-    var bits = l * 8;
-    bytes.push(0, 0, 0, 0);
-    bytes.push((bits >>> 24) & 255, (bits >>> 16) & 255, (bits >>> 8) & 255, bits & 255);
-    var H = [1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225];
-    var w = new Array(64);
-    function rr(x, n) { return (x >>> n) | (x << (32 - n)); }
-    for (var off = 0; off < bytes.length; off += 64) {
-      for (i = 0; i < 16; i++) {
-        w[i] = (bytes[off+i*4] << 24) | (bytes[off+i*4+1] << 16) | (bytes[off+i*4+2] << 8) | bytes[off+i*4+3];
-      }
-      for (i = 16; i < 64; i++) {
-        var s0 = rr(w[i-15],7) ^ rr(w[i-15],18) ^ (w[i-15] >>> 3);
-        var s1 = rr(w[i-2],17) ^ rr(w[i-2],19) ^ (w[i-2] >>> 10);
-        w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
-      }
-      var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
-      for (i = 0; i < 64; i++) {
-        var S1 = rr(e,6) ^ rr(e,11) ^ rr(e,25);
-        var ch = (e & f) ^ ((~e) & g);
-        var t1 = (h + S1 + ch + _K[i] + w[i]) | 0;
-        var S0 = rr(a,2) ^ rr(a,13) ^ rr(a,22);
-        var mj = (a & b) ^ (a & c) ^ (b & c);
-        var t2 = (S0 + mj) | 0;
-        h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
-      }
-      H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
-      H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
-    }
-    var out = '';
-    for (i = 0; i < 8; i++) { out += ('00000000' + (H[i] >>> 0).toString(16)).slice(-8); }
-    return out;
-  }
+  /* PATCH108: usa o calculo unico de senha do nucleo (window.PainelSeg). */
+  function sha256(str) { return window.PainelSeg.sha256(str); }
 
   /* mesma conta usada pelo login que ja existe no painel */
-  function hashSenha(usuario, senha) {
-    return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
-  }
+  /* PATCH108: codigo da senha vem do nucleo unico. */
+  function hashSenha(usuario, senha) { return window.PainelSeg.hashSenha(usuario, senha); }
 
   function lerJson(k, def) {
     try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
@@ -43595,13 +43597,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return null;
   }
 
-  function sessao() {
-    var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
-    if (!s) { s = lerJson(K_SESS, null); }
-    if (s && s.exp && Date.now() > s.exp) { s = null; }
-    return s;
-  }
+  /* PATCH108: leitura da sessao vem do nucleo unico. */
+  function sessao() { return window.PainelSeg.sessao(); }
 
   function abrirSessao(u, lembrar) {
     var s = { usuario: u.usuario, nome: u.nome || u.usuario, perfil: u.perfil, em: Date.now() };
@@ -44465,8 +44462,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   var PREFS = ['p83', 'p84', 'p86'];
   var OCULTAS = ['p86-oculto', 'p86b-oculto', 'p87-oculto'];
 
-  var K_USERS = 'painel_seg_usuarios_v1';
-  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_USERS = window.PainelSeg.K_USERS;   /* PATCH108 */
+  var K_SESS  = window.PainelSeg.K_SESS;    /* PATCH108 */
 
   /* ================================================================ *
    * utilidades
@@ -44660,53 +44657,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   /* ================================================================ *
    * BLOCO B - tela "Usuarios cadastrados"
    * ================================================================ */
-  var _K = [1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298];
+  /* PATCH108: usa o calculo unico de senha do nucleo (window.PainelSeg). */
+  function sha256(str) { return window.PainelSeg.sha256(str); }
 
-  function sha256(str) {
-    var bytes = [], i, s = encodeURIComponent(String(str));
-    for (i = 0; i < s.length; i++) {
-      if (s.charAt(i) === '%') { bytes.push(parseInt(s.substr(i + 1, 2), 16)); i += 2; }
-      else { bytes.push(s.charCodeAt(i)); }
-    }
-    var l = bytes.length;
-    bytes.push(0x80);
-    while (bytes.length % 64 !== 56) { bytes.push(0); }
-    var bits = l * 8;
-    bytes.push(0, 0, 0, 0);
-    bytes.push((bits >>> 24) & 255, (bits >>> 16) & 255, (bits >>> 8) & 255, bits & 255);
-    var H = [1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225];
-    var w = new Array(64);
-    function rr(x, n) { return (x >>> n) | (x << (32 - n)); }
-    for (var off = 0; off < bytes.length; off += 64) {
-      for (i = 0; i < 16; i++) {
-        w[i] = (bytes[off+i*4] << 24) | (bytes[off+i*4+1] << 16) | (bytes[off+i*4+2] << 8) | bytes[off+i*4+3];
-      }
-      for (i = 16; i < 64; i++) {
-        var s0 = rr(w[i-15],7) ^ rr(w[i-15],18) ^ (w[i-15] >>> 3);
-        var s1 = rr(w[i-2],17) ^ rr(w[i-2],19) ^ (w[i-2] >>> 10);
-        w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
-      }
-      var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
-      for (i = 0; i < 64; i++) {
-        var S1 = rr(e,6) ^ rr(e,11) ^ rr(e,25);
-        var ch = (e & f) ^ ((~e) & g);
-        var t1 = (h + S1 + ch + _K[i] + w[i]) | 0;
-        var S0 = rr(a,2) ^ rr(a,13) ^ rr(a,22);
-        var mj = (a & b) ^ (a & c) ^ (b & c);
-        var t2 = (S0 + mj) | 0;
-        h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
-      }
-      H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
-      H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
-    }
-    var out = '';
-    for (i = 0; i < 8; i++) { out += ('00000000' + (H[i] >>> 0).toString(16)).slice(-8); }
-    return out;
-  }
-
-  function hashSenha(usuario, senha) {
-    return sha256('ps79|' + String(usuario).toLowerCase() + '|' + String(senha));
-  }
+  /* PATCH108: codigo da senha vem do nucleo unico. */
+  function hashSenha(usuario, senha) { return window.PainelSeg.hashSenha(usuario, senha); }
 
   function lerJson(k, def) {
     try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; }
@@ -44721,13 +44676,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return (u && u.length) ? u : [];
   }
 
-  function sessao() {
-    var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
-    if (!s) { s = lerJson(K_SESS, null); }
-    if (s && s.exp && Date.now() > s.exp) { s = null; }
-    return s;
-  }
+  /* PATCH108: leitura da sessao vem do nucleo unico. */
+  function sessao() { return window.PainelSeg.sessao(); }
 
   function podeMexer() {
     var s = sessao();
@@ -44735,13 +44685,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return String(s.perfil || '').toLowerCase() === 'admin';
   }
 
-  function nomePerfil(p) {
-    var v = String(p || '').toLowerCase();
-    if (v === 'admin') { return 'Administrador'; }
-    if (v === 'editor') { return 'Pode lan\u00e7ar e editar'; }
-    if (v === 'visitante' || v === 'leitor') { return 'Somente consulta'; }
-    return p ? String(p) : 'Sem tipo definido';
-  }
+  /* PATCH108: nome do tipo de acesso vem do nucleo unico. */
+  function nomePerfil(p) { return window.PainelSeg.nomePerfil(p); }
 
   function dataBr(ms) {
     if (!ms) { return '-'; }
@@ -44796,9 +44741,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function desenhar() {
     var c = document.getElementById('p87Corpo');
     if (!c) { return; }
-    var lista = usuarios();
-    var s = sessao();
-    var manda = podeMexer();
+    /* PATCH108: tres calculos repetidos logo abaixo foram removidos daqui. */
 
     if (window.PainelAuthSupabase && !window.__p87ListaSupabase && !window.__p87CarregandoSupabase) {
       window.__p87CarregandoSupabase = true;
@@ -45144,8 +45087,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   if (window.__p88) { return; }
   window.__p88 = true;
 
-  var K_USERS = 'painel_seg_usuarios_v1';
-  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_USERS = window.PainelSeg.K_USERS;   /* PATCH108 */
+  var K_SESS  = window.PainelSeg.K_SESS;    /* PATCH108 */
   var K_PRES  = 'painel_seg_presenca_v1';
   var K_HIST  = 'painel_seg_historico_v1';
   var K_MEUID = 'painel_seg_presenca_id';
@@ -45180,13 +45123,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     finally { dentro = false; }
   }
 
-  function sessao() {
-    var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
-    if (!s) { s = ler(K_SESS, null); }
-    if (s && s.exp && Date.now() > s.exp) { s = null; }
-    return s;
-  }
+  /* PATCH108: leitura da sessao vem do nucleo unico. */
+  function sessao() { return window.PainelSeg.sessao(); }
 
   function ehAdmin() {
     var s = sessao();
@@ -45194,13 +45132,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return String(s.perfil || '').toLowerCase() === 'admin';
   }
 
-  function nomePerfil(p) {
-    var v = String(p || '').toLowerCase();
-    if (v === 'admin') { return 'Administrador'; }
-    if (v === 'editor') { return 'Pode lan\u00e7ar e editar'; }
-    if (v === 'visitante' || v === 'leitor') { return 'Somente consulta'; }
-    return p ? String(p) : 'Sem tipo definido';
-  }
+  /* PATCH108: nome do tipo de acesso vem do nucleo unico. */
+  function nomePerfil(p) { return window.PainelSeg.nomePerfil(p); }
 
   function hora(ms) {
     try {
@@ -53811,8 +53744,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   if (window.__p103) { return; }
   window.__p103 = true;
 
-  var K_USERS = 'painel_seg_usuarios_v1';
-  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_USERS = window.PainelSeg.K_USERS;   /* PATCH108 */
+  var K_SESS  = window.PainelSeg.K_SESS;    /* PATCH108 */
   var K_PERM  = 'painel_seg_permissoes_v1';
 
   var ABAS = [
@@ -53856,13 +53789,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     } catch (e) { /* ignora */ }
   }
 
-  function sessao() {
-    var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_SESS) || 'null'); } catch (e) { s = null; }
-    if (!s) { s = ler(K_SESS, null); }
-    if (s && s.exp && Date.now() > s.exp) { s = null; }
-    return s;
-  }
+  /* PATCH108: leitura da sessao vem do nucleo unico. */
+  function sessao() { return window.PainelSeg.sessao(); }
 
   function chave(usuario) {
     return String(usuario || '').trim().toLowerCase();
@@ -53872,13 +53800,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     return String(p || '').toLowerCase() === 'admin';
   }
 
-  function nomePerfil(p) {
-    var v = String(p || '').toLowerCase();
-    if (v === 'admin') { return 'Administrador'; }
-    if (v === 'editor') { return 'Pode lancar e editar'; }
-    if (v === 'visitante' || v === 'leitor') { return 'Somente consulta'; }
-    return p ? String(p) : 'Sem tipo definido';
-  }
+  /* PATCH108: nome do tipo de acesso vem do nucleo unico. */
+  function nomePerfil(p) { return window.PainelSeg.nomePerfil(p); }
 
   function rotuloAba(id) {
     var b = document.getElementById('btn-tab-' + id);

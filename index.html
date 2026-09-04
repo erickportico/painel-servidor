@@ -298,6 +298,206 @@
 })();
 </script>
 
+<!-- INI PATCH119 -->
+<script id="p119Agenda">
+/* ------------------------------------------------------------------ *
+ * PATCH 119 - UM RELOGIO SO PARA TODAS AS TAREFAS REPETIDAS           *
+ *                                                                    *
+ * Antes: cada patch antigo criava o seu proprio relogio (setInterval),
+ * dezenas deles acordando a pagina em horas diferentes.              *
+ * Agora: existe UM relogio mestre que bate de 250 em 250 ms e chama   *
+ * cada tarefa no ritmo que ela pediu. O comportamento nao muda, muda  *
+ * so a forma de agendar.                                             *
+ *                                                                    *
+ * Tambem: tarefas de vigilancia (ritmo de ate 2,5 s) descansam        *
+ * enquanto a aba do navegador esta em segundo plano, e tarefas muito  *
+ * demoradas tem o ritmo afrouxado para nao travar a tela.             *
+ *                                                                    *
+ * Relatorio: aperte Ctrl+Alt+R (ou rode p119Relatorio() no console).  *
+ * ------------------------------------------------------------------ */
+(function () {
+  'use strict';
+  if (window.__p119Agenda) { return; }
+
+  var origSet = window.setInterval;
+  var origClear = window.clearInterval;
+  if (typeof origSet !== 'function') { return; }
+
+  window.__p119Agenda = true;
+
+  var MINIMO = 250;      /* ritmos mais rapidos que isso ficam como estavam */
+  var TICK = 250;        /* batida do relogio mestre */
+  var LIMITE_PESADA = 150;   /* ms gastos numa rodada para considerar pesada */
+  var TETO_ESTICADO = 3000;  /* ritmo maximo depois de afrouxar */
+  var SONO = 2500;       /* ate esse ritmo, a tarefa dorme com a aba escondida */
+
+  var tarefas = [];
+  var contador = 0;
+  var mestre = null;
+  var BASE_ID = -1000000;
+
+  function agora() { return Date.now(); }
+
+  function resumoCodigo(fn) {
+    var s = '';
+    try { s = String(fn); } catch (e) { s = '?'; }
+    return s.replace(/\s+/g, ' ').slice(0, 90);
+  }
+
+  function ligarMestre() {
+    if (mestre !== null) { return; }
+    mestre = origSet.call(window, rodada, TICK);
+  }
+
+  function rodada() {
+    var t = agora();
+    var escondida = !!(document && document.hidden);
+    for (var i = 0; i < tarefas.length; i++) {
+      var a = tarefas[i];
+      if (!a.viva || t < a.prox) { continue; }
+      if (escondida && a.ms <= SONO) {
+        a.prox = t + a.ms;
+        a.dormiu++;
+        continue;
+      }
+      a.prox = t + a.ms;
+      var ini = agora();
+      try {
+        a.fn.apply(window, a.extras);
+      } catch (e) { /* mesma politica dos patches originais: segue adiante */ }
+      var gasto = agora() - ini;
+      a.rodou++;
+      a.gasto += gasto;
+      if (gasto > LIMITE_PESADA) {
+        a.pesadas++;
+        if (a.pesadas > 3 && a.ms < TETO_ESTICADO) {
+          a.ms = Math.min(TETO_ESTICADO, a.ms * 2);
+          a.afrouxada = true;
+          a.pesadas = 0;
+        }
+      }
+    }
+  }
+
+  window.setInterval = function (fn, ms) {
+    var ritmo = Number(ms);
+    if (typeof fn !== 'function' || !isFinite(ritmo) || ritmo < MINIMO) {
+      return origSet.apply(window, arguments);
+    }
+    contador += 1;
+    var a = {
+      id: BASE_ID - contador,
+      fn: fn,
+      ms: ritmo,
+      pedido: ritmo,
+      prox: agora() + ritmo,
+      extras: Array.prototype.slice.call(arguments, 2),
+      viva: true,
+      rodou: 0,
+      dormiu: 0,
+      pesadas: 0,
+      gasto: 0,
+      afrouxada: false,
+      cod: resumoCodigo(fn)
+    };
+    tarefas.push(a);
+    ligarMestre();
+    return a.id;
+  };
+
+  window.clearInterval = function (id) {
+    if (typeof id === 'number' && id <= BASE_ID) {
+      for (var i = 0; i < tarefas.length; i++) {
+        if (tarefas[i].id === id) {
+          tarefas[i].viva = false;
+          tarefas.splice(i, 1);
+          return;
+        }
+      }
+      return;
+    }
+    return origClear.apply(window, arguments);
+  };
+
+  /* deixa o relogio mestre acordar junto com a aba */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { return; }
+    var t = agora();
+    for (var i = 0; i < tarefas.length; i++) {
+      if (tarefas[i].prox > t + TICK) { tarefas[i].prox = t + TICK; }
+    }
+  });
+
+  function texto() {
+    var lista = tarefas.slice(0);
+    lista.sort(function (x, y) { return y.gasto - x.gasto; });
+    var fora = [];
+    fora.push('RELOGIOS REUNIDOS NUM SO (patch 119)');
+    fora.push('tarefas reunidas: ' + tarefas.length +
+              '  |  relogio mestre: 1 batida cada ' + TICK + ' ms');
+    fora.push('');
+    for (var i = 0; i < lista.length && i < 20; i++) {
+      var a = lista[i];
+      fora.push((i + 1) + ') ritmo pedido: ' + a.pedido + ' ms' +
+                (a.afrouxada ? ' (afrouxado para ' + a.ms + ' ms)' : ''));
+      fora.push('   rodou: ' + a.rodou + '  |  dormiu: ' + a.dormiu +
+                '  |  tempo total: ' + a.gasto + ' ms');
+      fora.push('   codigo: ' + a.cod);
+    }
+    return fora.join('\n');
+  }
+
+  function caixa() {
+    var velha = document.getElementById('p119Caixa');
+    if (velha) {
+      if (velha.parentNode) { velha.parentNode.removeChild(velha); }
+      return;
+    }
+    var fundo = document.createElement('div');
+    fundo.id = 'p119Caixa';
+    fundo.style.cssText = 'position:fixed;inset:0;z-index:2147483000;' +
+      'background:rgba(0,0,0,.72);display:flex;align-items:center;' +
+      'justify-content:center;padding:18px;';
+    var cx = document.createElement('div');
+    cx.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #33415a;' +
+      'border-radius:12px;max-width:900px;width:100%;max-height:86vh;overflow:auto;' +
+      'padding:16px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;';
+    cx.textContent = texto();
+    var bt = document.createElement('button');
+    bt.type = 'button';
+    bt.textContent = 'Fechar';
+    bt.style.cssText = 'margin-top:12px;padding:8px 14px;border-radius:8px;border:0;' +
+      'background:#2563eb;color:#fff;cursor:pointer;font:600 13px system-ui;';
+    bt.addEventListener('click', function () {
+      if (fundo.parentNode) { fundo.parentNode.removeChild(fundo); }
+    });
+    cx.appendChild(document.createElement('br'));
+    cx.appendChild(bt);
+    fundo.appendChild(cx);
+    fundo.addEventListener('click', function (ev) {
+      if (ev.target === fundo && fundo.parentNode) {
+        fundo.parentNode.removeChild(fundo);
+      }
+    });
+    (document.body || document.documentElement).appendChild(fundo);
+  }
+
+  window.p119Relatorio = function () {
+    try { caixa(); } catch (e) { /* ignora */ }
+    return texto();
+  };
+
+  document.addEventListener('keydown', function (ev) {
+    if (!ev.ctrlKey || !ev.altKey) { return; }
+    if (String(ev.key || '').toLowerCase() !== 'r') { return; }
+    ev.preventDefault();
+    try { caixa(); } catch (e) { /* ignora */ }
+  }, true);
+})();
+</script>
+<!-- FIM PATCH119 -->
+
+
     <!-- 1. Carrega o SDK do Supabase PRIMEIRO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -26921,385 +27121,8 @@ body.of-dep-aberto {
 }
 </style>
 
-<script>
-/* === PATCH 61: MENU ESTILO OREATE (gaveta lateral) === */
-(function () {
-  "use strict";
+<!-- PATCH119 LIMPEZA: bloco repetido do menu retirado -->
 
-  if (window.ORMENU && window.ORMENU.__v61) { return; }
-
-  var M = window.ORMENU = window.ORMENU || {};
-  M.__v61 = true;
-
-  var ACENTO_C = '\u00c7';
-  var ACENTO_A = '\u00c3';
-  var ACENTO_O = '\u00d3';
-  var SETA = '\u2192';
-
-  /* ordem e agrupamento das abas (por id do botao antigo) */
-  var GRUPOS = [
-    { titulo: 'PRODU' + ACENTO_C + ACENTO_A + 'O',
-      abas: ['itens', 'liberacao', 'ctm', 'recebimento'] },
-    { titulo: 'PLANEJAMENTO',
-      abas: ['cronograma', 'obraflow'] },
-    { titulo: 'FINANCEIRO',
-      abas: ['medicoes', 'pagamento', 'custo'] },
-    { titulo: 'RELAT' + ACENTO_O + 'RIOS',
-      abas: ['graficos'] }
-  ];
-
-  function el(id) { return document.getElementById(id); }
-
-  function menuAntigo() { return el('meu-menu-abas'); }
-
-  function caixaBotoes() {
-    var m = menuAntigo();
-    var c = m ? m.querySelector('.tabs') : null;
-    return c || document.querySelector('.tabs');
-  }
-
-  /* le os botoes do menu antigo; ele continua sendo a fonte da verdade */
-  function lerBotoes() {
-    var c = caixaBotoes();
-    if (!c) { return []; }
-    var brutos = c.querySelectorAll('button');
-    var fora = { orMenuBtn: 1 };
-    var lista = [];
-    for (var i = 0; i < brutos.length; i++) {
-      var b = brutos[i];
-      if (fora[b.id]) { continue; }
-      if (b.classList.contains('or-item')) { continue; }
-      var bruto = (b.textContent || '').replace(/\s+/g, ' ').trim();
-      if (!bruto) { continue; }
-      var ico = '';
-      var texto = bruto;
-      var m = bruto.match(/^([^0-9A-Za-z\u00c0-\u024f]+)\s*(.*)$/);
-      if (m && m[2]) { ico = m[1].trim(); texto = m[2].trim(); }
-      lista.push({
-        btn: b,
-        id: b.id || '',
-        aba: (b.id || '').replace(/^btn-tab-/, ''),
-        ico: ico || '\u25cf',
-        texto: texto,
-        ativo: b.classList.contains('active'),
-        chave: ((b.id || '').replace(/^btn-tab-/, '') + ' ' + texto).toLowerCase()
-      });
-    }
-    return lista;
-  }
-
-  function tituloAtual() {
-    var l = lerBotoes();
-    for (var i = 0; i < l.length; i++) { if (l[i].ativo) { return l[i].texto; } }
-    return l.length ? l[0].texto : '';
-  }
-
-  /* ------------------------------------------------------------------ *
-   * 1) botao que abre a gaveta
-   * ------------------------------------------------------------------ */
-  function criarLauncher() {
-    var antigo = menuAntigo();
-    if (!antigo || !antigo.parentNode) { return null; }
-    var b = el('orMenuBtn');
-    if (!b) {
-      b = document.createElement('button');
-      b.id = 'orMenuBtn';
-      b.type = 'button';
-      b.className = 'or-launcher';
-      b.setAttribute('aria-haspopup', 'true');
-      b.setAttribute('aria-expanded', 'false');
-      b.setAttribute('aria-controls', 'orMenu');
-      b.innerHTML = '<span class="or-burg" aria-hidden="true"><i></i><i></i><i></i></span>' +
-                    '<span class="or-rot">Menu</span>' +
-                    '<span class="or-atual" id="orAtual"></span>';
-      b.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        M.abrir();
-      });
-    }
-    if (b.previousElementSibling !== antigo && b.nextElementSibling !== antigo) {
-      antigo.parentNode.insertBefore(b, antigo);
-    }
-    antigo.classList.add('or-oculto');
-    antigo.removeAttribute('open');
-    antigo.setAttribute('aria-hidden', 'true');
-    esconderAntigo(antigo);
-    return b;
-  }
-
-  /* o menu antigo tem estilo escrito na propria tag, entao o CSS as vezes
-     nao ganha; aqui a gente forca item por item */
-  function esconderAntigo(a) {
-    if (!a || !a.style || !a.style.setProperty) { return; }
-    var regras = [
-      ['position', 'absolute'],
-      ['left', '-9999px'],
-      ['top', 'auto'],
-      ['width', '1px'],
-      ['height', '1px'],
-      ['min-height', '0'],
-      ['margin', '0'],
-      ['padding', '0'],
-      ['overflow', 'hidden'],
-      ['opacity', '0'],
-      ['pointer-events', 'none'],
-      ['visibility', 'hidden'],
-      ['z-index', '-1'],
-      ['box-shadow', 'none'],
-      ['border', '0']
-    ];
-    for (var i = 0; i < regras.length; i++) {
-      try { a.style.setProperty(regras[i][0], regras[i][1], 'important'); } catch (e) {}
-    }
-  }
-
-  /* ------------------------------------------------------------------ *
-   * 2) a gaveta
-   * ------------------------------------------------------------------ */
-  function criarGaveta() {
-    var g = el('orMenu');
-    if (g) {
-      if (document.body.lastElementChild !== g) { document.body.appendChild(g); }
-      return g;
-    }
-    g = document.createElement('div');
-    g.id = 'orMenu';
-    g.setAttribute('role', 'dialog');
-    g.setAttribute('aria-modal', 'true');
-    g.setAttribute('aria-label', 'Menu de navega' + ACENTO_C + ACENTO_A + 'o');
-    g.setAttribute('aria-hidden', 'true');
-    g.innerHTML =
-      '<div class="or-fundo" id="orFundo"></div>' +
-      '<div class="or-painel">' +
-        '<div class="or-topo">' +
-          '<span class="or-logo" aria-hidden="true">PS</span>' +
-          '<span class="or-nomes"><b>Painel Servidor</b><span>Navega' + ACENTO_C + ACENTO_A + 'o r' + '\u00e1' + 'pida</span></span>' +
-          '<button type="button" class="or-x" id="orFechar" title="Fechar" aria-label="Fechar menu">\u00d7</button>' +
-        '</div>' +
-        '<div class="or-buscabox">' +
-          '<input type="text" class="or-busca" id="orBusca" placeholder="Buscar aba..." autocomplete="off">' +
-        '</div>' +
-        '<div class="or-lista" id="orLista"></div>' +
-      '</div>';
-    document.body.appendChild(g);
-
-    g.addEventListener('click', function (ev) {
-      if (ev.target === g || ev.target.id === 'orFundo') { M.fechar(); }
-    });
-    var x = g.querySelector('#orFechar');
-    if (x) { x.addEventListener('click', function () { M.fechar(); }); }
-    var busca = g.querySelector('#orBusca');
-    if (busca) {
-      busca.addEventListener('input', function () { pintar(busca.value); });
-      busca.addEventListener('keydown', function (ev) {
-        if (ev.key !== 'Enter') { return; }
-        var alvo = g.querySelector('.or-item');
-        if (alvo) { alvo.click(); }
-      });
-    }
-    return g;
-  }
-
-  /* monta a lista de itens, filtrando pelo texto digitado */
-  function pintar(filtro) {
-    var caixa = el('orLista');
-    if (!caixa) { return; }
-    var busca = (filtro || '').toLowerCase().trim();
-    var todos = lerBotoes();
-    var porAba = {};
-    var i;
-    for (i = 0; i < todos.length; i++) {
-      if (todos[i].aba) { porAba[todos[i].aba] = todos[i]; }
-    }
-    var usados = {};
-    var blocos = [];
-    for (i = 0; i < GRUPOS.length; i++) {
-      var g = GRUPOS[i];
-      var itens = [];
-      for (var j = 0; j < g.abas.length; j++) {
-        var it = porAba[g.abas[j]];
-        if (!it) { continue; }
-        usados[g.abas[j]] = 1;
-        itens.push(it);
-      }
-      if (itens.length) { blocos.push({ titulo: g.titulo, itens: itens }); }
-    }
-    var sobra = [];
-    for (i = 0; i < todos.length; i++) {
-      if (!usados[todos[i].aba]) { sobra.push(todos[i]); }
-    }
-    if (sobra.length) { blocos.push({ titulo: 'OUTROS', itens: sobra }); }
-
-    caixa.innerHTML = '';
-    var achou = 0;
-    for (i = 0; i < blocos.length; i++) {
-      var vis = [];
-      for (var k = 0; k < blocos[i].itens.length; k++) {
-        var t = blocos[i].itens[k];
-        if (busca && (t.chave || t.texto.toLowerCase()).indexOf(busca) < 0) { continue; }
-        vis.push(t);
-      }
-      if (!vis.length) { continue; }
-      var tit = document.createElement('div');
-      tit.className = 'or-grupo';
-      tit.textContent = blocos[i].titulo;
-      caixa.appendChild(tit);
-      for (k = 0; k < vis.length; k++) {
-        caixa.appendChild(fazerItem(vis[k]));
-        achou++;
-      }
-    }
-    if (!achou) {
-      var v = document.createElement('div');
-      v.className = 'or-vazio';
-      v.textContent = 'Nenhuma aba com esse nome.';
-      caixa.appendChild(v);
-    }
-  }
-
-  function fazerItem(dados) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'or-item' + (dados.ativo ? ' or-ativo' : '');
-    b.setAttribute('data-aba', dados.aba);
-    if (dados.ativo) { b.setAttribute('aria-current', 'true'); }
-    var ico = document.createElement('span');
-    ico.className = 'or-ico';
-    ico.setAttribute('aria-hidden', 'true');
-    ico.textContent = dados.ico;
-    var txt = document.createElement('span');
-    txt.className = 'or-txt';
-    txt.textContent = dados.texto;
-    b.appendChild(ico);
-    b.appendChild(txt);
-    b.addEventListener('click', function () {
-      M.fechar();
-      try { dados.btn.click(); } catch (e) { }
-      atualizarRotulo();
-    });
-    return b;
-  }
-
-  function atualizarRotulo() {
-    var a = el('orAtual');
-    if (a) { a.textContent = tituloAtual(); }
-    var lista = el('orLista');
-    if (lista && lista.children.length) { pintar(valorBusca()); }
-  }
-
-  function valorBusca() {
-    var b = el('orBusca');
-    return b ? b.value : '';
-  }
-
-  /* ------------------------------------------------------------------ *
-   * 3) abrir / fechar
-   * ------------------------------------------------------------------ */
-  M.abrir = function () {
-    var g = criarGaveta();
-    if (document.body.lastElementChild !== g) { document.body.appendChild(g); }
-    var b = el('orBusca');
-    if (b) { b.value = ''; }
-    pintar('');
-    g.classList.add('or-on');
-    g.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('or-aberto');
-    var lb = el('orMenuBtn');
-    if (lb) { lb.setAttribute('aria-expanded', 'true'); }
-    var menu = menuAntigo();
-    if (menu) { menu.removeAttribute('open'); }
-    if (b && b.focus) { try { b.focus(); } catch (e) { } }
-  };
-
-  M.fechar = function () {
-    var g = el('orMenu');
-    if (g) {
-      g.classList.remove('or-on');
-      g.setAttribute('aria-hidden', 'true');
-    }
-    document.body.classList.remove('or-aberto');
-    var lb = el('orMenuBtn');
-    if (lb) { lb.setAttribute('aria-expanded', 'false'); }
-  };
-
-  M.alternar = function () {
-    var g = el('orMenu');
-    if (g && g.classList.contains('or-on')) { M.fechar(); } else { M.abrir(); }
-  };
-
-  M.aberto = function () {
-    var g = el('orMenu');
-    return !!(g && g.classList.contains('or-on'));
-  };
-
-  /* ------------------------------------------------------------------ *
-   * 4) manter tudo no lugar
-   * ------------------------------------------------------------------ */
-  M.arrumar = function () {
-    M.__mexendo = true;
-    try {
-      criarLauncher();
-      criarGaveta();
-      atualizarRotulo();
-      var g = el('orMenu');
-      if (g && !g.classList.contains('or-on')) { M.fechar(); }
-    } finally {
-      M.__mexendo = false;
-    }
-  };
-
-  function ligarTeclado() {
-    if (M.__teclado) { return; }
-    M.__teclado = true;
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape' && M.aberto()) {
-        M.fechar();
-        return;
-      }
-      var comAtalho = (ev.ctrlKey || ev.metaKey) && !ev.altKey;
-      if (comAtalho && (ev.key === 'k' || ev.key === 'K')) {
-        ev.preventDefault();
-        M.alternar();
-      }
-    });
-  }
-
-  function ligarVigia() {
-    if (M.__vigia || typeof MutationObserver !== 'function') { return; }
-    var alvo = document.body;
-    if (!alvo) { return; }
-    var pausa = null;
-    var obs = new MutationObserver(function () {
-      if (M.__mexendo || pausa) { return; }
-      pausa = setTimeout(function () {
-        pausa = null;
-        if (M.aberto()) { return; }
-        try { M.arrumar(); } catch (e) { }
-      }, 180);
-    });
-    obs.observe(alvo, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-    M.__vigia = obs;
-  }
-
-  function iniciar() {
-    if (!document.body) { return; }
-    M.arrumar();
-    ligarTeclado();
-    ligarVigia();
-    M.__pronto = true;
-    if (window.console && console.log) {
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(iniciar, 260); });
-  } else {
-    setTimeout(iniciar, 260);
-  }
-  window.addEventListener('load', function () { setTimeout(function () { try { M.arrumar(); } catch (e) { } }, 700); });
-
-}());
-</script>
 
 <style>
 /* === PATCH 61: MENU ESTILO OREATE (aparencia) === */
@@ -28467,7 +28290,8 @@ body.or-aberto { overflow: hidden !important; }
   function garantirBloco() {
     var painel = porId('panelPgtoLancamentos');
     if (!painel) return null;
-    var bloco = porId('p63BlocoResumo');
+    /* PATCH119: usa o quadro que o patch 71 ja criou */
+    var bloco = porId('p63BlocoResumo') || porId('p71BlocoResumo');
     if (!bloco) {
       bloco = document.createElement('div');
       bloco.id = 'p63BlocoResumo';

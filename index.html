@@ -48595,7 +48595,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.p94-folha *{box-sizing:border-box}',
       '.p94-folha .p94-q{position:absolute}',
       '.p94-folha .p94-i{position:absolute;display:flex;align-items:center;justify-content:center;border:1px solid #D1D5DB;background:#F8FAFC;overflow:hidden}',
-      '.p94-folha .p94-i img{max-width:100%;max-height:100%;width:100%;height:100%;display:block;object-position:center}',
+      '.p94-folha .p94-i img{max-width:100%;max-height:100%;width:100%;height:100%;display:block;object-fit:contain;object-position:center;background:#fff}',
       '.p94-folha .p94-t{position:absolute;display:flex;align-items:center;line-height:1.22;',
       '  white-space:pre-wrap;overflow:hidden}',
       '.p94-folha .p94-t.p94-top{display:block}',
@@ -48640,12 +48640,12 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       /* impressao: uma folha 16:9 por pagina, deitada */
       '@media print{',
       '  #p94Impr{display:block !important}',
-      '  #p94Impr .p94-folha{page-break-after:always;break-after:page;zoom:.82;margin:0 auto}',
+      '  #p94Impr .p94-folha{page-break-after:always;break-after:page;zoom:1;margin:0 auto}',
       '  #p94Impr .p94-folha:last-child{page-break-after:auto;break-after:auto}',
       '  #p94Impr .p94-num{display:none}',
       '  html body.p94-imp>*:not(#p92Impressao):not(#p94Impr){display:none !important}',
-      '  html body.p94-imp{background:#000 !important;margin:0 !important;padding:0 !important}',
-      '  @page{size:A4 landscape;margin:4mm}',
+      '  html body.p94-imp{background:#fff !important;margin:0 !important;padding:0 !important}',
+      '  @page{size:338.67mm 190.5mm;margin:0}',
       '}',
       '#p94Impr{display:none}'
     ].join('\n');
@@ -48880,8 +48880,8 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
           esperarImagens(pl, function () {
             var folhas = [].slice.call(pl.querySelectorAll('.p94-folha'));
             var PDF = classePdf();
-            var doc = new PDF({ unit: 'mm', format: 'a4', orientation: 'landscape', compress: true });
-            var LM = 297, AM = 210;
+            var doc = new PDF({ unit: 'mm', format: [338.67, 190.5], orientation: 'landscape', compress: true });
+            var LM = 338.67, AM = 190.5;
             var largura = LM, altura = LM * (ALT / LARG);
             var topo = (AM - altura) / 2;
             var i = 0, primeira = true;
@@ -48905,7 +48905,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
               var alvo = folhas[i++];
               window.html2canvas(alvo, {
                 scale: 2,
-                backgroundColor: '#000000',
+                backgroundColor: '#ffffff',
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
@@ -48913,9 +48913,9 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
                 height: ALT,
                 windowWidth: LARG
               }).then(function (cv) {
-                if (!primeira) { doc.addPage('a4', 'landscape'); }
+                if (!primeira) { doc.addPage([LM, AM], 'landscape'); }
                 primeira = false;
-                doc.setFillColor(0, 0, 0);
+                doc.setFillColor(255, 255, 255);
                 doc.rect(0, 0, LM, AM, 'F');
                 doc.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, topo, largura, altura, undefined, 'FAST');
                 espera(15, passo);
@@ -56739,5 +56739,76 @@ html body #p94Palco .p94-folha .p94-i img {
 })();
 </script>
 <!-- FIM PATCH114 -->
+<!-- INI PATCH115 -->
+<style id="p115Css">
+/* ------------------------------------------------------------------ *
+ * garantia extra: fotos inteiras, na proporcao original
+ * ------------------------------------------------------------------ */
+html body .p94-folha .p94-i,
+html body #p94Impr .p94-folha .p94-i,
+html body #p94Palco .p94-folha .p94-i,
+html body #p94Lupa .p94-folha .p94-i {
+  background: #fff !important;
+  overflow: hidden !important;
+}
+html body .p94-folha .p94-i img,
+html body #p94Impr .p94-folha .p94-i img,
+html body #p94Palco .p94-folha .p94-i img,
+html body #p94Lupa .p94-folha .p94-i img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: #fff !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * garantia extra: folha do slide branca, sem borda escura
+ * ------------------------------------------------------------------ */
+html body #p94Palco .p94-folha,
+html body #p94Impr .p94-folha {
+  background: #fff !important;
+  background-color: #fff !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+@media print {
+  @page { size: 338.67mm 190.5mm; margin: 0; }
+
+  html, html body, html body.p94-imp, html body.dark-mode {
+    background: #fff !important;
+    background-color: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body.p94-imp #p94Impr .p94-folha {
+    zoom: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    background-color: #fff !important;
+    overflow: hidden !important;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html body.p94-imp #p94Impr .p94-folha:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
+</style>
+<!-- FIM PATCH115 -->
 </body>
 </html>

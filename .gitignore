@@ -11,3 +11,20 @@ ferramentas_local/
 *.bak_patch*
 deploy_painel.cfg
 *.bak-patch*
+
+# INI limpeza automatica do painel
+deploy_painel.cfg
+index.html.bak-*
+index.html.antes_deploy_*
+*.bak
+patch1*.py
+patches/
+backups/
+_lixeira_painel/
+__pycache__/
+*.pyc
+*.log
+*.tmp
+Thumbs.db
+desktop.ini
+# FIM limpeza automatica do painel

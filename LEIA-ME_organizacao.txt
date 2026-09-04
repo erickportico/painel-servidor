@@ -1,0 +1,20 @@
+Organizacao da pasta do Painel Portico
+======================================
+
+Nada foi apagado. Os arquivos foram apenas guardados aqui:
+
+  backups/antigos/    copias antigas do painel (index.html.bak_...)
+  patches/aplicados/  scripts de patch que ja foram usados
+  temporarios/        lixo do Python e do Windows
+
+Se precisar de algum de volta, e so arrastar para a pasta principal.
+Quando tiver certeza de que nao precisa mais, pode apagar estas
+pastas a mao, sem risco para o painel.
+
+Na pasta principal ficam sempre:
+  index.html            o painel
+  INICIAR_SERVIDOR.bat  liga o painel no seu computador
+  servidor_painel.py    o servidor local
+  deploy_painel.py      publica no GitHub e no Render
+  arquivos .sql e .js   usados pelo Supabase
+  o patch mais recente

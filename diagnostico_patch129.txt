@@ -1,0 +1,83 @@
+DIAGNOSTICO DO PATCH 129
+OK      | PATCH 129 aplicado uma vez, sem duplicar.
+OK      | O bloco do patch esta antes do fim da pagina.
+OK      | O bloco de codigo abre e fecha corretamente.
+OK      | Chaves e parenteses do patch estao fechando.
+OK      | Nenhuma barra invertida estranha no bloco.
+OK      | Peca presente: selo de aviso "atualizacao em espera".
+OK      | Peca presente: botao de destravar a tela.
+OK      | Peca presente: botao de ver todos os meses no Centro de Custos.
+OK      | Peca presente: fila que segura a atualizacao automatica.
+OK      | Peca presente: protecao das funcoes de desenho da tela.
+OK      | Peca presente: teste de verdade contra o servidor.
+OK      | Peca presente: limpeza de tela travada.
+OK      | Peca presente: liberacao da rolagem.
+OK      | Peca presente: mes vigente no Centro de Custos.
+OK      | Peca presente: ajuste automatico do campo de mes.
+OK      | Peca presente: comando de conferencia no console.
+OK      | O painel ainda tem: campo de mes do Centro de Custos.
+OK      | O painel ainda tem: aba do Centro de Custos.
+OK      | O painel ainda tem: troca de menu do painel.
+OK      | O painel ainda tem: desenho do Centro de Custos.
+OK      | O painel ainda tem: aviso de internet do patch 117.
+OK      | Conversa com o vigia da nuvem do patch 125 esta possivel.
+OK      | Conversa com o tabela sem pisca do patch 126 esta possivel.
+OK      | Conversa com o login no servidor do patch 128 esta possivel.
+OK      | O PATCH 129 e o ultimo bloco da pagina.
+OK      | Existe copia de seguranca de antes do patch (1).
+        mais recente: index.html.antes_patch129_20260905_112058.html
+
+RESULTADO: 26 ok, 0 atencao, 0 falha(s)
+
+CONFERENCIA NO NAVEGADOR (abra o painel e faca na ordem)
+Antes de comecar, aperte Ctrl+F5 para carregar a versao nova.
+
+1. Cadastro nao e interrompido
+   faca:    Abra um cadastro, escreva algo em um campo e fique parado 1 minuto.
+   esperado: O texto continua no campo e aparece o selo "Atualizacao em espera" no canto.
+   [ ] passou   [ ] nao passou
+2. A atualizacao acontece depois
+   faca:    Clique fora do campo e espere alguns segundos.
+   esperado: O selo desaparece e a lista/tela se atualiza sozinha.
+   [ ] passou   [ ] nao passou
+3. Suas acoes valem na hora
+   faca:    Com um campo em foco, mude um filtro ou clique em um botao.
+   esperado: A tela responde imediatamente, sem esperar.
+   [ ] passou   [ ] nao passou
+4. Centro de Custos no mes atual
+   faca:    Entre no Centro de Custos.
+   esperado: O campo MES ja vem com o mes de hoje e os numeros aparecem preenchidos.
+   [ ] passou   [ ] nao passou
+5. Ver todos os meses
+   faca:    Clique no botao "Ver todos os meses" e depois no "Voltar ao mes atual".
+   esperado: O filtro limpa e volta, sem recarregar a pagina.
+   [ ] passou   [ ] nao passou
+6. Aviso de internet
+   faca:    Com internet funcionando, olhe o canto da tela por 30 segundos.
+   esperado: O aviso vermelho de sem internet nao aparece (ou desaparece sozinho).
+   [ ] passou   [ ] nao passou
+7. Aviso de internet ao cair
+   faca:    Desligue o wi-fi por 1 minuto.
+   esperado: O aviso aparece; ao religar, ele sai sozinho em pouco tempo.
+   [ ] passou   [ ] nao passou
+8. Trocar de menu nao trava
+   faca:    Troque de menu 10 vezes seguidas, rapido.
+   esperado: A tela continua respondendo e a pagina rola normalmente.
+   [ ] passou   [ ] nao passou
+9. Destravar na mao
+   faca:    Se algo travar, aperte Esc ou use o botao "Destravar tela".
+   esperado: A tela volta a responder sem precisar recarregar.
+   [ ] passou   [ ] nao passou
+
+COMANDO DE CONFERENCIA (console do navegador, tecla F12)
+   P129.conferir()
+   Ele mostra: se o painel entende que voce esta no meio de um
+   cadastro, o que esta na fila de atualizacao, se o servidor
+   respondeu no ultimo teste, se a tela esta travada e qual mes
+   o Centro de Custos esta usando.
+
+   P129.testarServidor()   testa a nuvem agora e ajusta o aviso
+   P129.soltar()           destrava a tela na hora
+
+Se "P129 is not defined" aparecer no console, o patch nao esta
+carregando: verifique se ha erro em vermelho antes dele.

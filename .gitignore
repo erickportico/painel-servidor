@@ -28,3 +28,7 @@ __pycache__/
 Thumbs.db
 desktop.ini
 # FIM limpeza automatica do painel
+# arrumado pelo gerenciar_painel
+index.html.backup*
+index.html.antes_da_fila*
+copias_antigas/

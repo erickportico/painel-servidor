@@ -62905,5 +62905,845 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
 })();
 </script>
 <!-- FIM PATCH127 -->
+
+
+<!-- PATCH128_LOGIN_NO_SERVIDOR -->
+<script>
+/* ===== PATCH128 - login conferido no servidor, perfil vindo do banco ===== */
+(function () {
+  'use strict';
+  if (window.__P128) { return; }
+  window.__P128 = true;
+
+  var K_SESS  = 'painel_seg_sessao_v1';
+  var K_USERS = 'painel_seg_usuarios_v1';
+  var K_ULT   = 'painel_p128_ultimo_v1';
+  var HORAS    = 12;
+
+  var estado = { perfil: null, email: null, id: null, online: false, offline: false };
+
+  function cliente() {
+    try { if (typeof _supabase !== 'undefined' && _supabase) { return _supabase; } } catch (e) {}
+    if (window._supabase) { return window._supabase; }
+    if (window.supabaseClient) { return window.supabaseClient; }
+    return null;
+  }
+
+  function guardar(chave, valor) {
+    try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (e) {}
+  }
+  function pegar(chave) {
+    try { return JSON.parse(localStorage.getItem(chave) || 'null'); } catch (e) { return null; }
+  }
+
+  /* as telas antigas do painel leem a sessao daqui, entao continuamos
+     gravando no mesmo lugar - a diferenca e que o tipo de acesso agora
+     vem do banco, nao do navegador */
+  function gravarSessao(dados) {
+    var s = {
+      usuario: dados.email,
+      nome: dados.nome || dados.email,
+      perfil: dados.perfil,
+      authId: dados.id || null,
+      em: Date.now(),
+      exp: Date.now() + HORAS * 3600000,
+      p128: true
+    };
+    try { sessionStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e) {}
+    guardar(K_SESS, s);
+    estado.perfil = dados.perfil;
+    estado.email = dados.email;
+    estado.id = dados.id || null;
+    return s;
+  }
+
+  function apagarSessao() {
+    try { sessionStorage.removeItem(K_SESS); } catch (e) {}
+    try { localStorage.removeItem(K_SESS); } catch (e) {}
+    estado.perfil = null;
+    estado.email = null;
+    estado.id = null;
+  }
+
+  /* fim do usuario admin com senha padrao: deixamos a lista local
+     ocupada por um registro sem senha valida, assim o bloco antigo nao
+     cria mais o admin/admin123 */
+  function semAdminPadrao() {
+    var marca = [{
+      usuario: 'contas-no-servidor',
+      nome: 'As contas ficam no servidor',
+      perfil: 'visitante',
+      hash: 'p128-sem-senha-local',
+      trocar: false
+    }];
+    guardar(K_USERS, marca);
+  }
+
+  /* ---------------- aparencia das telas ---------------- */
+  function estilo() {
+    if (document.getElementById('p128Estilo')) { return; }
+    var st = document.createElement('style');
+    st.id = 'p128Estilo';
+    st.textContent = [
+      '#p128Tela{position:fixed;inset:0;z-index:2147483500;background:linear-gradient(160deg,#0f172a,#1e293b);display:flex;align-items:center;justify-content:center;font-family:Segoe UI,Arial,sans-serif}',
+      '#p128Tela .cx{background:#fff;border-radius:14px;padding:26px;width:min(360px,92vw);box-shadow:0 18px 50px rgba(0,0,0,.45)}',
+      '#p128Tela h2{margin:0 0 4px;font-size:19px;color:#16304f}',
+      '#p128Tela p.sb{margin:0 0 14px;font-size:12px;color:#64748b}',
+      '#p128Tela label{display:block;font-size:12px;color:#334155;margin:10px 0 4px;font-weight:600}',
+      '#p128Tela input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px}',
+      '#p128Tela button{width:100%;margin-top:14px;padding:10px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:15px;font-weight:600;cursor:pointer}',
+      '#p128Tela button.lado{background:#e2e8f0;color:#16304f;font-size:13px;margin-top:8px}',
+      '#p128Tela .er{margin-top:10px;font-size:12px;color:#b91c1c;min-height:16px}',
+      '#p128Tela .ok{margin-top:10px;font-size:12px;color:#15803d;min-height:16px}',
+      '#p128Aviso{position:fixed;left:0;right:0;top:0;z-index:2147482500;background:#b45309;color:#fff;padding:7px 12px;font:12px Segoe UI,Arial,sans-serif;text-align:center}'
+    ].join(' ');
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function aviso(texto) {
+    estilo();
+    var v = document.getElementById('p128Aviso');
+    if (!v) {
+      v = document.createElement('div');
+      v.id = 'p128Aviso';
+      document.body.appendChild(v);
+    }
+    v.textContent = texto;
+  }
+
+  function fechar() {
+    var t = document.getElementById('p128Tela');
+    if (t && t.parentNode) { t.parentNode.removeChild(t); }
+  }
+
+  function tela(titulo, subtitulo) {
+    estilo();
+    fechar();
+    var ov = document.createElement('div');
+    ov.id = 'p128Tela';
+    var cx = document.createElement('div');
+    cx.className = 'cx';
+    var h = document.createElement('h2');
+    h.textContent = titulo;
+    var p = document.createElement('p');
+    p.className = 'sb';
+    p.textContent = subtitulo;
+    cx.appendChild(h);
+    cx.appendChild(p);
+    ov.appendChild(cx);
+    document.body.appendChild(ov);
+    return cx;
+  }
+
+  function campo(pai, rotulo, tipo) {
+    var l = document.createElement('label');
+    l.textContent = rotulo;
+    var i = document.createElement('input');
+    i.type = tipo || 'text';
+    pai.appendChild(l);
+    pai.appendChild(i);
+    return i;
+  }
+
+  function botao(pai, texto, classe, fn) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    if (classe) { b.className = classe; }
+    b.textContent = texto;
+    b.addEventListener('click', fn);
+    pai.appendChild(b);
+    return b;
+  }
+
+  function recado(pai, classe) {
+    var d = document.createElement('div');
+    d.className = classe;
+    pai.appendChild(d);
+    return d;
+  }
+
+  /* ---------------- conversa com o servidor ---------------- */
+  async function buscarPerfil(sb, id) {
+    var r = await sb.from('painel_perfis').select('*').eq('id', id).limit(1);
+    if (r.error) { throw new Error('Nao consegui ler o seu tipo de acesso: ' + r.error.message); }
+    var lista = r.data || [];
+    if (!lista.length) {
+      throw new Error('Sua conta existe, mas ainda nao tem tipo de acesso. Peca ao administrador para liberar.');
+    }
+    return lista[0];
+  }
+
+  async function entrar(email, senha) {
+    var sb = cliente();
+    if (!sb) { throw new Error('O painel nao conseguiu falar com o servidor. Verifique a internet.'); }
+    email = String(email || '').trim().toLowerCase();
+    var r = await sb.auth.signInWithPassword({ email: email, password: String(senha || '') });
+    if (r.error) { throw new Error('E-mail ou senha nao conferem.'); }
+    var usuario = r.data && r.data.user ? r.data.user : null;
+    if (!usuario) { throw new Error('E-mail ou senha nao conferem.'); }
+
+    var perfil = await buscarPerfil(sb, usuario.id);
+    if (perfil.ativo === false) {
+      try { await sb.auth.signOut(); } catch (e) {}
+      throw new Error('Esta conta esta bloqueada. Fale com o administrador.');
+    }
+
+    estado.online = true;
+    estado.offline = false;
+    guardar(K_ULT, { email: perfil.email || email, nome: perfil.nome, perfil: perfil.perfil, em: Date.now() });
+    try { await sb.from('painel_perfis').update({ ultimo_acesso: new Date().toISOString() }).eq('id', usuario.id); } catch (e) {}
+
+    return { user: usuario, dados: perfil };
+  }
+
+  async function trocarSenha(nova) {
+    var sb = cliente();
+    if (!sb) { throw new Error('Sem conexao com o servidor agora.'); }
+    var r = await sb.auth.updateUser({ password: String(nova || '') });
+    if (r.error) { throw new Error(r.error.message || 'Nao consegui trocar a senha.'); }
+    var id = r.data && r.data.user ? r.data.user.id : estado.id;
+    if (id) {
+      try { await sb.from('painel_perfis').update({ trocar_senha: false }).eq('id', id); } catch (e) {}
+    }
+    return true;
+  }
+
+  async function sair() {
+    var sb = cliente();
+    if (sb) { try { await sb.auth.signOut(); } catch (e) {} }
+    apagarSessao();
+    try { location.reload(); } catch (e) {}
+  }
+
+  /* ---------------- telas ---------------- */
+  function telaEntrar(recadoInicial) {
+    var cx = tela('Painel de Acompanhamento', 'Entre com o e-mail e a senha da sua conta.');
+    var ie = campo(cx, 'E-mail', 'email');
+    var is = campo(cx, 'Senha', 'password');
+    var bt = botao(cx, 'Entrar', '', tentar);
+    var er = recado(cx, 'er');
+    if (recadoInicial) { er.textContent = recadoInicial; }
+    setTimeout(function () { try { ie.focus(); } catch (e) {} }, 60);
+    is.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { tentar(); } });
+    ie.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { is.focus(); } });
+
+    function tentar() {
+      var email = String(ie.value || '').trim();
+      var senha = String(is.value || '');
+      if (!email || !senha) { er.textContent = 'Preencha o e-mail e a senha.'; return; }
+      bt.disabled = true;
+      bt.textContent = 'Entrando...';
+      er.textContent = '';
+      entrar(email, senha).then(function (res) {
+        depoisDeEntrar(res.dados, res.user.id);
+      }).catch(function (erro) {
+        er.textContent = (erro && erro.message) ? erro.message : 'Nao consegui entrar.';
+        is.value = '';
+      }).then(function () {
+        bt.disabled = false;
+        bt.textContent = 'Entrar';
+      });
+    }
+  }
+
+  function telaTrocarSenha(dados) {
+    var cx = tela('Crie a sua senha', 'Por seguranca, a senha provisoria precisa ser trocada agora.');
+    var i1 = campo(cx, 'Nova senha (pelo menos 8 letras ou numeros)', 'password');
+    var i2 = campo(cx, 'Repita a nova senha', 'password');
+    var bt = botao(cx, 'Salvar e entrar', '', salvar);
+    var er = recado(cx, 'er');
+    setTimeout(function () { try { i1.focus(); } catch (e) {} }, 60);
+    i2.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { salvar(); } });
+
+    function salvar() {
+      var a = String(i1.value || '');
+      var b = String(i2.value || '');
+      if (a.length < 8) { er.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; return; }
+      if (a !== b) { er.textContent = 'As duas senhas estao diferentes.'; return; }
+      bt.disabled = true;
+      bt.textContent = 'Salvando...';
+      er.textContent = '';
+      trocarSenha(a).then(function () {
+        dados.trocar_senha = false;
+        liberarPainel(dados);
+      }).catch(function (erro) {
+        er.textContent = (erro && erro.message) ? erro.message : 'Nao consegui trocar a senha.';
+        bt.disabled = false;
+        bt.textContent = 'Salvar e entrar';
+      });
+    }
+  }
+
+  function liberarPainel(dados) {
+    gravarSessao({ email: dados.email, nome: dados.nome, perfil: dados.perfil, id: dados.id || estado.id });
+    fechar();
+    var v = document.getElementById('p128Aviso');
+    if (v && v.parentNode) { v.parentNode.removeChild(v); }
+    try { if (window.PS79 && typeof window.PS79.barra === 'function') { window.PS79.barra(); } } catch (e) {}
+    try { if (typeof atualizarTudo === 'function') { atualizarTudo(); } } catch (e) {}
+  }
+
+  function depoisDeEntrar(dados, id) {
+    estado.id = id || dados.id || null;
+    dados.id = estado.id;
+    if (dados.trocar_senha) { telaTrocarSenha(dados); return; }
+    liberarPainel(dados);
+  }
+
+  /* ---------------- sem internet: somente consulta ---------------- */
+  function modoOffline(motivo) {
+    var ult = pegar(K_ULT);
+    estado.online = false;
+    estado.offline = true;
+    if (!ult || !ult.email) {
+      telaEntrar(motivo || 'Sem conexao com o servidor. Tente novamente quando a internet voltar.');
+      return;
+    }
+    gravarSessao({ email: ult.email, nome: ult.nome, perfil: 'visitante', id: null });
+    fechar();
+    aviso('Sem conexao com o servidor: o painel esta aberto apenas para consulta, como ' + (ult.nome || ult.email) + '.');
+  }
+
+  /* ---------------- inicio ---------------- */
+  async function iniciar() {
+    semAdminPadrao();
+    var sb = cliente();
+    if (!sb || !sb.auth || typeof sb.auth.getSession !== 'function') {
+      modoOffline('O painel nao encontrou a conexao com o servidor.');
+      return;
+    }
+    var s = null;
+    try {
+      var r = await sb.auth.getSession();
+      s = (r && r.data) ? r.data.session : null;
+    } catch (e) {
+      modoOffline();
+      return;
+    }
+    if (!s || !s.user) {
+      apagarSessao();
+      telaEntrar('');
+      return;
+    }
+    estado.online = true;
+    try {
+      var dados = await buscarPerfil(sb, s.user.id);
+      if (dados.ativo === false) {
+        try { await sb.auth.signOut(); } catch (e) {}
+        apagarSessao();
+        telaEntrar('Esta conta esta bloqueada. Fale com o administrador.');
+        return;
+      }
+      guardar(K_ULT, { email: dados.email, nome: dados.nome, perfil: dados.perfil, em: Date.now() });
+      depoisDeEntrar(dados, s.user.id);
+    } catch (e) {
+      modoOffline();
+    }
+  }
+
+  /* o painel antigo tambem chama esta porta de entrada */
+  window.PainelAuthSupabase = {
+    entrarComEmail: function (email, senha) {
+      return entrar(email, senha).then(function (res) {
+        return {
+          user: res.user,
+          perfil: {
+            usuario: res.dados.email,
+            nome: res.dados.nome,
+            perfil: res.dados.perfil,
+            trocar: !!res.dados.trocar_senha
+          }
+        };
+      });
+    }
+  };
+
+  window.P128 = {
+    entrar: entrar,
+    sair: sair,
+    trocarSenha: trocarSenha,
+    perfil: function () { return estado.perfil; },
+    conferir: function () {
+      var r = {
+        quem: estado.email || '(ninguem)',
+        tipoDeAcesso: estado.perfil || '(sem acesso)',
+        conexao: estado.online ? 'ativa' : 'sem conexao',
+        somenteConsulta: estado.offline || estado.perfil === 'visitante'
+      };
+      try { console.log('P128', r); } catch (e) {}
+      return r;
+    }
+  };
+
+  function comecar() {
+    iniciar().catch(function () { modoOffline(); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', comecar);
+  } else {
+    comecar();
+  }
+})();
+</script>
+<!-- FIM PATCH128_LOGIN_NO_SERVIDOR -->
+
+
+
+<!-- PATCH129_NAO_INTERROMPER -->
+<script>
+/* ===== PATCH129 - a tela nao atualiza no meio do cadastro ===== */
+(function () {
+  'use strict';
+  if (window.__P129) { return; }
+  window.__P129 = true;
+
+  var ESPERA_DIGITANDO = 8000;    /* considera que voce esta no cadastro por 8s depois da ultima tecla */
+  var FOLGA_DEPOIS     = 2500;    /* espera 2,5s de silencio antes de atualizar */
+  var emEvento = 0;
+  var ultimaTecla = 0;
+  var pendentes = {};
+  var timerPend = null;
+  var estado = { servidorRespondeu: null, testadoEm: 0 };
+
+  function agora() { return Date.now(); }
+
+  /* ---------------- estou no meio de um cadastro? ---------------- */
+  function digitando() {
+    var el = document.activeElement;
+    if (el) {
+      var tag = String(el.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+        var tipo = String(el.type || '').toLowerCase();
+        if (tipo !== 'button' && tipo !== 'submit' && tipo !== 'reset') { return true; }
+      }
+      if (el.isContentEditable) { return true; }
+    }
+    if (ultimaTecla && (agora() - ultimaTecla) < ESPERA_DIGITANDO) { return true; }
+    return false;
+  }
+
+  function medida(valor) {
+    var n = parseFloat(String(valor || '0'));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function largura(el, est) {
+    var r = 0;
+    try { r = el.getBoundingClientRect().width; } catch (e) { r = 0; }
+    return Math.max(el.offsetWidth || 0, r || 0, medida(est ? est.width : 0));
+  }
+
+  function altura(el, est) {
+    var r = 0;
+    try { r = el.getBoundingClientRect().height; } catch (e) { r = 0; }
+    return Math.max(el.offsetHeight || 0, r || 0, medida(est ? est.height : 0));
+  }
+
+  function janelaAberta() {
+    var lista = document.querySelectorAll('[id]');
+    var i, el, est;
+    for (i = 0; i < lista.length; i++) {
+      el = lista[i];
+      var id = String(el.id || '');
+      if (!/(modal|janela|overlay|fundo|popup|dialog)/i.test(id)) { continue; }
+      try { est = window.getComputedStyle(el); } catch (e) { est = null; }
+      if (!est) { continue; }
+      if (est.display === 'none' || est.visibility === 'hidden' || est.opacity === '0') { continue; }
+      if (largura(el, est) < 80 || altura(el, est) < 60) { continue; }
+      if (el.querySelector('input, textarea, select, button')) { return true; }
+    }
+    return false;
+  }
+
+  function ocupado() { return digitando() || janelaAberta(); }
+
+  /* ---------------- selo discreto de espera ---------------- */
+  function estilo() {
+    if (document.getElementById('p129Estilo')) { return; }
+    var st = document.createElement('style');
+    st.id = 'p129Estilo';
+    st.textContent = [
+      '#p129Selo{position:fixed;left:14px;bottom:14px;z-index:2147481000;display:none;background:#1e293b;color:#fff;border-radius:999px;padding:6px 12px;font:12px Segoe UI,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25)}',
+      '#p129Selo.on{display:block}',
+      '#p129Solta{position:fixed;right:14px;top:14px;z-index:2147483400;display:none;background:#b91c1c;color:#fff;border:0;border-radius:999px;padding:8px 14px;font:600 12px Segoe UI,Arial,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.3)}',
+      '#p129Solta.on{display:block}',
+      '#p129Mes{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;font:12px Segoe UI,Arial,sans-serif;color:#475569}',
+      '#p129Mes button{border:0;border-radius:999px;padding:4px 10px;font:600 11px Segoe UI,Arial,sans-serif;background:#e2e8f0;color:#16304f;cursor:pointer}',
+      '@media print{#p129Selo,#p129Solta{display:none!important}}'
+    ].join(' ');
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function selo(ligado, texto) {
+    estilo();
+    var d = document.getElementById('p129Selo');
+    if (!d) {
+      if (!document.body) { return; }
+      d = document.createElement('div');
+      d.id = 'p129Selo';
+      d.setAttribute('data-html2canvas-ignore', 'true');
+      document.body.appendChild(d);
+    }
+    if (ligado) { d.textContent = texto || 'Atualizacao em espera - voce esta preenchendo'; d.classList.add('on'); }
+    else { d.classList.remove('on'); }
+  }
+
+  /* ---------------- marca quando a acao veio de voce ----------------
+     se VOCE clicou ou trocou um filtro, a tela atualiza na hora.
+     so a atualizacao automatica (relogio, nuvem) e que espera. */
+  function marcarEvento() {
+    emEvento++;
+    setTimeout(function () { if (emEvento > 0) { emEvento--; } }, 0);
+  }
+  ['click', 'change', 'submit', 'keydown', 'input', 'touchend'].forEach(function (nome) {
+    document.addEventListener(nome, marcarEvento, true);
+  });
+  document.addEventListener('keydown', function () { ultimaTecla = agora(); }, true);
+  document.addEventListener('input', function () { ultimaTecla = agora(); }, true);
+
+  /* ---------------- fila de atualizacoes em espera ---------------- */
+  function correrFila() {
+    var nomes = Object.keys(pendentes);
+    if (!nomes.length) { selo(false); return; }
+    if (ocupado()) { agendar(); return; }
+    var i;
+    for (i = 0; i < nomes.length; i++) {
+      var f = pendentes[nomes[i]];
+      delete pendentes[nomes[i]];
+      try { f(); } catch (e) { try { console.warn('[129] ' + nomes[i], e); } catch (e2) {} }
+    }
+    selo(false);
+  }
+
+  function agendar() {
+    if (timerPend) { clearTimeout(timerPend); }
+    timerPend = setTimeout(function () { timerPend = null; correrFila(); }, FOLGA_DEPOIS);
+  }
+
+  function guardarParaDepois(nome, fn) {
+    pendentes[nome] = fn;
+    selo(true);
+    agendar();
+  }
+
+  /* ---------------- coloca a trava nas funcoes que redesenham ---------------- */
+  var REDESENHAM = ['render', 'renderTudo', 'atualizarTudo', 'atualizarTela',
+                    'renderPagamento', 'renderCustoDashboard', 'renderCronoReport',
+                    'renderCrono', 'renderObras', 'renderItens', 'renderTabela',
+                    'p125Vigiar', 'p125Redesenhar'];
+
+  function proteger(nome) {
+    var original = window[nome];
+    if (typeof original !== 'function' || original.__p129) { return false; }
+    var novo = function () {
+      var args = arguments;
+      var eu = this;
+      if (emEvento > 0 || !ocupado()) {
+        return original.apply(eu, args);
+      }
+      guardarParaDepois(nome, function () { original.apply(eu, args); });
+      return undefined;
+    };
+    novo.__p129 = true;
+    novo.__original = original;
+    try { window[nome] = novo; } catch (e) { return false; }
+    return true;
+  }
+
+  function protegerTudo() {
+    var n = 0, i;
+    for (i = 0; i < REDESENHAM.length; i++) { if (proteger(REDESENHAM[i])) { n++; } }
+    return n;
+  }
+
+  /* alguns blocos do painel sao criados depois; tentamos algumas vezes */
+  protegerTudo();
+  var tentativas = 0;
+  var relogioProteger = setInterval(function () {
+    protegerTudo();
+    tentativas++;
+    if (tentativas > 20) { clearInterval(relogioProteger); }
+  }, 1500);
+
+  /* se algo pedir para recarregar a pagina no meio do cadastro, o
+     navegador pergunta antes de jogar o texto fora */
+  window.addEventListener('beforeunload', function (ev) {
+    if (!digitando()) { return; }
+    ev.preventDefault();
+    ev.returnValue = 'Voce esta preenchendo um cadastro. Sair agora perde o que nao foi salvo.';
+    return ev.returnValue;
+  });
+
+  /* ================================================================ *
+   * aviso de internet testado de verdade contra o servidor
+   * ================================================================ */
+  function cliente() {
+    try { if (typeof _supabase !== 'undefined' && _supabase) { return _supabase; } } catch (e) {}
+    if (window._supabase) { return window._supabase; }
+    if (window.supabaseClient) { return window.supabaseClient; }
+    return null;
+  }
+
+  function mostrarAvisoNet(fora) {
+    var ids = ['p117Net', 'p114Net', 'p111Net'];
+    var classes = ['p117-on', 'p114-on', 'p111-on'];
+    var i;
+    for (i = 0; i < ids.length; i++) {
+      var d = document.getElementById(ids[i]);
+      if (!d) { continue; }
+      if (fora) { d.classList.add(classes[i]); }
+      else { d.classList.remove(classes[i]); }
+    }
+    if (document.body) {
+      if (fora) { document.body.classList.add('p129-sem-net'); }
+      else {
+        document.body.classList.remove('p129-sem-net');
+        document.body.classList.remove('p114-sem-net');
+        document.body.classList.remove('p111-com-faixa');
+      }
+    }
+  }
+
+  function testarServidor() {
+    var sb = cliente();
+    estado.testadoEm = agora();
+    if (!sb || !sb.from) {
+      var fora = false;
+      try { fora = (navigator && navigator.onLine === false); } catch (e) { fora = false; }
+      estado.servidorRespondeu = !fora;
+      mostrarAvisoNet(fora);
+      return Promise.resolve(!fora);
+    }
+    return Promise.resolve(sb.from('painel_nuvem').select('chave').limit(1)).then(function (r) {
+      /* o servidor pode responder recusando o acesso - isso tambem prova
+         que a internet esta funcionando */
+      var msg = (r && r.error && r.error.message) ? String(r.error.message) : '';
+      var semRede = /fetch|network|networkerror|offline|conex/i.test(msg);
+      estado.servidorRespondeu = !semRede;
+      mostrarAvisoNet(semRede);
+      return !semRede;
+    }).catch(function () {
+      estado.servidorRespondeu = false;
+      mostrarAvisoNet(true);
+      return false;
+    });
+  }
+
+  window.addEventListener('online', function () { testarServidor(); });
+  window.addEventListener('offline', function () { mostrarAvisoNet(true); estado.servidorRespondeu = false; });
+
+  /* ================================================================ *
+   * destravar a tela ao trocar de menu
+   * ================================================================ */
+  function overlayPreso() {
+    var lista = document.querySelectorAll('div, section');
+    var i, el, est;
+    var telaL = window.innerWidth || 1024;
+    var telaA = window.innerHeight || 768;
+    for (i = 0; i < lista.length; i++) {
+      el = lista[i];
+      try { est = window.getComputedStyle(el); } catch (e) { continue; }
+      if (est.position !== 'fixed' || est.display === 'none' || est.visibility === 'hidden') { continue; }
+      if (est.pointerEvents === 'none' || est.opacity === '0') { continue; }
+      if (largura(el, est) < telaL * 0.8 || altura(el, est) < telaA * 0.8) { continue; }
+      if (el.querySelector('input, textarea, select, button, a')) { continue; }
+      if (String(el.textContent || '').trim().length > 3) { continue; }
+      return el;
+    }
+    return null;
+  }
+
+  function soltar() {
+    if (!document.body) { return false; }
+    var mexeu = false;
+    var sobra = overlayPreso();
+    while (sobra) {
+      sobra.style.display = 'none';
+      mexeu = true;
+      sobra = overlayPreso();
+    }
+    var classes = ['modal-open', 'no-scroll', 'sem-rolagem', 'travado', 'p114-sem-net', 'p111-com-faixa'];
+    classes.forEach(function (c) {
+      if (document.body.classList.contains(c)) { document.body.classList.remove(c); mexeu = true; }
+    });
+    if (!janelaAberta()) {
+      try {
+        var est = window.getComputedStyle(document.body);
+        if (est.overflow === 'hidden') { document.body.style.overflow = ''; mexeu = true; }
+        if (est.pointerEvents === 'none') { document.body.style.pointerEvents = ''; mexeu = true; }
+      } catch (e) {}
+      if (document.documentElement && document.documentElement.style.overflow === 'hidden') {
+        document.documentElement.style.overflow = '';
+        mexeu = true;
+      }
+    }
+    botaoSoltar(false);
+    return mexeu;
+  }
+
+  function botaoSoltar(ligado) {
+    estilo();
+    var b = document.getElementById('p129Solta');
+    if (!b) {
+      if (!document.body) { return; }
+      b = document.createElement('button');
+      b.id = 'p129Solta';
+      b.type = 'button';
+      b.textContent = 'Destravar tela';
+      b.setAttribute('data-html2canvas-ignore', 'true');
+      b.addEventListener('click', function () { soltar(); });
+      document.body.appendChild(b);
+    }
+    if (ligado) { b.classList.add('on'); } else { b.classList.remove('on'); }
+  }
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { setTimeout(soltar, 30); }
+  }, true);
+
+  /* ================================================================ *
+   * Centro de Custos sempre no mes vigente
+   * ================================================================ */
+  function mesVigente() {
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    return d.getFullYear() + '-' + (m < 10 ? '0' + m : String(m));
+  }
+
+  function chamarDireto(nome) {
+    var f = window[nome];
+    if (typeof f !== 'function') { return false; }
+    var real = f.__original || f;
+    try { real(); return true; } catch (e) { try { console.warn('[129] ' + nome, e); } catch (e2) {} }
+    return false;
+  }
+
+  function botaoTodosOsMeses(campo) {
+    if (document.getElementById('p129Mes')) { return; }
+    estilo();
+    var cx = document.createElement('div');
+    cx.id = 'p129Mes';
+    var txt = document.createElement('span');
+    txt.textContent = 'Mostrando o mes atual.';
+    var bt = document.createElement('button');
+    bt.type = 'button';
+    bt.textContent = 'Ver todos os meses';
+    var soMesAtual = true;
+    bt.addEventListener('click', function () {
+      if (soMesAtual) {
+        campo.value = '';
+        txt.textContent = 'Mostrando todos os meses.';
+        bt.textContent = 'Voltar ao mes atual';
+      } else {
+        campo.value = mesVigente();
+        txt.textContent = 'Mostrando o mes atual.';
+        bt.textContent = 'Ver todos os meses';
+      }
+      soMesAtual = !soMesAtual;
+      chamarDireto('renderCustoDashboard');
+    });
+    cx.appendChild(txt);
+    cx.appendChild(bt);
+    if (campo.parentNode) { campo.parentNode.appendChild(cx); }
+  }
+
+  function ajustarMesCusto(forcar) {
+    var campo = document.getElementById('custoFilterMes');
+    if (!campo) { return false; }
+    botaoTodosOsMeses(campo);
+    if (!forcar && campo.value) { return false; }
+    if (campo.getAttribute('data-p129') === '1' && !forcar) { return false; }
+    campo.value = mesVigente();
+    campo.setAttribute('data-p129', '1');
+    chamarDireto('renderCustoDashboard');
+    return true;
+  }
+
+  function abaCustoAberta() {
+    var el = document.getElementById('tab-custo');
+    if (!el) { return false; }
+    try { return window.getComputedStyle(el).display !== 'none'; } catch (e) { return false; }
+  }
+
+  /* ================================================================ *
+   * trocar de menu: destrava e cuida do Centro de Custos
+   * ================================================================ */
+  function protegerTrocaAba() {
+    var original = window.trocarAba;
+    if (typeof original !== 'function' || original.__p129) { return; }
+    var novo = function (aba) {
+      var r;
+      try { r = original.apply(this, arguments); }
+      catch (e) { try { console.warn('[129] trocarAba', e); } catch (e2) {} }
+      setTimeout(function () {
+        soltar();
+        if (String(aba) === 'custo' || abaCustoAberta()) { ajustarMesCusto(false); }
+      }, 60);
+      return r;
+    };
+    novo.__p129 = true;
+    novo.__original = original;
+    try { window.trocarAba = novo; } catch (e) {}
+  }
+
+  protegerTrocaAba();
+  setTimeout(protegerTrocaAba, 1200);
+  setTimeout(protegerTrocaAba, 4000);
+
+  /* ================================================================ *
+   * relogios de vigilancia (leves)
+   * ================================================================ */
+  setInterval(function () {
+    if (!document.body) { return; }
+    var preso = !!overlayPreso();
+    if (!preso) {
+      try { preso = (window.getComputedStyle(document.body).overflow === 'hidden' && !janelaAberta()); } catch (e) {}
+    }
+    botaoSoltar(preso);
+    if (preso && !janelaAberta()) { soltar(); }
+  }, 3000);
+
+  setInterval(function () { testarServidor(); }, 30000);
+
+  /* ================================================================ *
+   * porta de servico para conferir no console
+   * ================================================================ */
+  window.P129 = {
+    ocupado: ocupado,
+    soltar: soltar,
+    testarServidor: testarServidor,
+    mesVigente: ajustarMesCusto,
+    conferir: function () {
+      var r = {
+        noMeioDeUmCadastro: ocupado(),
+        emEspera: Object.keys(pendentes),
+        servidorRespondeu: estado.servidorRespondeu,
+        telaTravada: !!overlayPreso(),
+        mesDoCentroDeCustos: (document.getElementById('custoFilterMes') || {}).value || '(sem campo)'
+      };
+      try { console.log('P129', r); } catch (e) {}
+      return r;
+    }
+  };
+
+  function comecar() {
+    estilo();
+    protegerTudo();
+    protegerTrocaAba();
+    testarServidor();
+    setTimeout(function () { if (abaCustoAberta()) { ajustarMesCusto(false); } }, 900);
+    setTimeout(function () { if (abaCustoAberta()) { ajustarMesCusto(false); } }, 3000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', comecar);
+  } else {
+    comecar();
+  }
+})();
+</script>
+<!-- FIM PATCH129_NAO_INTERROMPER -->
+
 </body>
 </html>

@@ -67573,5 +67573,856 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 }());
 </script>
 <!-- FIM PATCH135B_DIAGNOSTICO -->
+
+<!-- INI PATCH136_ACESSOS_E_ABAS -->
+<style id="p136Estilo">
+#p136Barra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+.p136-sel { padding: 5px 7px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px;
+  background: #fff; color: #16304f; }
+.p136-btn { border: 0; border-radius: 7px; padding: 5px 9px; cursor: pointer;
+  font: 600 11.5px Segoe UI, Arial, sans-serif; background: #e2e8f0; color: #16304f; }
+.p136-btn.pri { background: #2563eb; color: #fff; }
+.p136-btn[disabled] { opacity: .5; cursor: not-allowed; }
+.p136-rec { font-size: 11.5px; margin-top: 3px; }
+.p136-rec.ok { color: #15803d; }
+.p136-rec.er { color: #b91c1c; }
+</style>
+<script>
+/* =====================================================================
+ * PATCH 136 - acesso das pessoas + abas novas destravadas
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.__p136) { return; }
+  window.__p136 = true;
+
+  var CORE = ['itens', 'liberacao', 'medicoes', 'graficos', 'recebimento',
+              'cronograma', 'pagamento', 'ctm', 'custo', 'fpdo'];
+
+  function porId(x) { return document.getElementById(x); }
+
+  function esc(v) {
+    return String(v === undefined || v === null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function cliente() {
+    try { if (typeof _supabase !== 'undefined' && _supabase) { return _supabase; } } catch (e) { }
+    if (window._supabase) { return window._supabase; }
+    if (window.supabaseClient) { return window.supabaseClient; }
+    if (window.supabase && window.supabase.from) { return window.supabase; }
+    return null;
+  }
+
+  function sessao() {
+    try {
+      if (window.PainelNucleo && typeof window.PainelNucleo.sessao === 'function') {
+        return window.PainelNucleo.sessao();
+      }
+    } catch (e) { }
+    var bruto = null;
+    try { bruto = sessionStorage.getItem('painel_seg_sessao_v1'); } catch (e2) { }
+    if (!bruto) { try { bruto = localStorage.getItem('painel_seg_sessao_v1'); } catch (e3) { } }
+    if (!bruto) { return null; }
+    try { return JSON.parse(bruto); } catch (e4) { return null; }
+  }
+
+  function souAdmin() {
+    var s = sessao();
+    return !!(s && String(s.perfil || '').toLowerCase() === 'admin');
+  }
+
+  function nomeTipo(p) {
+    var v = String(p || '').toLowerCase();
+    if (v === 'admin') { return 'Administrador'; }
+    if (v === 'editor') { return 'Pode lancar e editar'; }
+    return 'Somente consulta';
+  }
+
+  /* ================================================================ *
+   * 1) salvar tipo de acesso e pedir nova senha
+   * ================================================================ */
+  function acharUsuario(email) {
+    var lista = window.__p136Lista || window.__p87ListaSupabase || [];
+    var alvo = String(email || '').trim().toLowerCase();
+    var i;
+    for (i = 0; i < lista.length; i++) {
+      var u = lista[i] || {};
+      var e = String(u.email || u.usuario || '').trim().toLowerCase();
+      if (e === alvo) { return u; }
+    }
+    return null;
+  }
+
+  function salvarTipo(email, tipo) {
+    var u = acharUsuario(email);
+    if (!souAdmin()) {
+      return Promise.reject(new Error('Somente administrador troca tipo de acesso.'));
+    }
+    var ponte = window.PainelAuthSupabase;
+    if (u && u.id && ponte && typeof ponte.salvarPerfil === 'function') {
+      return Promise.resolve(ponte.salvarPerfil(u.id, tipo, u.ativo === false ? false : true));
+    }
+    var sb = cliente();
+    if (!sb) { return Promise.reject(new Error('O painel nao esta falando com o servidor agora.')); }
+    var q = sb.from('painel_perfis').update({ perfil: tipo });
+    q = (u && u.id) ? q.eq('id', u.id) : q.eq('email', String(email || '').toLowerCase());
+    return Promise.resolve(q).then(function (r) {
+      if (r && r.error) {
+        throw new Error(r.error.message || 'O servidor recusou a troca.');
+      }
+      return true;
+    });
+  }
+
+  function conferirNoServidor(email) {
+    var sb = cliente();
+    if (!sb) { return Promise.resolve(null); }
+    return Promise.resolve(
+      sb.from('painel_perfis').select('perfil,ativo').eq('email', String(email || '').toLowerCase()).limit(1)
+    ).then(function (r) {
+      if (r && r.error) { return null; }
+      var d = (r && r.data) ? r.data[0] : null;
+      return d || null;
+    }).catch(function () { return null; });
+  }
+
+  function pedirNovaSenha(email) {
+    var sb = cliente();
+    if (!sb || !sb.auth || typeof sb.auth.resetPasswordForEmail !== 'function') {
+      return Promise.reject(new Error('Este painel nao tem a porta de troca de senha do servidor.'));
+    }
+    var alvo = String(email || '').trim().toLowerCase();
+    if (alvo.indexOf('@') < 1) {
+      return Promise.reject(new Error('Esta conta nao tem e-mail: sem e-mail o link nao pode ser enviado.'));
+    }
+    return Promise.resolve(sb.auth.resetPasswordForEmail(alvo)).then(function (r) {
+      if (r && r.error) { throw new Error(r.error.message || 'O servidor nao enviou o link.'); }
+      return true;
+    });
+  }
+
+  window.P136 = window.P136 || {};
+  window.P136.salvarTipo = salvarTipo;
+  window.P136.novaSenha = pedirNovaSenha;
+
+  /* ================================================================ *
+   * 2) devolver os controles na tela de usuarios
+   * ================================================================ */
+  function recado(cel, txt, ok) {
+    var d = cel.querySelector('.p136-rec');
+    if (!d) {
+      d = document.createElement('div');
+      d.className = 'p136-rec';
+      cel.appendChild(d);
+    }
+    d.className = 'p136-rec ' + (ok ? 'ok' : 'er');
+    d.textContent = txt;
+  }
+
+  function emailDaLinha(tr) {
+    var cels = tr.getElementsByTagName('td');
+    if (cels.length < 3) { return ''; }
+    var t = String(cels[1].textContent || '').replace(/admin/gi, '').trim();
+    var m = t.match(/[^\s]+@[^\s]+/);
+    return m ? m[0] : t;
+  }
+
+  function montarLinha(tr) {
+    if (tr.getAttribute('data-p136') === '1') { return; }
+    var cels = tr.getElementsByTagName('td');
+    if (cels.length < 5) { return; }
+    var email = emailDaLinha(tr);
+    if (!email) { return; }
+    tr.setAttribute('data-p136', '1');
+
+    var celTipo = cels[2];
+    var atual = String(celTipo.textContent || '').toLowerCase();
+    var valor = atual.indexOf('administrador') >= 0 ? 'admin'
+              : (atual.indexOf('lan') >= 0 ? 'editor' : 'visitante');
+    var u = acharUsuario(email);
+    if (u && u.perfil) { valor = String(u.perfil).toLowerCase(); }
+
+    var sel = document.createElement('select');
+    sel.className = 'p136-sel';
+    ['visitante', 'editor', 'admin'].forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v;
+      o.textContent = nomeTipo(v);
+      if (v === valor) { o.selected = true; }
+      sel.appendChild(o);
+    });
+    celTipo.innerHTML = '';
+    celTipo.appendChild(sel);
+
+    var celAc = cels[cels.length - 1];
+    celAc.innerHTML = '';
+    var bs = document.createElement('button');
+    bs.type = 'button';
+    bs.className = 'p136-btn pri';
+    bs.textContent = 'Salvar acesso';
+    var bn = document.createElement('button');
+    bn.type = 'button';
+    bn.className = 'p136-btn';
+    bn.textContent = 'Nova senha';
+    celAc.appendChild(bs);
+    celAc.appendChild(bn);
+
+    bs.addEventListener('click', function () {
+      bs.disabled = true;
+      recado(celAc, 'salvando...', true);
+      salvarTipo(email, sel.value).then(function () {
+        return conferirNoServidor(email);
+      }).then(function (d) {
+        bs.disabled = false;
+        if (d && String(d.perfil || '').toLowerCase() !== sel.value) {
+          recado(celAc, 'o servidor manteve ' + nomeTipo(d.perfil) + ': a regra dele nao deixou trocar.', false);
+          return;
+        }
+        if (u) { u.perfil = sel.value; }
+        recado(celAc, 'pronto. A pessoa ve a mudanca ao recarregar o painel.', true);
+      }).catch(function (e) {
+        bs.disabled = false;
+        recado(celAc, (e && e.message) ? e.message : 'nao consegui salvar.', false);
+      });
+    });
+
+    bn.addEventListener('click', function () {
+      bn.disabled = true;
+      recado(celAc, 'enviando o link...', true);
+      pedirNovaSenha(email).then(function () {
+        bn.disabled = false;
+        recado(celAc, 'link enviado para ' + email + '. A propria pessoa escolhe a senha nova.', true);
+      }).catch(function (e) {
+        bn.disabled = false;
+        recado(celAc, (e && e.message) ? e.message : 'nao consegui enviar o link.', false);
+      });
+    });
+  }
+
+  function melhorar() {
+    if (!souAdmin()) { return 0; }
+    var tabs = document.querySelectorAll('table.p87-tab');
+    var quantos = 0;
+    Array.prototype.forEach.call(tabs, function (t) {
+      var trs = t.querySelectorAll('tbody tr');
+      Array.prototype.forEach.call(trs, function (tr) {
+        montarLinha(tr);
+        quantos = quantos + 1;
+      });
+    });
+    return quantos;
+  }
+
+  /* ================================================================ *
+   * 3) abas novas destravadas (e administrador abre tudo)
+   * ================================================================ */
+  function abasNaTela() {
+    var saida = [];
+    var nos = document.querySelectorAll('[id^="tab-"]');
+    Array.prototype.forEach.call(nos, function (n) {
+      var id = String(n.id || '').replace(/^tab-/, '');
+      if (id && saida.indexOf(id) < 0) { saida.push(id); }
+    });
+    return saida;
+  }
+
+  function limparAvisoDePermissao() {
+    var avisos = document.querySelectorAll('.p87-aviso');
+    Array.prototype.forEach.call(avisos, function (a) {
+      var t = String(a.textContent || '').toLowerCase();
+      if (t.indexOf('permiss') >= 0 && t.indexOf('aba') >= 0) {
+        if (a.parentNode) { a.parentNode.removeChild(a); }
+      }
+    });
+  }
+
+  function trocaManual(aba) {
+    var alvo = porId('tab-' + aba);
+    var nos = document.querySelectorAll('[id^="tab-"]');
+    Array.prototype.forEach.call(nos, function (n) {
+      if (n !== alvo) { n.style.display = 'none'; }
+    });
+    if (alvo) { alvo.style.display = 'block'; }
+    var bts = document.querySelectorAll('.tab-btn');
+    Array.prototype.forEach.call(bts, function (b) { b.classList.remove('active'); });
+    var meu = porId('btn-tab-' + aba);
+    if (meu) { meu.classList.add('active'); }
+    var menu = porId('meu-menu-abas');
+    if (menu) { try { menu.removeAttribute('open'); } catch (e) { } }
+
+    try {
+      if (aba === 'obraflow' && window.OF && typeof window.OF.abrir === 'function') {
+        window.OF.abrir();
+      } else if (aba === 'p118dash' && typeof window.p118AbrirDashboard === 'function') {
+        window.p118AbrirDashboard();
+      } else if (aba === 'cronograma' && typeof window.initCronograma === 'function') {
+        window.initCronograma();
+      } else if (aba === 'custo' && typeof window.initCustoTab === 'function') {
+        window.initCustoTab();
+      }
+    } catch (e2) { }
+    try { if (typeof window.render === 'function') { window.render(); } } catch (e3) { }
+    return true;
+  }
+
+  function destravar() {
+    var antiga = window.trocarAba;
+    if (typeof antiga !== 'function' || antiga.__p136) { return false; }
+    var nova = function (aba) {
+      var id = String(aba || '');
+      var euPosso = souAdmin() || CORE.indexOf(id) < 0;
+      var r;
+      try { r = antiga.apply(this, arguments); } catch (e) { r = false; }
+      if (r === false && euPosso) {
+        limparAvisoDePermissao();
+        setTimeout(limparAvisoDePermissao, 60);
+        return trocaManual(id);
+      }
+      return r;
+    };
+    nova.__p136 = true;
+    var k;
+    for (k in antiga) {
+      if (Object.prototype.hasOwnProperty.call(antiga, k)) {
+        try { nova[k] = antiga[k]; } catch (e4) { }
+      }
+    }
+    try { window.trocarAba = nova; } catch (e5) { }
+    try { trocarAba = nova; } catch (e6) { }
+    return true;
+  }
+
+  window.P136.abrir = function (aba) {
+    try { return window.trocarAba(aba); } catch (e) { return trocaManual(String(aba || '')); }
+  };
+
+  window.P136.conferir = function () {
+    var s = sessao();
+    var d = {
+      quemEstaLogado: s ? (s.usuario || s.email || '') : '(ninguem)',
+      tipoDeAcesso: nomeTipo(s ? s.perfil : ''),
+      souAdministrador: souAdmin(),
+      falaComOServidor: !!cliente(),
+      portaDeTipoDeAcesso: !!(window.PainelAuthSupabase &&
+        typeof window.PainelAuthSupabase.salvarPerfil === 'function'),
+      abasQueExistem: abasNaTela(),
+      trancaDestravada: !!(window.trocarAba && window.trocarAba.__p136),
+      linhasAjustadas: melhorar()
+    };
+    try { console.log('[P136]', d); } catch (e) { }
+    return d;
+  };
+
+  /* ================================================================ *
+   * 4) ligar
+   * ================================================================ */
+  var pendente = null;
+
+  function olhar() {
+    if (pendente) { return; }
+    pendente = setTimeout(function () {
+      pendente = null;
+      try { melhorar(); } catch (e) { }
+      try { destravar(); } catch (e2) { }
+    }, 160);
+  }
+
+  function ligar() {
+    destravar();
+    melhorar();
+    try {
+      if (window.MutationObserver && document.body) {
+        var ob = new MutationObserver(function () { olhar(); });
+        ob.observe(document.body, { childList: true, subtree: true });
+        window.__p136Olho = ob;
+      }
+    } catch (e) { }
+    try {
+      console.log('[PATCH136] acesso das pessoas e abas novas liberadas. Use P136.conferir()');
+    } catch (e2) { }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(ligar, 800); });
+  } else {
+    setTimeout(ligar, 800);
+  }
+}());
+</script>
+<!-- FIM PATCH136_ACESSOS_E_ABAS -->
+
+<!-- INI PATCH137_CUSTOS_E_PLANO -->
+<style id="p137Estilo">
+#p137Faixa { margin: 8px 0 12px; padding: 10px 12px; border-radius: 10px;
+  background: #fef9c3; border: 1px solid #fde68a; color: #78350f;
+  font: 500 12.5px Segoe UI, Arial, sans-serif; line-height: 1.5; }
+#p137Faixa.calmo { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+#p137Faixa b { font-weight: 700; }
+#p137Faixa .p137-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+#p137Faixa button { border: 0; border-radius: 7px; padding: 6px 10px; cursor: pointer;
+  font: 600 12px Segoe UI, Arial, sans-serif; background: #2563eb; color: #fff; }
+#p137Faixa button.lado { background: #fff; color: #78350f; border: 1px solid #d6d3d1; }
+#p137Lista { margin-top: 8px; max-height: 190px; overflow: auto; background: #fff;
+  border: 1px solid #e7e5e4; border-radius: 8px; padding: 8px; display: none; }
+#p137Lista table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#p137Lista td, #p137Lista th { text-align: left; padding: 3px 6px; border-bottom: 1px solid #f1f5f9; }
+.p137-plano { width: 100%; border-collapse: collapse; font: 500 12px Segoe UI, Arial, sans-serif; }
+.p137-plano td { padding: 4px 6px; border-bottom: 1px solid rgba(148,163,184,.25); }
+.p137-plano td.n { text-align: right; font-weight: 700; }
+.p137-plano tr.al td.n { color: #b91c1c; }
+.p137-nota { margin-top: 6px; font-size: 11.5px; color: #b45309; }
+.p137-abre { margin-top: 8px; }
+.p137-abre button { border: 0; border-radius: 7px; padding: 6px 10px; cursor: pointer;
+  font: 600 12px Segoe UI, Arial, sans-serif; background: #2563eb; color: #fff; }
+</style>
+<script>
+/* =====================================================================
+ * PATCH 137 - custos visiveis + plano mestre no painel de indicadores
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.__p137) { return; }
+  window.__p137 = true;
+
+  function porId(x) { return document.getElementById(x); }
+
+  function num(v) {
+    if (typeof v === 'number') { return isFinite(v) ? v : 0; }
+    var s = String(v === undefined || v === null ? '' : v).replace(/[^0-9,.-]/g, '');
+    if (s.indexOf(',') >= 0 && s.indexOf('.') >= 0) { s = s.replace(/\./g, ''); }
+    s = s.replace(',', '.');
+    var n = Number(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function esc(v) {
+    return String(v === undefined || v === null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function moeda(v) {
+    return 'R$ ' + num(v).toLocaleString('pt-BR',
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function obraAtual() {
+    try { if (typeof getObraAtual === 'function') { return getObraAtual(); } } catch (e) { }
+    try {
+      var b = window.db || null;
+      if (b && b.obras && b.obras.length) {
+        var a = b.obras.filter(function (o) { return o.id === b.obraAtualId; })[0];
+        return a || b.obras[0];
+      }
+    } catch (e2) { }
+    return null;
+  }
+
+  function data(v) {
+    var s = String(v === undefined || v === null ? '' : v).trim();
+    if (!s) { return null; }
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) { return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])); }
+    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) { return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])); }
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /* ================================================================ *
+   * 1) centro de custos: dizer o que o filtro esta escondendo
+   * ================================================================ */
+  var CAMPOS = { obra: 'custoFilterObra', mes: 'custoFilterMes',
+                 de: 'custoFilterDataDe', ate: 'custoFilterDataAte',
+                 pde: 'custoFilterPeriodoDe', pate: 'custoFilterPeriodoAte' };
+
+  function todosLancamentos() {
+    var saida = [];
+    try {
+      var b = window.db || {};
+      (b.obras || []).forEach(function (o) {
+        (o.centrosCusto || []).forEach(function (c) {
+          saida.push({ obra: o.nome || '', c: c });
+        });
+      });
+    } catch (e) { }
+    return saida;
+  }
+
+  function noFiltro() {
+    try {
+      if (typeof window.getCustosFiltered === 'function') {
+        return window.getCustosFiltered() || [];
+      }
+    } catch (e) { }
+    return null;
+  }
+
+  function contas() {
+    var todos = todosLancamentos();
+    var somaTudo = 0, semData = [];
+    todos.forEach(function (x) {
+      somaTudo = somaTudo + num(x.c.valor);
+      if (!data(x.c.data)) { semData.push(x); }
+    });
+    var vistos = noFiltro();
+    var somaVista = 0;
+    (vistos || []).forEach(function (c) { somaVista = somaVista + num(c.valor); });
+    return {
+      quantosTodos: todos.length,
+      somaTodos: Math.round(somaTudo * 100) / 100,
+      quantosVistos: vistos ? vistos.length : null,
+      somaVistos: Math.round(somaVista * 100) / 100,
+      semData: semData,
+      mes: (porId(CAMPOS.mes) || {}).value || '',
+      de: (porId(CAMPOS.de) || {}).value || '',
+      ate: (porId(CAMPOS.ate) || {}).value || ''
+    };
+  }
+
+  function limparFiltrosDeData() {
+    var mudou = false;
+    ['mes', 'de', 'ate', 'pde', 'pate'].forEach(function (k) {
+      var el = porId(CAMPOS[k]);
+      if (el && el.value) {
+        el.value = '';
+        mudou = true;
+        try {
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (e) { }
+      }
+    });
+    try { if (typeof window.initCustoTab === 'function') { window.initCustoTab(); } } catch (e2) { }
+    try { if (typeof window.render === 'function') { window.render(); } } catch (e3) { }
+    setTimeout(faixa, 120);
+    return mudou;
+  }
+
+  function listaSemData(c) {
+    if (!c.semData.length) { return '<p>Nenhum lancamento sem data. Otimo.</p>'; }
+    var h = '<table><thead><tr><th>Obra</th><th>Categoria</th><th>Descricao</th><th>Valor</th></tr></thead><tbody>';
+    c.semData.slice(0, 80).forEach(function (x) {
+      h += '<tr><td>' + esc(x.obra) + '</td><td>' + esc(x.c.categoria || '') + '</td>' +
+           '<td>' + esc(x.c.descricao || '') + '</td><td>' + moeda(x.c.valor) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    if (c.semData.length > 80) { h += '<p>mostrando os 80 primeiros.</p>'; }
+    return h;
+  }
+
+  function ondeEncaixar() {
+    var area = porId('p120Area');
+    if (area && area.parentNode) { return { pai: area.parentNode, antes: area }; }
+    var aba = porId('tab-custo');
+    if (aba) { return { pai: aba, antes: aba.firstChild }; }
+    return null;
+  }
+
+  function faixa() {
+    var aba = porId('tab-custo');
+    if (!aba || (aba.style && aba.style.display === 'none')) { return null; }
+    var c = contas();
+    var cx = porId('p137Faixa');
+    if (!cx) {
+      var lugar = ondeEncaixar();
+      if (!lugar) { return null; }
+      cx = document.createElement('div');
+      cx.id = 'p137Faixa';
+      lugar.pai.insertBefore(cx, lugar.antes);
+    }
+    var escondidos = (c.quantosVistos === null) ? 0 : (c.quantosTodos - c.quantosVistos);
+    var calmo = (escondidos <= 0 && !c.semData.length);
+    cx.className = calmo ? 'calmo' : '';
+
+    var txt = 'Existem <b>' + c.quantosTodos + '</b> lancamento(s) somando <b>' +
+              moeda(c.somaTodos) + '</b>. ';
+    if (c.quantosVistos === null) {
+      txt += 'Nao consegui ler o filtro desta tela agora.';
+    } else if (escondidos > 0) {
+      txt += 'O filtro de agora mostra <b>' + c.quantosVistos + '</b> (' +
+             moeda(c.somaVistos) + '). Ficaram de fora <b>' + escondidos + '</b>';
+      if (c.mes) { txt += ', porque o filtro de mes esta em <b>' + esc(c.mes) + '</b>'; }
+      txt += '.';
+    } else {
+      txt += 'O filtro de agora mostra tudo.';
+    }
+    if (c.semData.length) {
+      txt += ' <b>' + c.semData.length + '</b> lancamento(s) estao sem data: ' +
+             'lancamento sem data nunca aparece em filtro por mes.';
+    }
+
+    cx.innerHTML = '<div>' + txt + '</div>' +
+      '<div class="p137-btns">' +
+      '<button type="button" data-a="tudo">Ver todos os lancamentos</button>' +
+      '<button type="button" class="lado" data-a="semdata">Ver os sem data</button>' +
+      '<button type="button" class="lado" data-a="atualizar">Atualizar</button>' +
+      '</div><div id="p137Lista"></div>';
+
+    cx.querySelector('[data-a="tudo"]').addEventListener('click', function () {
+      limparFiltrosDeData();
+    });
+    cx.querySelector('[data-a="atualizar"]').addEventListener('click', function () { faixa(); });
+    cx.querySelector('[data-a="semdata"]').addEventListener('click', function () {
+      var l = porId('p137Lista');
+      if (!l) { return; }
+      if (l.style.display === 'block') { l.style.display = 'none'; return; }
+      l.innerHTML = listaSemData(c);
+      l.style.display = 'block';
+    });
+    return c;
+  }
+
+  /* ================================================================ *
+   * 2) o cartao do cronograma passa a ler o Plano Mestre
+   * ================================================================ */
+  function primeiro(o, campos) {
+    var i;
+    for (i = 0; i < campos.length; i++) {
+      if (o && o[campos[i]] !== undefined && o[campos[i]] !== null && o[campos[i]] !== '') {
+        return o[campos[i]];
+      }
+    }
+    return '';
+  }
+
+  function tarefasDoPlano() {
+    var obra = obraAtual();
+    if (!obra) { return []; }
+    var l = null;
+    try {
+      if (window.OF && window.OF.state && window.OF.state.tarefas && window.OF.state.tarefas.length) {
+        l = window.OF.state.tarefas;
+      }
+    } catch (e) { }
+    if (!l) {
+      l = (obra.obraflow && obra.obraflow.tarefas) || obra.planoMestre ||
+          obra.ofTarefas || obra.tarefasPlano || null;
+    }
+    return (l && l.length) ? l : [];
+  }
+
+  function ehFase(t) {
+    var v = String(primeiro(t, ['tipo', 'categoria']) || 'tarefa').toLowerCase();
+    return v.indexOf('fase') >= 0 || v.indexOf('grupo') >= 0;
+  }
+
+  function ehMarco(t) {
+    var v = String(primeiro(t, ['tipo', 'categoria']) || '').toLowerCase();
+    return v.indexOf('marco') >= 0 || v.indexOf('milestone') >= 0;
+  }
+
+  function idDe(t) { return String(primeiro(t, ['id', 'codigo', 'chave']) || ''); }
+  function paiDe(t) { return String(primeiro(t, ['pai', 'paiId', 'parent', 'parentId']) || ''); }
+
+  function pontas(lista) {
+    var temFilho = {};
+    lista.forEach(function (t) { var p = paiDe(t); if (p) { temFilho[p] = 1; } });
+    return lista.filter(function (t) {
+      return !ehFase(t) && !temFilho[idDe(t)];
+    });
+  }
+
+  function resumoPlano() {
+    var lista = tarefasDoPlano();
+    var r = { total: lista.length, pontas: 0, concluidas: 0, andamento: 0,
+              atrasadas: 0, aIniciar: 0, marcos: 0, semData: 0, semPct: 0,
+              semCusto: 0, avanco: 0 };
+    if (!lista.length) { return r; }
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    var folhas = pontas(lista);
+    var somaPeso = 0, somaFeito = 0;
+    folhas.forEach(function (t) {
+      if (ehMarco(t)) { r.marcos = r.marcos + 1; return; }
+      r.pontas = r.pontas + 1;
+      var ini = data(primeiro(t, ['inicio', 'dataInicio', 'start', 'inicioPrevisto']));
+      var fim = data(primeiro(t, ['fim', 'dataFim', 'end', 'fimPrevisto', 'termino']));
+      var real = data(primeiro(t, ['fimReal', 'dataFimReal', 'terminoReal']));
+      var pct = num(primeiro(t, ['percentual', 'pct', 'avanco', 'progresso']));
+      var custo = num(primeiro(t, ['custoPrevisto', 'custoPlanejado', 'orcado', 'custo']));
+      if (!ini || !fim) { r.semData = r.semData + 1; }
+      if (!pct && !real) { r.semPct = r.semPct + 1; }
+      if (!custo) { r.semCusto = r.semCusto + 1; }
+      var dias = (ini && fim) ? Math.max(1, Math.round((fim - ini) / 86400000) + 1) : 1;
+      var peso = custo > 0 ? custo : dias;
+      somaPeso = somaPeso + peso;
+      var feito = real ? 100 : Math.max(0, Math.min(100, pct));
+      somaFeito = somaFeito + peso * feito;
+      if (real || pct >= 100) { r.concluidas = r.concluidas + 1; return; }
+      if (fim && fim < hoje) { r.atrasadas = r.atrasadas + 1; return; }
+      if (ini && ini > hoje) { r.aIniciar = r.aIniciar + 1; return; }
+      r.andamento = r.andamento + 1;
+    });
+    r.avanco = somaPeso > 0 ? Math.round((somaFeito / somaPeso) * 10) / 10 : 0;
+    return r;
+  }
+
+  function abrirPlano() {
+    try {
+      if (window.OF && typeof window.OF.abrir === 'function') { window.OF.abrir(); return true; }
+      if (typeof window.trocarAba === 'function') { window.trocarAba('obraflow'); return true; }
+    } catch (e) { }
+    return false;
+  }
+
+  function cartaoDoPlano() {
+    var tela = porId('p118cCrono');
+    if (!tela) { return null; }
+    var card = tela.parentNode;
+    while (card && String(card.className || '').indexOf('p118-card') < 0) { card = card.parentNode; }
+    if (!card) { return null; }
+    var r = resumoPlano();
+
+    var tit = card.getElementsByTagName('h4')[0];
+    if (tit) { tit.textContent = 'Plano Mestre - situacao das tarefas'; }
+    var dica = card.querySelector('.dica');
+    if (dica) { dica.textContent = 'Vem do Plano Mestre (EAP), nao do cronograma antigo.'; }
+
+    tela.style.display = 'none';
+    var alvo = porId('p118cCronoVazio');
+    if (!alvo) { return r; }
+    alvo.style.display = 'block';
+    alvo.style.height = 'auto';
+
+    if (!r.total) {
+      alvo.innerHTML = '<div>Esta obra ainda nao tem plano. ' +
+        '<div class="p137-abre"><button type="button" id="p137AbrePlano">Abrir o Plano Mestre</button></div></div>';
+    } else {
+      var linhas = [
+        ['Tarefas de ponta', r.pontas, ''],
+        ['Concluidas', r.concluidas, ''],
+        ['Em andamento', r.andamento, ''],
+        ['Atrasadas', r.atrasadas, r.atrasadas ? 'al' : ''],
+        ['A iniciar', r.aIniciar, ''],
+        ['Marcos', r.marcos, ''],
+        ['Avanco do plano', r.avanco + '%', '']
+      ];
+      var h = '<div style="width:100%"><table class="p137-plano">';
+      linhas.forEach(function (l) {
+        h += '<tr class="' + l[2] + '"><td>' + l[0] + '</td><td class="n">' + l[1] + '</td></tr>';
+      });
+      h += '</table>';
+      var faltas = [];
+      if (r.semData) { faltas.push(r.semData + ' sem data'); }
+      if (r.semPct) { faltas.push(r.semPct + ' sem percentual'); }
+      if (r.semCusto) { faltas.push(r.semCusto + ' sem custo previsto'); }
+      if (faltas.length) {
+        h += '<div class="p137-nota">Plano incompleto: ' + faltas.join(', ') +
+             '. Enquanto faltar isso, o avanco e o dinheiro do plano ficam mancos.</div>';
+      }
+      h += '<div class="p137-abre"><button type="button" id="p137AbrePlano">Abrir o Plano Mestre</button></div></div>';
+      alvo.innerHTML = h;
+    }
+    var b = porId('p137AbrePlano');
+    if (b) { b.addEventListener('click', abrirPlano); }
+    return r;
+  }
+
+  /* ================================================================ *
+   * 3) guardar a aba do cronograma Gantt (sem apagar nada)
+   * ================================================================ */
+  function esconderGantt(esconder) {
+    var b = porId('btn-tab-cronograma');
+    if (b) {
+      if (esconder) {
+        b.setAttribute('data-p137off', '1');
+        b.style.setProperty('display', 'none', 'important');
+      } else {
+        b.removeAttribute('data-p137off');
+        b.style.display = '';
+      }
+    }
+    var itens = document.querySelectorAll('#meu-menu-abas [data-aba="cronograma"]');
+    Array.prototype.forEach.call(itens, function (n) {
+      n.style.display = esconder ? 'none' : '';
+    });
+    if (esconder) {
+      var pane = porId('tab-cronograma');
+      if (pane && pane.style && pane.style.display !== 'none') {
+        pane.style.display = 'none';
+        try { if (typeof window.trocarAba === 'function') { window.trocarAba('itens'); } } catch (e) { }
+      }
+    }
+    return true;
+  }
+
+  /* ================================================================ *
+   * 4) ligar e manter no lugar
+   * ================================================================ */
+  var pendente = null;
+
+  function passar() {
+    try { faixa(); } catch (e) { }
+    try { cartaoDoPlano(); } catch (e2) { }
+    try { esconderGantt(true); } catch (e3) { }
+  }
+
+  function olhar() {
+    if (pendente) { return; }
+    pendente = setTimeout(function () { pendente = null; passar(); }, 220);
+  }
+
+  window.P137 = {
+    custos: function () { return contas(); },
+    plano: function () { return resumoPlano(); },
+    verTudo: limparFiltrosDeData,
+    mostrarGantt: function () { return esconderGantt(false); },
+    esconderGantt: function () { return esconderGantt(true); },
+    atualizar: passar,
+    conferir: function () {
+      var c = contas();
+      var p = resumoPlano();
+      var d = {
+        lancamentosNoTotal: c.quantosTodos,
+        somaNoTotal: c.somaTodos,
+        lancamentosNoFiltro: c.quantosVistos,
+        somaNoFiltro: c.somaVistos,
+        lancamentosSemData: c.semData.length,
+        filtroDeMes: c.mes || '(vazio)',
+        tarefasNoPlano: p.total,
+        tarefasDePonta: p.pontas,
+        avancoDoPlano: p.avanco,
+        atrasadas: p.atrasadas,
+        semData: p.semData,
+        semPercentual: p.semPct,
+        semCustoPrevisto: p.semCusto,
+        ganttEscondido: !!(porId('btn-tab-cronograma') &&
+          porId('btn-tab-cronograma').getAttribute('data-p137off') === '1')
+      };
+      try { console.log('[P137]', d); } catch (e) { }
+      return d;
+    }
+  };
+
+  function ligar() {
+    passar();
+    try {
+      if (window.MutationObserver && document.body) {
+        var ob = new MutationObserver(function () { olhar(); });
+        ob.observe(document.body, { childList: true, subtree: true });
+        window.__p137Olho = ob;
+      }
+    } catch (e) { }
+    try {
+      document.addEventListener('change', function (ev) {
+        var id = ev && ev.target ? String(ev.target.id || '') : '';
+        if (id.indexOf('custoFilter') === 0) { olhar(); }
+      }, true);
+    } catch (e2) { }
+    try {
+      console.log('[PATCH137] custos visiveis e plano no painel. Use P137.conferir()');
+    } catch (e3) { }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(ligar, 900); });
+  } else {
+    setTimeout(ligar, 900);
+  }
+}());
+</script>
+<!-- FIM PATCH137_CUSTOS_E_PLANO -->
 </body>
 </html>

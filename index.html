@@ -63306,15 +63306,19 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
         conexao: estado.online ? 'ativa' : 'sem conexao',
         somenteConsulta: estado.offline || estado.perfil === 'visitante'
       };
+      try { console.log('P128', r); } catch (e) {}
+      return r;
+    }
+  };
 
-/* ---- PATCH152: helpers para desmarcar trocar_senha localmente (fallback RLS) ---- */
+/* ---- PATCH153: helpers para desmarcar trocar_senha localmente (fallback RLS) ---- */
 window.P128._desmarcarTrocarSenha = function () {
   try {
     var K_SESS = 'painel_seg_sessao_v1';
     var raw = sessionStorage.getItem(K_SESS) || localStorage.getItem(K_SESS);
     if (raw) {
       var s = JSON.parse(raw);
-      if (s) { s.trocar_senha = false; s.p152_ts = Date.now(); }
+      if (s) { s.trocar_senha = false; s.p153_ts = Date.now(); }
       try { sessionStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e) {}
       try { localStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e2) {}
     }
@@ -63322,7 +63326,7 @@ window.P128._desmarcarTrocarSenha = function () {
   try { localStorage.setItem('p152_trocar_ok', '1'); } catch (e4) {}
 };
 
-/* PATCH152: verificar se trocar_senha esta pendente.
+/* PATCH153: verificar se trocar_senha esta pendente.
    Chamado pelo P139 apos destravar a tela de bloqueio. */
 window.P128._trocarPendente = function () {
   try { if (localStorage.getItem('p152_trocar_ok') === '1') { return Promise.resolve(false); } } catch (e) {}
@@ -63341,10 +63345,7 @@ window.P128._trocarPendente = function () {
     });
   }).catch(function () { return false; });
 };
-      try { console.log('P128', r); } catch (e) {}
-      return r;
-    }
-  };
+/* PATCH153_CORRIGE_P152 */
 
   function comecar() {
     iniciar().catch(function () { modoOffline(); });
@@ -64795,6 +64796,8 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
       if (t) { t.classList.remove('on'); }
       if (campo) { campo.value = ''; }
       if (er) { er.textContent = ''; }
+      /* PATCH153: soltar P138 antes de consultar perfil (sb.from pode estar pausado) */
+      try { if (window.P138 && window.P138.soltar) { window.P138.soltar(); } } catch (eS) {}
       /* PATCH152: verificar se trocar_senha pendente apos destravar */
       meuPerfil().then(function (perfil) {
         if (perfil && perfil.trocar_senha === true) {
@@ -69096,7 +69099,8 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     if (s) { s.value = ''; s.disabled = false; }
     var velho = porId('p131Trava');
     if (velho) { velho.classList.remove('on'); velho.style.display = 'none'; }
-    try { if (window.P138 && window.P138.aplicar) { window.P138.aplicar(); } } catch (e) {}
+    try { if (window.P138 && window.P138.soltar) { window.P138.soltar(); } } catch (e1) {} /* PATCH153: soltar antes de aplicar */
+    try { if (window.P138 && window.P138.aplicar) { window.P138.aplicar(); } } catch (e2) {}
     /* PATCH152: apos destravar, verificar se trocar_senha esta pendente.
        Se sim, abrir telaTrocarSenha de forma integrada (nao surpresa). */
     try {

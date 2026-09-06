@@ -263,18 +263,7 @@
    Agora: 1 unico MutationObserver + 1 unico setInterval cuidam de rodar
    todas as varreduras registradas. Cada patch so chama
    window.__varreduraUnica(suaFuncao) em vez de criar timer/observer proprio.
-   O comportamento de cada patch nao muda, so a forma de agendar.
-
-   CONVENCAO PARA PATCHES NOVOS (leia antes de criar um vigia de tela):
-   Se o seu patch precisa ficar de olho na pagina pra reagir quando algo
-   aparece/some ou muda de estilo, NAO crie um novo setInterval nem um
-   novo "new MutationObserver(...).observe(document.body ou
-   document.documentElement, ...)". Em vez disso:
-       window.__varreduraUnica(function () { suaChecagem(); });
-   Sua funcao sera chamada, junto com a de todos os outros patches, a
-   cada ~900ms e sempre que o corpo da pagina mudar (elementos indo e
-   vindo, ou estilo/classe mudando). Ela deve ser rapida e "idempotente"
-   (nao fazer nada se ja estiver tudo certo), porque roda bastante. */
+   O comportamento de cada patch nao muda, so a forma de agendar. */
 (function () {
   'use strict';
   if (window.__varreduraUnica) { return; }
@@ -297,14 +286,7 @@
         pendente = true;
         setTimeout(function () { pendente = false; rodarTodas(); }, 60);
       });
-      mo.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'class'] /* PATCH_VARREDURA_UNICA_OK: ampliado para tambem
-          cobrir vigias de estilo/classe (telas que aparecem via display:flex, temas
-          claro/escuro etc.), que antes precisavam de um MutationObserver proprio */
-      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
     }
   } catch (e) { /* ignora */ }
 
@@ -40476,15 +40458,15 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   }
 
   function vigiar() {
-    /* PATCH_VARREDURA_UNICA_OK: antes tinha um MutationObserver proprio
-       aqui. Agora a checagem entra no agendador unico (ver inicio do
-       arquivo), que ja cobre childList/subtree/estilo/classe. */
-    window.__varreduraUnica(function () {
-      if (travado) { return; }
-      ligar();
-      montarLista();
-      centralizarTelas();
-    });
+    try {
+      var mo = new MutationObserver(function () {
+        if (travado) { return; }
+        ligar();
+        montarLista();
+        centralizarTelas();
+      });
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) {}
   }
 
   function iniciar() {
@@ -40493,6 +40475,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     centralizarTelas();
     montarLista();
     vigiar();
+    setInterval(function () {
+      ligar();
+      montarLista();
+      centralizarTelas();
+    }, 1500);
   }
 
   window.p82AtualizarPainelGeral = atualizarPainel;
@@ -52430,14 +52417,33 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
 
   /* ---------------- ficar de olho nos slides desenhados ---------------- */
   function vigiar() {
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de um
-       MutationObserver + setInterval proprios (mesmo efeito: reaplica
-       a numeracao/formatacao quando uma folha aparece; e barata quando
-       nao ha nenhuma .p94-folha na tela, so um querySelectorAll vazio). */
-    window.__varreduraUnica(function () {
+    var pendente = false;
+    function correr() {
+      pendente = false;
       try { aplicarTudo(); } catch (e) {}
       try { colocarBarra(); } catch (e2) {}
-    });
+    }
+    function pedir() {
+      if (pendente) { return; }
+      pendente = true;
+      setTimeout(correr, 60);
+    }
+    try {
+      var mo = new MutationObserver(function (lst) {
+        var i, j, n;
+        for (i = 0; i < lst.length; i++) {
+          for (j = 0; j < lst[i].addedNodes.length; j++) {
+            n = lst[i].addedNodes[j];
+            if (!n || n.nodeType !== 1) { continue; }
+            if (n.classList && (n.classList.contains('p94-folha') || n.id === 'p94Fundo')) { pedir(); return; }
+            if (n.querySelector && n.querySelector('.p94-folha')) { pedir(); return; }
+          }
+        }
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e3) {}
+    setInterval(correr, 1200);
+    pedir();
   }
 
   /* ---------------- comecar ---------------- */
@@ -53183,11 +53189,14 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       setTimeout(passar, 70);
     }
 
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico; 'passar' guarda seu
-       proprio estado (estavaAberta/pendente) no fechamento acima, entao o
-       comportamento de detectar abrir/fechar continua igual, so muda quem
-       chama a funcao. */
-    window.__varreduraUnica(passar);
+    try {
+      var mo = new MutationObserver(function () { pedir(); });
+      mo.observe(document.body, { childList: true, subtree: true, attributes: true,
+        attributeFilter: ['style', 'class'] });
+    } catch (e3) {}
+
+    setInterval(passar, 900);
+    pedir();
   }
 
   /* ---------------- comecar ---------------- */
@@ -53290,9 +53299,11 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     if (!document.body) { setTimeout(iniciar, 60); return; }
     estilo();
     frente();
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de
-       MutationObserver + setInterval proprios */
-    window.__varreduraUnica(function () { estilo(); frente(); });
+    try {
+      var mo = new MutationObserver(function () { estilo(); frente(); });
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+    setInterval(function () { estilo(); frente(); }, 1500);
   }
 
   if (document.readyState === 'loading') {
@@ -54955,13 +54966,14 @@ html body.p111-com-faixa { padding-top: 22px !important; }
       esperando = true;
       setTimeout(function () { esperando = false; aplicar(); }, 250);
     }
-    /* PATCH_VARREDURA_UNICA_OK: a checagem por DOM/estilo entra no
-       agendador unico; resize/online/offline continuam com o proprio
-       debounce (agendar), que nao tem relacao com o DOM mudando. */
-    window.__varreduraUnica(aplicar);
+    try {
+      var obs = new MutationObserver(agendar);
+      obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    } catch (e) {}
     window.addEventListener('resize', agendar);
     window.addEventListener('online', agendar);
     window.addEventListener('offline', agendar);
+    setInterval(aplicar, 2000);
     void ALTURA;
   }
 
@@ -55551,13 +55563,18 @@ html body.p111-com-faixa { padding-top: 22px !important; }
   /* as opcoes tem que aparecer sempre que a janela do compromisso abrir */
   function vigiarJanela() {
     montarOpcoes();
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de
-       MutationObserver + setInterval proprios; montarOpcoes() ja se
-       protege sozinha (nao faz nada se o modal nao estiver aberto ou
-       se o bloco ja existir), entao rodar pra sempre e barato. */
-    window.__varreduraUnica(function () {
+    var t = setInterval(function () {
       if (document.querySelector('#agModal .ag-form')) { montarOpcoes(); }
-    });
+    }, 1500);
+    try {
+      var obs = new MutationObserver(function () {
+        if (document.querySelector('#agModal .ag-form')) { montarOpcoes(); }
+      });
+      if (document.body) {
+        obs.observe(document.body, { childList: true, subtree: true });
+      }
+    } catch (e) {}
+    setTimeout(function () { clearInterval(t); }, 60000);
   }
 
   /* ---------------- ferramenta manual: avisar um compromisso existente ---------------- */
@@ -56740,9 +56757,12 @@ html body #p116Rotulo { display: none; }
     }
 
     /* a tela do boletim e remontada varias vezes: mantem tudo em ordem */
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de
-       MutationObserver + setInterval proprios */
-    window.__varreduraUnica(function () { ligar(); sincronizar(); });
+    try {
+      var obs = new MutationObserver(function () { ligar(); sincronizar(); });
+      obs.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+
+    setInterval(function () { ligar(); sincronizar(); }, 1200);
   }
 
   if (document.readyState === 'loading') {
@@ -57288,10 +57308,8 @@ html body #p94Fundo .p117-hint {
 
   function iniciar() {
     rodada();
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico (roda a cada
-       ~900ms e reage a mudancas no DOM) em vez do setInterval de
-       1500ms + do MutationObserver proprio de vigiarNovasFolhas() */
-    window.__varreduraUnica(rodada);
+    setInterval(rodada, 1500);
+    vigiarNovasFolhas();
     window.addEventListener('online', verNet);
     window.addEventListener('offline', verNet);
     window.addEventListener('beforeprint', aplicarTudo);
@@ -62497,6 +62515,7 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
       linha('tela inteira', tempos.tela),
       linha('gravacao no navegador', tempos.gravacao),
       '  redesenhos evitados: ' + tempos.juntados].join(NL);
+    console.log(texto);
     return {
       linhaAlterada: tempos.linha,
       tabelaPrincipal: tempos.tabela,
@@ -62518,6 +62537,7 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
       repetidosEntreObras: []
     };
     if (!b || !b.obras) {
+      console.log('PATCH 126 - nao encontrei as obras para conferir.');
       return saida;
     }
     var vistosObra = {};
@@ -62557,9 +62577,13 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
       '  obras com codigo repetido: ' + saida.obrasComCodigoRepetido.length,
       '  itens com codigo repetido na mesma obra: ' + saida.repetidosNaMesmaObra.length,
       '  itens com codigo repetido entre obras: ' + saida.repetidosEntreObras.length].join(NL);
+    console.log(relato);
     if (saida.repetidosNaMesmaObra.length || saida.repetidosEntreObras.length ||
         saida.obrasComCodigoRepetido.length || saida.semCodigo) {
+      console.log('Achei repeticao. Guarde este resultado: o patch 127 (gerador unico de codigos) precisa vir antes.');
+      console.log(saida);
     } else {
+      console.log('Nenhuma repeticao encontrada. O patch 127 pode seguir na ordem normal.');
     }
     return saida;
   };
@@ -62568,6 +62592,7 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
   window.p126AtualizarLinha = atualizarLinha;
   window.p126Indicadores = atualizarIndicadores;
 
+  console.log('[PATCH 126] tabela sem pisca ativa. No Console: p126Tempos() para os tempos, p126Codigos() para conferir codigos repetidos.');
 })();
 </script>
 <!-- FIM PATCH126 -->
@@ -62845,13 +62870,16 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
       resumo.push(linha);
     }
     try {
+      console.log('%c[PATCH 127] conferencia de codigos', 'font-weight:bold');
       if (console.table) { console.table(resumo); } else { console.log(resumo); }
       console.log('marca deste computador: ' + maquina +
                   ' | codigos entregues nesta sessao: ' + entregues +
                   ' | repetidos no total: ' + totalRepetidos +
                   ' | sem codigo no total: ' + totalSemCodigo);
       if (totalRepetidos === 0 && totalSemCodigo === 0) {
+        console.log('%cnenhum problema de codigo. tudo certo.', 'color:green');
       } else {
+        console.log('%crode uma gravacao qualquer (ou clique em salvar) para o patch arrumar o que da.', 'color:orange');
       }
       if (ultimoRelato.length) { console.log('ultimos ajustes feitos nesta sessao:', ultimoRelato); }
     } catch (e) {}
@@ -65102,6 +65130,7 @@ html body #p125Aviso { display: none !important; }
         botoes: c.querySelectorAll('button').length
       };
     });
+    console.log('[P132] caixas abertas: ' + fora.length);
     fora.forEach(function (x) {
       console.log('  - ' + x.marca + ' | clicavel: ' + (x.clicavel ? 'sim' : 'nao') +
                   ' | botoes: ' + x.botoes);
@@ -65913,6 +65942,7 @@ body.dark-mode #p133Quadro button.fraco { color: #dbe6f3; }
 
   function ver() {
     var r = calcular();
+    console.log('[P133] modo: ' + estado.modo + ' | tarefas lidas: ' + r.linhas.length);
     r.linhas.forEach(function (l) {
       console.log('  - ' + l.nome + ' | plano: ' + pct(l.atual) + ' | producao: ' + pct(l.real) +
         ' | ' + l.confianca + (l.mudaria ? ' | mudaria' : ''));
@@ -65944,6 +65974,7 @@ body.dark-mode #p133Quadro button.fraco { color: #dbe6f3; }
       var m = avancoPorLocalizacao(obraAtual()), k, fora = [];
       for (k in m) {
         if (m.hasOwnProperty(k)) {
+          console.log('  - ' + m[k].nome + ': ' + m[k].percentual + '% (' + m[k].pecas + ' peca(s))');
           fora.push({ nome: m[k].nome, percentual: m[k].percentual, pecas: m[k].pecas });
         }
       }
@@ -66388,13 +66419,17 @@ body.dark-mode .p134-solto { background: #111a2e; border-color: rgba(255, 255, 2
   function verResumo() {
     var r = resumo();
     if (!r.temPlano) { console.log('[P134] esta obra nao tem plano.'); return r; }
+    console.log('[P134] obra: ' + r.obra);
+    console.log('  avanco do plano: ' + r.avanco + '% (peso por ' + r.criterio + ')');
     console.log('  tarefas: ' + r.tarefas + ' | prontas: ' + r.concluidas +
                 ' | andando: ' + r.emAndamento + ' | a comecar: ' + r.naoIniciadas);
+    console.log('  atrasadas: ' + r.atrasadas.length + ' | pior atraso: ' + r.piorAtraso + ' dia(s)');
     console.log('  termino previsto: ' + comoData(r.terminoPrevisto) +
                 ' | linha de base: ' + comoData(r.terminoBase) +
                 (r.desvioDias === null ? '' : ' | desvio: ' + r.desvioDias + ' dia(s)'));
     console.log('  proximo marco: ' + (r.proximoMarco ? r.proximoMarco.nome + ' em ' +
                 comoData(r.proximoMarco.quando) : 'nenhum'));
+    console.log('  custo do plano: previsto ' + r.custoPrevisto + ' | real ' + r.custoReal);
     if (r.incompleto) { console.log('  ATENCAO plano incompleto: ' + r.motivos.join(' / ')); }
     return r;
   }
@@ -66402,6 +66437,7 @@ body.dark-mode .p134-solto { background: #111a2e; border-color: rgba(255, 255, 2
   function verFases() {
     var r = resumo();
     r.fases.forEach(function (f) {
+      console.log('  - ' + f.nome + ': ' + f.avanco + '% (' + f.tarefas + ' tarefa(s))');
     });
     return r.fases;
   }
@@ -67202,6 +67238,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
   function verCurva() {
     var r = curva();
     if (!r.temPlano) { console.log('[P135] esta obra nao tem plano.'); return r; }
+    console.log('[P135] curva da obra ' + r.obra + ' (peso por ' + r.criterio + ')');
     r.meses.forEach(function (m) {
       console.log('  ' + m.rotulo + ' | previsto ' + m.previsto + '% | realizado ' +
                   (m.realizado === null ? '-' : m.realizado + '%') + ' | instalacao ' +
@@ -67216,10 +67253,12 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
   function verCustos() {
     var r = custos();
     if (!r.temPlano) { console.log('[P135] esta obra nao tem plano.'); return r; }
+    console.log('[P135] dinheiro da obra ' + r.obra);
     r.meses.forEach(function (m) {
       console.log('  ' + m.rotulo + ' | previsto ' + brl(m.previsto) + ' | lancado ' +
                   brl(m.lancado) + ' | diferenca ' + brl(m.diferenca) + (m.atual ? '  <- mes atual' : ''));
     });
+    console.log('  total: previsto ' + brl(r.previstoTotal) + ' | lancado ' + brl(r.lancadoTotal));
     if (r.semDataNoPlano > 0) { console.log('  ATENCAO custo previsto sem data: ' + brl(r.semDataNoPlano)); }
     if (r.semDataNoLancamento > 0) { console.log('  ATENCAO lancamento sem data: ' + brl(r.semDataNoLancamento)); }
     return r;
@@ -67237,6 +67276,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     passo();
     window.setInterval(passo, 1500);
     try {
+      console.log('[PATCH135] curva de avanco e custo previsto no ar. Use P135.curva(), P135.custos()');
     } catch (e) { }
   }
 
@@ -67514,9 +67554,12 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto2);
+        console.log('[P135B] relatorio copiado. Cole onde precisar.');
         return true;
       }
     } catch (e) { }
+    console.log(texto2);
+    console.log('[P135B] copie o texto acima com o mouse.');
     return false;
   }
 
@@ -67525,6 +67568,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
                    tudo: tudo, copiar: copiar, texto: function () { return linhas.join('\n'); } };
 
   try {
+    console.log('[PATCH135B] raio x pronto. Rode P135B.tudo() e depois P135B.copiar()');
   } catch (e) { }
 }());
 </script>
@@ -67888,10 +67932,15 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
   function ligar() {
     destravar();
     melhorar();
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de
-       MutationObserver proprio; olhar() ja tem seu proprio debounce. */
-    window.__varreduraUnica(olhar);
     try {
+      if (window.MutationObserver && document.body) {
+        var ob = new MutationObserver(function () { olhar(); });
+        ob.observe(document.body, { childList: true, subtree: true });
+        window.__p136Olho = ob;
+      }
+    } catch (e) { }
+    try {
+      console.log('[PATCH136] acesso das pessoas e abas novas liberadas. Use P136.conferir()');
     } catch (e2) { }
   }
 
@@ -68349,9 +68398,13 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 
   function ligar() {
     passar();
-    /* PATCH_VARREDURA_UNICA_OK: usa o agendador unico em vez de
-       MutationObserver proprio; olhar() ja tem seu proprio debounce. */
-    window.__varreduraUnica(olhar);
+    try {
+      if (window.MutationObserver && document.body) {
+        var ob = new MutationObserver(function () { olhar(); });
+        ob.observe(document.body, { childList: true, subtree: true });
+        window.__p137Olho = ob;
+      }
+    } catch (e) { }
     try {
       document.addEventListener('change', function (ev) {
         var id = ev && ev.target ? String(ev.target.id || '') : '';
@@ -68359,6 +68412,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
       }, true);
     } catch (e2) { }
     try {
+      console.log('[PATCH137] custos visiveis e plano no painel. Use P137.conferir()');
     } catch (e3) { }
   }
 
@@ -68685,6 +68739,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
       });
     } catch (e3) { }
     try {
+      console.log('[PATCH138] cracha do servidor ligado ao canal de dados. Use P138.conferir()');
     } catch (e4) { }
   }
 
@@ -69116,6 +69171,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     estado.email = descobrirEmail();
     estado.ultimoToque = Date.now();
     try {
+      console.log('[PATCH139] tela de bloqueio centrada no ar. Use P139.conferir()');
     } catch (e4) { }
   }
 
@@ -69127,5 +69183,783 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 }());
 </script>
 <!-- FIM PATCH139_BLOQUEIO_CENTRADO -->
+
+<!-- INI PATCH140_SIMULADOR_BLOQUEIO -->
+<script>
+/* =====================================================================
+ * PATCH 140 - simulador da tela de bloqueio
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.__p140) { return; }
+  window.__p140 = true;
+
+  var CENARIOS = {
+    'senha-certa': {
+      conta: 'o servidor aceita a senha',
+      senha: 'senha-de-mentira',
+      espera: 'a caixa sai da tela',
+      resposta: function () { return Promise.resolve({ data: { session: {} }, error: null }); }
+    },
+    'senha-errada': {
+      conta: 'o servidor diz que a senha nao confere',
+      senha: 'senha-errada',
+      espera: 'aviso na tela falando da senha e do Caps Lock',
+      resposta: function () {
+        return Promise.resolve({ error: { message: 'Invalid login credentials' } });
+      }
+    },
+    'muitas': {
+      conta: 'muitas tentativas seguidas',
+      senha: 'qualquer',
+      espera: 'pedido para esperar um minuto',
+      resposta: function () {
+        return Promise.resolve({ error: { message: 'Too Many Requests' } });
+      }
+    },
+    'sem-rede': {
+      conta: 'a internet caiu no meio da conferencia',
+      senha: 'qualquer',
+      espera: 'explicacao da internet e botao para voltar sem conferir',
+      resposta: function () { return Promise.reject(new Error('Failed to fetch')); }
+    },
+    'calado': {
+      conta: 'o servidor nao responde nada (leva 16 segundos)',
+      senha: 'qualquer',
+      espera: 'depois de 15 segundos, aviso de que o servidor nao respondeu',
+      resposta: function () { return new Promise(function () { }); }
+    },
+    'sem-senha': {
+      conta: 'clicou em Voltar ao painel com o campo vazio',
+      senha: '',
+      espera: 'pedido para digitar a senha',
+      resposta: function () { return Promise.resolve({ error: { message: 'nao deveria chegar aqui' } }); }
+    }
+  };
+
+  var ORDEM = ['senha-errada', 'muitas', 'sem-rede', 'sem-senha', 'senha-certa', 'calado'];
+
+  function porId(x) { return document.getElementById(x); }
+
+  function cliente() {
+    try { if (typeof _supabase !== 'undefined' && _supabase) { return _supabase; } } catch (e) { }
+    if (window._supabase) { return window._supabase; }
+    if (window.supabaseClient) { return window.supabaseClient; }
+    if (window.supabase && window.supabase.from) { return window.supabase; }
+    return null;
+  }
+
+  var guardado = null;   /* a conferencia de verdade, guardada de lado */
+
+  function fingir(qual) {
+    var sb = cliente();
+    if (!sb || !sb.auth) { return false; }
+    if (!guardado) { guardado = sb.auth.signInWithPassword; }
+    sb.auth.signInWithPassword = function () { return CENARIOS[qual].resposta(); };
+    return true;
+  }
+
+  function devolver() {
+    var sb = cliente();
+    if (sb && sb.auth && guardado) {
+      sb.auth.signInWithPassword = guardado;
+      guardado = null;
+      return true;
+    }
+    return false;
+  }
+
+  function prontoParaSimular() {
+    if (!window.P139 || !window.P139.travar) {
+      try {
+        console.log('%c[P140] A tela de bloqueio nova (patch 139) nao esta aqui. ' +
+                    'Aplique o patch 139 e recarregue com Ctrl+F5.',
+                    'color:#b91c1c;font-weight:700');
+      } catch (e) { }
+      return false;
+    }
+    if (!cliente()) {
+      try {
+        console.log('%c[P140] Nao encontrei a ligacao com o servidor nesta pagina.',
+                    'color:#b91c1c;font-weight:700');
+      } catch (e2) { }
+      return false;
+    }
+    return true;
+  }
+
+  function naTela() {
+    var er = porId('p139Er');
+    return er ? String(er.textContent || '').trim() : '';
+  }
+
+  function travadoAgora() {
+    var t = porId('p139Trava');
+    return !!(t && t.className.indexOf('on') >= 0);
+  }
+
+  function conferindoResultado(qual) {
+    var texto = naTela();
+    var baixo = texto.toLowerCase();
+    var atalho = porId('p139SemRede');
+    var mostraAtalho = !!(atalho && atalho.style.display === 'block');
+    if (qual === 'senha-certa') {
+      return { passou: !travadoAgora(), viu: 'a caixa saiu da tela' };
+    }
+    if (qual === 'senha-errada') {
+      return { passou: travadoAgora() && baixo.indexOf('nao confere') >= 0, viu: texto };
+    }
+    if (qual === 'muitas') {
+      return { passou: travadoAgora() && baixo.indexOf('espere um minuto') >= 0, viu: texto };
+    }
+    if (qual === 'sem-rede') {
+      return { passou: travadoAgora() && baixo.indexOf('internet') >= 0, viu: texto +
+               (mostraAtalho ? '  [+ botao para voltar sem conferir]' : '') };
+    }
+    if (qual === 'calado') {
+      return { passou: travadoAgora() && baixo.indexOf('nao respondeu') >= 0, viu: texto };
+    }
+    if (qual === 'sem-senha') {
+      return { passou: travadoAgora() && baixo.indexOf('digite a senha') >= 0, viu: texto };
+    }
+    return { passou: false, viu: texto };
+  }
+
+  function rodarUm(qual, deixarNaTela) {
+    var c = CENARIOS[qual];
+    if (!c) {
+      try { console.log('[P140] nao conheco a situacao "' + qual + '". Use P140.lista()'); }
+      catch (e) { }
+      return Promise.resolve(null);
+    }
+    if (!prontoParaSimular()) { return Promise.resolve(null); }
+
+    try {
+      console.log('%c[P140] situacao: ' + qual + ' - ' + c.conta,
+                  'color:#1d4ed8;font-weight:700');
+      console.log('        esperado: ' + c.espera);
+      if (qual === 'calado') {
+        console.log('        (esta leva 16 segundos de proposito, aguarde)');
+      }
+    } catch (e2) { }
+
+    fingir(qual);
+    try { window.P139.destravar(); } catch (e3) { }
+    window.P139.travar();
+
+    var campo = porId('p139Senha');
+    if (campo) { campo.value = c.senha; }
+
+    return Promise.resolve(window.P139.tentar()).then(function () {
+      var r = conferindoResultado(qual);
+      try {
+        console.log((r.passou ? '%c        resultado: como esperado' :
+                                '%c        resultado: DIFERENTE do esperado'),
+                    r.passou ? 'color:#15803d;font-weight:700' : 'color:#b91c1c;font-weight:700');
+        console.log('        na tela: ' + (r.viu || '(nada escrito)'));
+      } catch (e4) { }
+      if (!deixarNaTela) {
+        devolver();
+        try { window.P139.destravar(); } catch (e5) { }
+      } else {
+        try {
+          console.log('%c        a caixa ficou na tela para voce olhar. ' +
+                      'Chame P140.parar() quando terminar.', 'color:#b45309');
+        } catch (e6) { }
+      }
+      return { situacao: qual, comoEsperado: r.passou, naTela: r.viu };
+    });
+  }
+
+  function rodarTodos() {
+    if (!prontoParaSimular()) { return Promise.resolve([]); }
+    var resultados = [];
+    try {
+      console.log('%c[P140] simulando a tela de bloqueio (' + ORDEM.length + ' situacoes). ' +
+                  'A senha nao vai para o servidor: as respostas sao de faz-de-conta.',
+                  'color:#0f172a;font-weight:700');
+    } catch (e) { }
+
+    return ORDEM.reduce(function (fila, qual) {
+      return fila.then(function () {
+        return rodarUm(qual, false).then(function (r) {
+          if (r) { resultados.push(r); }
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      devolver();
+      try { window.P139.destravar(); } catch (e2) { }
+      var certas = resultados.filter(function (r) { return r.comoEsperado; }).length;
+      try {
+        if (console.table) { console.table(resultados); }
+        console.log('%c[P140] fim: ' + certas + ' de ' + resultados.length +
+                    ' situacoes se comportaram como esperado. ' +
+                    'A conferencia de verdade ja voltou ao normal.',
+                    certas === resultados.length ?
+                      'color:#15803d;font-weight:700' : 'color:#b45309;font-weight:700');
+      } catch (e3) { }
+      return resultados;
+    });
+  }
+
+  window.P140 = {
+    simular: rodarTodos,
+    cenario: function (qual) { return rodarUm(qual, true); },
+    lista: function () {
+      var nomes = Object.keys(CENARIOS);
+      try {
+        nomes.forEach(function (n) { console.log('  ' + n + '  ->  ' + CENARIOS[n].conta); });
+      } catch (e) { }
+      return nomes;
+    },
+    parar: function () {
+      var voltou = devolver();
+      try { window.P139.destravar(); } catch (e) { }
+      try {
+        console.log('[P140] faz-de-conta desligado. Conferencia de verdade ' +
+                    (voltou ? 'restaurada.' : 'nunca foi trocada.'));
+      } catch (e2) { }
+      return true;
+    },
+    fingindoAgora: function () { return !!guardado; }
+  };
+
+  try {
+    console.log('[PATCH140] simulador pronto. Use P140.simular() ou P140.lista()');
+  } catch (e) { }
+}());
+</script>
+<!-- FIM PATCH140_SIMULADOR_BLOQUEIO -->
+
+<!-- INI PATCH141_CAIXAS_EM_ORDEM -->
+<style id="p141Estilo">
+#p141Saida {
+  position: fixed !important; top: 10px; right: 12px;
+  z-index: 2147483420 !important; display: none;
+  border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  background: rgba(15, 23, 42, .92); color: #fff;
+  font: 600 12px Segoe UI, Arial, sans-serif;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+}
+#p141Saida.on { display: block; }
+#p141Saida:hover { background: #b91c1c; }
+@media print { #p141Saida { display: none !important; } }
+</style>
+
+<script>
+/* =====================================================================
+ * PATCH 141 - gerente das caixas de dialogo
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.__p141) { return; }
+  window.__p141 = true;
+
+  /* alturas reservadas: nada da fila passa daqui */
+  var BASE = 2147483100;    /* primeira caixa da fila */
+  var PASSO = 2;
+  var TETO = 2147483380;    /* abaixo da faixa de aviso e da tela de bloqueio */
+
+  /* quem nunca entra na fila: avisos, barras, tela de bloqueio, dicas */
+  var FORA = /aviso|toast|barra|status|dica|faixa|p139trava|p131trava|p138faixa|p141saida|tooltip|snack/i;
+  var CARA_DE_CAIXA = /modal|overlay|popup|janela|caixa|dialog|drawer|menu|fundo|backdrop/i;
+
+  var ordem = [];           /* ids/elementos na ordem de abertura */
+  var conhecidas = [];      /* tudo que ja identifiquei como caixa */
+  var original = {};        /* altura original, para devolver depois */
+  var contaFechamentos = 0;
+
+  function pos(el) {
+    try { return window.getComputedStyle(el); } catch (e) { return null; }
+  }
+
+  function visivel(el) {
+    if (!el || !el.getBoundingClientRect) { return false; }
+    var s = pos(el);
+    if (!s) { return false; }
+    if (s.display === 'none' || s.visibility === 'hidden') { return false; }
+    if (Number(s.opacity || 1) < 0.05) { return false; }
+    var r = el.getBoundingClientRect();
+    return r.width > 30 && r.height > 20;
+  }
+
+  function marca(el) {
+    return (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
+  }
+
+  function ehCaixa(el) {
+    if (!el || el.nodeType !== 1) { return false; }
+    if (el === document.body || el === document.documentElement) { return false; }
+    var m = marca(el);
+    if (FORA.test(m)) { return false; }
+    var s = pos(el);
+    if (!s) { return false; }
+    if (s.position !== 'fixed' && s.position !== 'absolute') { return false; }
+    var z = parseInt(s.zIndex, 10);
+    if (isNaN(z) || z < 50) { return false; }
+    if (el.getAttribute && el.getAttribute('role') === 'dialog') { return true; }
+    if (CARA_DE_CAIXA.test(m)) { return true; }
+    /* fundo escuro que cobre a tela tambem conta */
+    var r = el.getBoundingClientRect();
+    var area = (r.width * r.height) / (window.innerWidth * window.innerHeight || 1);
+    return area > 0.5;
+  }
+
+  function todasAsCaixas() {
+    var achadas = [];
+    var todos = document.querySelectorAll('div,section,aside,nav,form,dialog');
+    var i;
+    for (i = 0; i < todos.length; i++) {
+      if (ehCaixa(todos[i])) { achadas.push(todos[i]); }
+    }
+    /* guarda a lista geral para a varredura */
+    achadas.forEach(function (el) {
+      if (conhecidas.indexOf(el) < 0) { conhecidas.push(el); }
+    });
+    return achadas;
+  }
+
+  function abertas() {
+    return todasAsCaixas().filter(visivel);
+  }
+
+  function botaoDeFechar(el) {
+    var b = el.querySelectorAll('button,a,[role="button"],span.fechar,.close,.fechar');
+    var i, t, achou = null;
+    for (i = 0; i < b.length; i++) {
+      t = (b[i].textContent || '').trim().toLowerCase();
+      if (t === '\u00d7' || t === 'x' || t === 'fechar' || t === 'cancelar' ||
+          t === 'voltar' || t === 'sair' || /^fechar\b/.test(t) || /^cancelar\b/.test(t) ||
+          (b[i].className && /close|fechar/i.test(String(b[i].className)))) {
+        if (visivel(b[i]) && !b[i].disabled) { achou = achou || b[i]; }
+      }
+    }
+    return achou;
+  }
+
+  /* ================================================================ *
+   * 1) por em fila: a ultima aberta fica por cima
+   * ================================================================ */
+  function guardarAltura(el) {
+    var id = el.id || '';
+    if (!id) {
+      id = 'p141_' + Math.random().toString(36).slice(2, 8);
+      el.id = id;
+    }
+    if (!(id in original)) {
+      original[id] = (el.style.zIndex || '') + '';
+    }
+    return id;
+  }
+
+  function organizar() {
+    var lista = abertas();
+    /* quem abriu antes continua antes; quem e novo vai para o fim */
+    lista.forEach(function (el) {
+      if (ordem.indexOf(el) < 0) { ordem.push(el); }
+    });
+    ordem = ordem.filter(function (el) {
+      return el && el.parentNode && lista.indexOf(el) >= 0;
+    });
+    var i, z;
+    for (i = 0; i < ordem.length; i++) {
+      guardarAltura(ordem[i]);
+      z = BASE + i * PASSO;
+      if (z > TETO) { z = TETO; }
+      try { ordem[i].style.setProperty('z-index', String(z), 'important'); } catch (e) { }
+    }
+    botaoSaida(ordem.length > 0);
+    return ordem.length;
+  }
+
+  function topo() {
+    organizar();
+    return ordem.length ? ordem[ordem.length - 1] : null;
+  }
+
+  /* ================================================================ *
+   * 2) fechar de verdade
+   * ================================================================ */
+  function esconder(el) {
+    var id = el.id || '';
+    ['on', 'ativo', 'aberto', 'show', 'shown', 'visible', 'visivel', 'open']
+      .forEach(function (c) {
+        try { el.classList.remove(c); } catch (e) { }
+      });
+    try { el.style.setProperty('display', 'none', 'important'); } catch (e2) { }
+    try { el.setAttribute('aria-hidden', 'true'); } catch (e3) { }
+    if (id in original) {
+      try {
+        if (original[id]) { el.style.zIndex = original[id]; } else { el.style.zIndex = ''; }
+      } catch (e4) { }
+    }
+  }
+
+  function soltarRolagem() {
+    try {
+      if (!abertas().length) {
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        document.body.style.paddingRight = document.body.style.paddingRight || '';
+      }
+    } catch (e) { }
+  }
+
+  function fechar(el) {
+    if (!el) { return false; }
+    contaFechamentos = contaFechamentos + 1;
+    var b = botaoDeFechar(el);
+    if (b) {
+      try { b.click(); } catch (e) { }
+      /* se a caixa insistir em ficar, esconde na forca */
+      setTimeout(function () {
+        if (visivel(el)) { esconder(el); }
+        var i = ordem.indexOf(el);
+        if (i >= 0 && !visivel(el)) { ordem.splice(i, 1); }
+        organizar();
+        soltarRolagem();
+      }, 260);
+    } else {
+      esconder(el);
+      var j = ordem.indexOf(el);
+      if (j >= 0) { ordem.splice(j, 1); }
+      organizar();
+      soltarRolagem();
+    }
+    return true;
+  }
+
+  function fecharTopo() {
+    var el = topo();
+    if (!el) { return false; }
+    return fechar(el);
+  }
+
+  function fecharTudo() {
+    var lista = abertas().slice().reverse();
+    lista.forEach(function (el) { esconder(el); });
+    ordem = [];
+    organizar();
+    soltarRolagem();
+    return lista.length;
+  }
+
+  /* ================================================================ *
+   * 3) fundos abandonados (os que travam o clique)
+   * ================================================================ */
+  function zumbis(remover) {
+    var suspeitos = [];
+    abertas().forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      var area = (r.width * r.height) / (window.innerWidth * window.innerHeight || 1);
+      if (area < 0.55) { return; }
+      /* tem algum conteudo visivel dentro? */
+      var filhos = el.children || [];
+      var i, temConteudo = false;
+      for (i = 0; i < filhos.length; i++) {
+        if (visivel(filhos[i])) { temConteudo = true; break; }
+      }
+      var texto = (el.textContent || '').trim();
+      if (!temConteudo && texto.length < 3) {
+        suspeitos.push(el.id || '(sem nome)');
+        if (remover) {
+          esconder(el);
+          var j = ordem.indexOf(el);
+          if (j >= 0) { ordem.splice(j, 1); }
+        }
+      }
+    });
+    if (remover) {
+      organizar();
+      soltarRolagem();
+    }
+    return suspeitos;
+  }
+
+  /* ================================================================ *
+   * 4) botao de emergencia + Esc + clique no fundo
+   * ================================================================ */
+  function botaoSaida(mostrar) {
+    var b = document.getElementById('p141Saida');
+    if (!b) {
+      b = document.createElement('button');
+      b.id = 'p141Saida';
+      b.type = 'button';
+      b.textContent = 'Fechar caixa (Esc)';
+      b.title = 'Fecha a caixa que esta por cima';
+      document.body.appendChild(b);
+      b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        fecharTopo();
+      });
+    }
+    if (mostrar) { b.classList.add('on'); } else { b.classList.remove('on'); }
+  }
+
+  function digitando(alvo) {
+    if (!alvo) { return false; }
+    var t = (alvo.tagName || '').toLowerCase();
+    if (t === 'input' || t === 'textarea' || t === 'select') { return true; }
+    return !!(alvo.isContentEditable);
+  }
+
+  function ligarTeclado() {
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape' && ev.keyCode !== 27) { return; }
+      /* a tela de bloqueio manda: Esc nao mexe com ela */
+      var trava = document.getElementById('p139Trava');
+      if (trava && trava.className.indexOf('on') >= 0) { return; }
+      if (!ordem.length && !abertas().length) { return; }
+      if (digitando(ev.target)) {
+        /* deixa o campo em paz, mas Esc no campo tambem fecha a caixa:
+           primeiro tira o foco, depois fecha */
+        try { ev.target.blur(); } catch (e) { }
+      }
+      ev.preventDefault();
+      ev.stopPropagation();
+      fecharTopo();
+    }, true);
+  }
+
+  function ligarCliqueNoFundo() {
+    document.addEventListener('mousedown', function (ev) {
+      var el = topo();
+      if (!el) { return; }
+      if (ev.target !== el) { return; }        /* clicou dentro da caixa: nao mexe */
+      var r = el.getBoundingClientRect();
+      var area = (r.width * r.height) / (window.innerWidth * window.innerHeight || 1);
+      if (area < 0.5) { return; }              /* menus pequenos: nao contam como fundo */
+      fechar(el);
+    }, true);
+  }
+
+  /* ================================================================ *
+   * 5) varredura e ferramentas do console
+   * ================================================================ */
+  function varredura() {
+    var lista = todasAsCaixas();
+    var linhas = lista.map(function (el) {
+      var s = pos(el) || {};
+      var r = el.getBoundingClientRect();
+      return {
+        caixa: el.id || ('(sem nome) ' + (el.className || '').toString().slice(0, 22)),
+        abertaAgora: visivel(el),
+        alturaOriginal: (el.id in original) ? (original[el.id] || '(do estilo)') : s.zIndex,
+        alturaAgora: s.zIndex,
+        temBotaoFechar: !!botaoDeFechar(el),
+        cobreATela: Math.round(100 * (r.width * r.height) /
+                    (window.innerWidth * window.innerHeight || 1)) + '%',
+        fechaComEsc: true
+      };
+    });
+    var zs = {};
+    linhas.forEach(function (l) { zs[l.alturaAgora] = true; });
+    try {
+      console.log('%c[P141] varredura das caixas do painel', 'color:#0f172a;font-weight:700');
+      if (console.table) { console.table(linhas); }
+      console.log('  caixas encontradas: ' + linhas.length +
+                  ' | abertas agora: ' + linhas.filter(function (l) { return l.abertaAgora; }).length +
+                  ' | sem botao de fechar proprio: ' +
+                  linhas.filter(function (l) { return !l.temBotaoFechar; }).length);
+      console.log('  todas fecham com Esc, com clique no fundo e com o botao ' +
+                  '"Fechar caixa (Esc)" no alto da tela.');
+      var z = zumbis(false);
+      console.log('  fundos abandonados agora: ' + (z.length ? z.join(', ') : 'nenhum'));
+    } catch (e) { }
+    return linhas;
+  }
+
+  window.P141 = {
+    varredura: varredura,
+    listar: function () {
+      organizar();
+      var linhas = ordem.slice().reverse().map(function (el, i) {
+        return {
+          posicao: (i === 0 ? 'em cima' : 'abaixo ' + i),
+          caixa: el.id || '(sem nome)',
+          altura: (pos(el) || {}).zIndex,
+          temBotaoFechar: !!botaoDeFechar(el)
+        };
+      });
+      try {
+        if (console.table) { console.table(linhas); }
+        console.log('[P141] caixas abertas: ' + linhas.length);
+      } catch (e) { }
+      return linhas;
+    },
+    fecharTopo: fecharTopo,
+    fecharTudo: fecharTudo,
+    zumbis: function () {
+      var z = zumbis(true);
+      try {
+        console.log('[P141] fundos abandonados retirados: ' + (z.length ? z.join(', ') : 'nenhum'));
+      } catch (e) { }
+      return z;
+    },
+    organizar: organizar,
+    quantasFechei: function () { return contaFechamentos; }
+  };
+
+  function ligar() {
+    ligarTeclado();
+    ligarCliqueNoFundo();
+    organizar();
+    try {
+      var observador = new MutationObserver(function () {
+        clearTimeout(window.__p141t);
+        window.__p141t = setTimeout(function () {
+          organizar();
+          zumbis(true);
+        }, 120);
+      });
+      observador.observe(document.body, {
+        attributes: true, attributeFilter: ['style', 'class', 'hidden'],
+        childList: true, subtree: true
+      });
+    } catch (e) { }
+    try { setInterval(function () { organizar(); }, 3000); } catch (e2) { }
+    try {
+      console.log('[PATCH141] caixas em ordem. Use P141.varredura() para ver o mapa.');
+    } catch (e3) { }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(ligar, 400); });
+  } else {
+    setTimeout(ligar, 400);
+  }
+}());
+</script>
+<!-- FIM PATCH141_CAIXAS_EM_ORDEM -->
+
+<!-- INI PATCH142_ESC_LIBERADO -->
+<script>
+/* =====================================================================
+ * PATCH 142 - o Esc volta a funcionar pelo caminho do "soltar a tecla"
+ *
+ * Motivo: um vigia antigo (editor de fotos dos slides) fica na janela,
+ * no primeiro nivel, e consome todo Esc enquanto existir qualquer texto
+ * editavel na pagina - e o titulo do relatorio e sempre editavel.
+ * Como o "soltar a tecla" nao passa por aquele vigia, usamos esse
+ * caminho para fechar a caixa de cima.
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.P142) { return; }
+
+  var contagemAnterior = 0;   /* quantos fechamentos o patch 141 ja fez */
+  var vezesReserva = 0;       /* quantas vezes este caminho precisou agir */
+  var escNormalFunciona = false;
+
+  /* texto rico sendo editado de verdade (titulo do relatorio, texto de
+     slide): o Esc e do texto, nao da caixa */
+  function editandoTexto() {
+    var a = document.activeElement;
+    return !!(a && a.isContentEditable);
+  }
+
+  /* campo comum (caixa de digitacao, lista de escolha): o Esc pode
+     fechar a caixa, mas primeiro tiramos o cursor do campo */
+  function emCampo() {
+    var a = document.activeElement;
+    if (!a) { return false; }
+    var t = (a.tagName || '').toLowerCase();
+    return (t === 'input' || t === 'textarea' || t === 'select');
+  }
+
+  function travaLigada() {
+    var t = document.getElementById('p139Trava');
+    return !!(t && String(t.className || '').indexOf('on') >= 0);
+  }
+
+  function contagem() {
+    if (window.P141 && typeof window.P141.quantasFechei === 'function') {
+      try { return window.P141.quantasFechei(); } catch (e) { return contagemAnterior; }
+    }
+    return contagemAnterior;
+  }
+
+  function fecharDeCima() {
+    if (window.P141 && typeof window.P141.fecharTopo === 'function') {
+      try { return window.P141.fecharTopo(); } catch (e) { return false; }
+    }
+    return false;
+  }
+
+  /* ================================================================ *
+   * o caminho de reserva: soltar o Esc
+   * ================================================================ */
+  window.addEventListener('keyup', function (ev) {
+    if (ev.key !== 'Escape' && ev.keyCode !== 27) { return; }
+
+    /* a tela de bloqueio manda: nao mexemos em nada */
+    if (travaLigada()) { return; }
+
+    /* voce esta editando um texto: o Esc e do texto, nao da caixa */
+    if (editandoTexto()) { contagemAnterior = contagem(); return; }
+
+    /* cursor dentro de um campo: sai do campo e segue fechando a caixa */
+    if (emCampo()) {
+      try { document.activeElement.blur(); } catch (e) { }
+    }
+
+    /* se o Esc normal ja fechou algo, nao fechamos de novo */
+    var agora = contagem();
+    if (agora > contagemAnterior) {
+      escNormalFunciona = true;
+      contagemAnterior = agora;
+      return;
+    }
+
+    if (fecharDeCima()) { vezesReserva = vezesReserva + 1; }
+    contagemAnterior = contagem();
+  }, true);
+
+  /* ================================================================ *
+   * diagnostico no console
+   * ================================================================ */
+  window.P142 = {
+    estado: function () {
+      var eds = document.querySelectorAll('[contenteditable="true"]');
+      var quem = [];
+      var i;
+      for (i = 0; i < eds.length; i++) {
+        quem.push(eds[i].id || eds[i].tagName.toLowerCase());
+      }
+      var r = {
+        gerenteDeCaixas: !!window.P141,
+        textosEditaveisNaPagina: quem,
+        escNormalChegou: escNormalFunciona,
+        vezesQueOReservaAgiu: vezesReserva,
+        editandoTextoAgora: editandoTexto(),
+        cursorEmCampo: emCampo()
+      };
+      try {
+        console.log('[PATCH142] textos editaveis que fazem o vigia antigo engolir o Esc: ' +
+                    (quem.length ? quem.join(', ') : 'nenhum'));
+        console.log('[PATCH142] o caminho de reserva ja fechou caixa ' + vezesReserva + ' vez(es).');
+      } catch (e) { }
+      return r;
+    },
+    fecharTopo: function () { return fecharDeCima(); }
+  };
+
+  /* comeco: guardo a contagem atual do patch 141, senao o primeiro Esc
+     seria confundido com um fechamento que ja tinha acontecido antes */
+  function comecar() {
+    contagemAnterior = contagem();
+    try {
+      console.log('[PATCH142] Esc liberado pelo caminho do soltar a tecla. Use P142.estado().');
+    } catch (e2) { }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(comecar, 900); });
+  } else {
+    setTimeout(comecar, 900);
+  }
+}());
+</script>
+<!-- FIM PATCH142_ESC_LIBERADO -->
 </body>
 </html>

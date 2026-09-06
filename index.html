@@ -41563,7 +41563,18 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.pr-ass{margin-top:20px;text-align:center;font-size:9pt}' +
       '</style>';
     janelaImpressao.document.open();
-    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Diário de Obra</title>' + cssImpressao + '</head><body>' + h + '</body></html>');
+    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Diário de Obra</title>' + cssImpressao + '</head><body>' + h + '
+<!-- PATCH152_AUTH_FIX -->
+<script>
+(function () {
+  'use strict';
+  if (window.__p152) { return; }
+  window.__p152 = true;
+  try { console.log('[PATCH152] Correcoes de autenticacao aplicadas (trocarSenha RLS + bloqueio integrado).'); } catch (e) {}
+})();
+</script>
+
+</body></html>');
     janelaImpressao.document.close();
     var imprimirJanela = function () {
       try { janelaImpressao.focus(); janelaImpressao.print(); } catch (erro) {}
@@ -63102,9 +63113,28 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
     var r = await sb.auth.updateUser({ password: String(nova || '') });
     if (r.error) { throw new Error(r.error.message || 'Nao consegui trocar a senha.'); }
     var id = r.data && r.data.user ? r.data.user.id : estado.id;
+    var perfilOk = false;
     if (id) {
-      try { await sb.from('painel_perfis').update({ trocar_senha: false }).eq('id', id); } catch (e) {}
+      try {
+        var ru = await sb.from('painel_perfis').update({ trocar_senha: false }).eq('id', id);
+        if (ru && ru.error) {
+          /* RLS bloqueou — senha ja foi trocada no auth, desmarcar localmente */
+          try { console.warn('[PATCH152] RLS bloqueou update painel_perfis.trocar_senha: ' + (ru.error.message || '')); } catch (e4) {}
+        } else {
+          perfilOk = true;
+        }
+      } catch (e) {
+        /* erro de rede ou RLS — senha ja foi trocada no auth */
+        try { console.warn('[PATCH152] Falha ao desmarcar trocar_senha no banco: ' + (e.message || '')); } catch (e5) {}
+      }
     }
+    /* PATCH152: fallback local — desmarcar trocar_senha no estado e localStorage
+       para evitar que a tela apareça de novo na proxima vez */
+    try {
+      if (window.P128 && typeof window.P128._desmarcarTrocarSenha === 'function') {
+        window.P128._desmarcarTrocarSenha();
+      }
+    } catch (e2) {}
     return true;
   }
 
@@ -63165,8 +63195,12 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
       er.textContent = '';
       trocarSenha(a).then(function () {
         dados.trocar_senha = false;
+        /* PATCH152: sempre liberar o painel apos trocar a senha com sucesso.
+           Mesmo que o update de painel_perfis tenha falhado (RLS),
+           a senha JA foi trocada no auth — nao travar o usuario. */
         liberarPainel(dados);
       }).catch(function (erro) {
+        /* so mostrar erro se a senha NAO foi trocada (auth falhou) */
         er.textContent = (erro && erro.message) ? erro.message : 'Nao consegui trocar a senha.';
         bt.disabled = false;
         bt.textContent = 'Salvar e entrar';
@@ -63186,6 +63220,8 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
   function depoisDeEntrar(dados, id) {
     estado.id = id || dados.id || null;
     dados.id = estado.id;
+    /* PATCH152: limpar flag local — login novo pode ter trocar_senha real */
+    try { localStorage.removeItem('p152_trocar_ok'); } catch (e) {}
     if (dados.trocar_senha) { telaTrocarSenha(dados); return; }
     liberarPainel(dados);
   }
@@ -63270,6 +63306,41 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
         conexao: estado.online ? 'ativa' : 'sem conexao',
         somenteConsulta: estado.offline || estado.perfil === 'visitante'
       };
+
+/* ---- PATCH152: helpers para desmarcar trocar_senha localmente (fallback RLS) ---- */
+window.P128._desmarcarTrocarSenha = function () {
+  try {
+    var K_SESS = 'painel_seg_sessao_v1';
+    var raw = sessionStorage.getItem(K_SESS) || localStorage.getItem(K_SESS);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (s) { s.trocar_senha = false; s.p152_ts = Date.now(); }
+      try { sessionStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e) {}
+      try { localStorage.setItem(K_SESS, JSON.stringify(s)); } catch (e2) {}
+    }
+  } catch (e3) {}
+  try { localStorage.setItem('p152_trocar_ok', '1'); } catch (e4) {}
+};
+
+/* PATCH152: verificar se trocar_senha esta pendente.
+   Chamado pelo P139 apos destravar a tela de bloqueio. */
+window.P128._trocarPendente = function () {
+  try { if (localStorage.getItem('p152_trocar_ok') === '1') { return Promise.resolve(false); } } catch (e) {}
+  var sb = cliente();
+  if (!sb || !sb.auth || typeof sb.auth.getUser !== 'function') { return Promise.resolve(false); }
+  return sb.auth.getUser().then(function (r) {
+    var u = r && r.data ? r.data.user : null;
+    if (!u) { return false; }
+    return sb.from('painel_perfis').select('trocar_senha').eq('id', u.id).limit(1).then(function (r2) {
+      var linha = (r2 && r2.data && r2.data.length) ? r2.data[0] : null;
+      if (linha && linha.trocar_senha === true) {
+        return { id: u.id, email: u.email, nome: '', perfil: linha.perfil || 'visitante',
+                 ativo: linha.ativo !== false, trocar_senha: true };
+      }
+      return false;
+    });
+  }).catch(function () { return false; });
+};
       try { console.log('P128', r); } catch (e) {}
       return r;
     }
@@ -64724,7 +64795,23 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
       if (t) { t.classList.remove('on'); }
       if (campo) { campo.value = ''; }
       if (er) { er.textContent = ''; }
-      meuPerfil();
+      /* PATCH152: verificar se trocar_senha pendente apos destravar */
+      meuPerfil().then(function (perfil) {
+        if (perfil && perfil.trocar_senha === true) {
+          try {
+            var dadosTS = {
+              id: perfil.id || estado.id,
+              email: perfil.email || estado.email,
+              nome: perfil.nome || '',
+              perfil: perfil.perfil || 'visitante',
+              trocar_senha: true
+            };
+            if (typeof telaTrocarSenha === 'function') {
+              telaTrocarSenha(dadosTS);
+            }
+          } catch (e2) {}
+        }
+      });
     }).catch(function () {
       if (er) {
         er.textContent = 'Nao consegui conferir a senha agora. Tente de novo com internet.';
@@ -69009,7 +69096,33 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     if (s) { s.value = ''; s.disabled = false; }
     var velho = porId('p131Trava');
     if (velho) { velho.classList.remove('on'); velho.style.display = 'none'; }
-    try { if (window.P138 && window.P138.aplicar) { window.P138.aplicar(); } } catch (e) { }
+    try { if (window.P138 && window.P138.aplicar) { window.P138.aplicar(); } } catch (e) {}
+    /* PATCH152: apos destravar, verificar se trocar_senha esta pendente.
+       Se sim, abrir telaTrocarSenha de forma integrada (nao surpresa). */
+    try {
+      if (window.P128 && typeof window.P128._trocarPendente === 'function') {
+        window.P128._trocarPendente().then(function (dados) {
+          if (dados && dados.trocar_senha === true) {
+            var sb2 = cliente();
+            if (sb2) {
+              sb2.from('painel_perfis').select('*').eq('id', dados.id).limit(1).then(function (r) {
+                var linha = (r && r.data && r.data.length) ? r.data[0] : null;
+                if (linha) {
+                  dados.nome = linha.nome || '';
+                  dados.email = linha.email || dados.email;
+                  dados.perfil = linha.perfil || dados.perfil;
+                }
+                try { if (typeof telaTrocarSenha === 'function') { telaTrocarSenha(dados); } } catch (e2) {}
+              }).catch(function () {
+                try { if (typeof telaTrocarSenha === 'function') { telaTrocarSenha(dados); } } catch (e3) {}
+              });
+            } else {
+              try { if (typeof telaTrocarSenha === 'function') { telaTrocarSenha(dados); } } catch (e4) {}
+            }
+          }
+        }).catch(function () { /* silencioso — nao impedir destravar */ });
+      }
+    } catch (e5) { /* nao impedir destravar por causa disto */ }
   }
 
   /* ================================================================ *

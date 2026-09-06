@@ -69961,5 +69961,1284 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 }());
 </script>
 <!-- FIM PATCH142_ESC_LIBERADO -->
+
+<!-- INI PATCH143_IMPORTAR_CTM -->
+<script>
+/* =====================================================================
+ * PATCH 143 - importacao da lista CTM que cria, atualiza e explica
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.P143) { return; }
+
+  var relatorio = null;
+
+  /* ---------- ajudas simples ---------- */
+  function obraAtual() {
+    try { return (typeof getObraAtual === 'function') ? getObraAtual() : null; } catch (e) { return null; }
+  }
+  function chave(v) { return String(v === null || v === undefined ? '' : v).trim().toUpperCase(); }
+  function texto(v) { return String(v === null || v === undefined ? '' : v).trim(); }
+  function inteiro(v) {
+    var s = String(v === null || v === undefined ? '' : v).replace(/[^0-9-]/g, '');
+    var n = parseInt(s, 10);
+    return isFinite(n) ? n : 0;
+  }
+
+  /* nomes aceitos para cada coluna */
+  var COLUNAS = {
+    ref: ['Ref', 'ref', 'REF', 'Referencia', 'Referência', 'REFERENCIA'],
+    type: ['Tipo', 'tipo', 'Tipologia', 'TIPO'],
+    L: ['L(mm)', 'L', 'l', 'Largura', 'LARGURA'],
+    H: ['H(mm)', 'H', 'h', 'Altura', 'ALTURA'],
+    qty: ['Qtd', 'qtd', 'qty', 'Quantidade', 'Qtde', 'QTD'],
+    lados: ['Lados', 'lados', 'Estrutura', 'LADOS'],
+    modelo: ['Modelo', 'modelo', 'Perfil', 'ctmProfile', 'MODELO']
+  };
+
+  /* devolve o valor da coluna, ou undefined se a coluna nao existe na linha */
+  function coluna(linha, quais) {
+    var i, nome;
+    for (i = 0; i < quais.length; i++) {
+      nome = quais[i];
+      if (Object.prototype.hasOwnProperty.call(linha, nome)) {
+        if (texto(linha[nome]) !== '') { return linha[nome]; }
+      }
+    }
+    return undefined;
+  }
+
+  /* escolhe a aba: a primeira que tiver coluna de referencia */
+  function escolherAba(workbook) {
+    var nomes = workbook.SheetNames || [];
+    var i, linhas;
+    for (i = 0; i < nomes.length; i++) {
+      try {
+        linhas = XLSX.utils.sheet_to_json(workbook.Sheets[nomes[i]]);
+      } catch (e) { linhas = []; }
+      if (linhas.length && coluna(linhas[0], COLUNAS.ref) !== undefined) {
+        return { nome: nomes[i], linhas: linhas };
+      }
+    }
+    return { nome: nomes.length ? nomes[0] : '', linhas: [] };
+  }
+
+  /* ---------- monta o retrato do que ja existe ---------- */
+  function retrato(obra) {
+    var daLista = {};   /* referencia -> peca da lista de itens da obra */
+    var extras = {};    /* referencia -> peca que veio de importacao */
+    (obra.itens || []).forEach(function (it) {
+      var k = chave(it.ref);
+      if (!k) { return; }
+      if (!daLista[k]) {
+        daLista[k] = {
+          ref: it.ref,
+          L: Math.round((it.larg || 0) * 1000),
+          H: Math.round((it.alt || 0) * 1000),
+          qty: it.qtd || 0
+        };
+      } else {
+        daLista[k].qty += (it.qtd || 0);
+      }
+    });
+    (obra.ctmExtraSpecs || []).forEach(function (es) {
+      var k = chave(es.ref);
+      if (k && !daLista[k]) { extras[k] = es; }
+    });
+    return { daLista: daLista, extras: extras };
+  }
+
+  /* ---------- le a planilha e decide o que fazer com cada linha ---------- */
+  function analisar(linhas, obra) {
+    var foto = retrato(obra);
+    var r = {
+      linhas: linhas.length,
+      novas: [],
+      atualizadas: [],
+      iguais: [],
+      daListaDeItens: [],
+      repetidas: [],
+      semRef: 0,
+      vistas: {}
+    };
+
+    linhas.forEach(function (linha, i) {
+      var bruto = coluna(linha, COLUNAS.ref);
+      var ref = texto(bruto);
+      var k = chave(bruto);
+      if (!k) { r.semRef++; return; }
+      if (r.vistas[k]) { r.repetidas.push(ref); return; }
+      r.vistas[k] = true;
+
+      var vL = coluna(linha, COLUNAS.L);
+      var vH = coluna(linha, COLUNAS.H);
+      var vQ = coluna(linha, COLUNAS.qty);
+      var vT = coluna(linha, COLUNAS.type);
+      var vLados = coluna(linha, COLUNAS.lados);
+      var vModelo = coluna(linha, COLUNAS.modelo);
+
+      /* peca que vem da lista de itens da obra: nao mexemos */
+      if (foto.daLista[k]) {
+        var atual = foto.daLista[k];
+        var difs = [];
+        if (vL !== undefined && inteiro(vL) !== atual.L) { difs.push('L ' + atual.L + ' -> ' + inteiro(vL)); }
+        if (vH !== undefined && inteiro(vH) !== atual.H) { difs.push('H ' + atual.H + ' -> ' + inteiro(vH)); }
+        if (vQ !== undefined && inteiro(vQ) !== atual.qty) { difs.push('Qtd ' + atual.qty + ' -> ' + inteiro(vQ)); }
+        r.daListaDeItens.push({ ref: ref, diferencas: difs });
+        return;
+      }
+
+      /* peca que veio de importacao: pode ser atualizada */
+      if (foto.extras[k]) {
+        var alvo = foto.extras[k];
+        var mudancas = [];
+        var novo = {};
+        if (vT !== undefined && texto(vT) !== texto(alvo.type)) { novo.type = texto(vT); mudancas.push('Tipo'); }
+        if (vL !== undefined && inteiro(vL) !== (alvo.L || 0)) { novo.L = inteiro(vL); mudancas.push('L ' + (alvo.L || 0) + ' -> ' + inteiro(vL)); }
+        if (vH !== undefined && inteiro(vH) !== (alvo.H || 0)) { novo.H = inteiro(vH); mudancas.push('H ' + (alvo.H || 0) + ' -> ' + inteiro(vH)); }
+        if (vQ !== undefined && inteiro(vQ) !== (alvo.qty || 0)) { novo.qty = inteiro(vQ); mudancas.push('Qtd ' + (alvo.qty || 0) + ' -> ' + inteiro(vQ)); }
+        if (vLados !== undefined) {
+          var temFundo = texto(vLados) === '3' ? false : true;
+          var antes = (alvo.hasBottom === undefined) ? true : !!alvo.hasBottom;
+          if (temFundo !== antes) { novo.hasBottom = temFundo; mudancas.push('Lados'); }
+        }
+        if (vModelo !== undefined && texto(vModelo) !== texto(alvo.ctmProfile || 'largo')) {
+          novo.ctmProfile = texto(vModelo); mudancas.push('Modelo');
+        }
+        if (mudancas.length) { r.atualizadas.push({ ref: ref, alvo: alvo, novo: novo, mudancas: mudancas }); }
+        else { r.iguais.push(ref); }
+        return;
+      }
+
+      /* referencia nova */
+      r.novas.push({
+        ref: ref,
+        type: texto(vT),
+        L: inteiro(vL),
+        H: inteiro(vH),
+        qty: inteiro(vQ),
+        hasBottom: texto(vLados) === '3' ? false : true,
+        ctmProfile: vModelo === undefined ? 'largo' : texto(vModelo)
+      });
+    });
+
+    return r;
+  }
+
+  /* ---------- texto do resumo ---------- */
+  function amostra(lista, quantos) {
+    var fim = lista.slice(0, quantos).join(', ');
+    if (lista.length > quantos) { fim += ' e mais ' + (lista.length - quantos); }
+    return fim;
+  }
+
+  function resumo(r, aba) {
+    var t = 'Planilha lida: aba "' + aba + '", ' + r.linhas + ' linha(s).\n\n';
+    t += 'Vou CRIAR: ' + r.novas.length + '\n';
+    t += 'Vou ATUALIZAR: ' + r.atualizadas.length + '\n';
+    if (r.atualizadas.length) {
+      t += '   ' + amostra(r.atualizadas.map(function (a) { return a.ref + ' (' + a.mudancas.join('; ') + ')'; }), 5) + '\n';
+    }
+    t += '\nFicam de fora:\n';
+    t += '  - iguais ao que ja existe: ' + r.iguais.length + '\n';
+    if (r.daListaDeItens.length) {
+      var comDif = r.daListaDeItens.filter(function (d) { return d.diferencas.length; });
+      t += '  - vem da lista de itens da obra (planilha nao altera): ' + r.daListaDeItens.length + '\n';
+      if (comDif.length) {
+        t += '      dessas, ' + comDif.length + ' estao diferentes na planilha; corrija na lista de itens:\n';
+        t += '      ' + amostra(comDif.map(function (d) { return d.ref + ' (' + d.diferencas.join('; ') + ')'; }), 5) + '\n';
+      }
+    }
+    if (r.repetidas.length) { t += '  - repetidas dentro da planilha: ' + r.repetidas.length + ' (' + amostra(r.repetidas, 5) + ')\n'; }
+    if (r.semRef) { t += '  - linhas sem referencia: ' + r.semRef + '\n'; }
+    return t;
+  }
+
+  /* ---------- grava ---------- */
+  function aplicar(r, obra) {
+    if (!obra.ctmExtraSpecs) { obra.ctmExtraSpecs = []; }
+    r.novas.forEach(function (n) {
+      obra.ctmExtraSpecs.push({
+        ref: n.ref, type: n.type, L: n.L, H: n.H, qty: n.qty,
+        hasBottom: n.hasBottom, ctmProfile: n.ctmProfile || 'largo'
+      });
+    });
+    r.atualizadas.forEach(function (a) {
+      var campo;
+      for (campo in a.novo) {
+        if (Object.prototype.hasOwnProperty.call(a.novo, campo)) { a.alvo[campo] = a.novo[campo]; }
+      }
+    });
+    try { if (typeof salvarDB === 'function') { salvarDB(); } } catch (e) { }
+    try { if (typeof renderCTMDashboard === 'function') { renderCTMDashboard(); } } catch (e2) { }
+  }
+
+  /* ---------- a nova importacao ---------- */
+  function importar(event) {
+    var entrada = event && event.target;
+    var file = entrada && entrada.files ? entrada.files[0] : null;
+    if (!file) { return; }
+    var obra = obraAtual();
+    if (!obra) { alert('Escolha uma obra antes de importar a lista CTM.'); return; }
+    if (typeof XLSX === 'undefined') {
+      alert('A biblioteca de planilhas nao carregou. Verifique a internet e recarregue a pagina.');
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onerror = function () { alert('Nao consegui ler o arquivo. Tente salvar a planilha de novo e repetir.'); };
+    reader.onload = function (e) {
+      try {
+        var workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        var aba = escolherAba(workbook);
+        if (!aba.linhas.length) {
+          alert('Nao achei nenhuma aba com a coluna de referencia.\n\n' +
+                'A planilha precisa de uma coluna chamada Ref (ou Referencia) na primeira linha. ' +
+                'O jeito mais simples e usar o Exp.Excel do painel como modelo.');
+          return;
+        }
+        var r = analisar(aba.linhas, obra);
+        r.aba = aba.nome;
+        relatorio = r;
+
+        if (!r.novas.length && !r.atualizadas.length) {
+          alert('Nada a mudar.\n\n' + resumo(r, aba.nome) +
+                '\nObservacao: a planilha exportada pelo painel tem justamente as pecas que ja existem, ' +
+                'por isso ela sozinha nunca muda nada.');
+          return;
+        }
+        if (!confirm(resumo(r, aba.nome) + '\nConfirma a importacao?')) {
+          alert('Importacao cancelada. Nada foi alterado.');
+          return;
+        }
+        aplicar(r, obra);
+        alert('Pronto.\n\nCriadas: ' + r.novas.length + '\nAtualizadas: ' + r.atualizadas.length +
+              '\n\nDetalhe completo no console: P143.ultimo()');
+      } catch (err) {
+        alert('Erro ao importar: ' + (err && err.message ? err.message : err));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    try { entrada.value = ''; } catch (e3) { }
+  }
+
+  window.importExcelSpecsCTM = importar;
+
+  window.P143 = {
+    ultimo: function () {
+      if (!relatorio) { console.log('[PATCH143] nenhuma importacao feita nesta sessao.'); return null; }
+      try { console.log('[PATCH143] resumo:\n' + resumo(relatorio, relatorio.aba || '')); } catch (e) { }
+      return relatorio;
+    },
+    analisar: analisar
+  };
+
+  try { console.log('[PATCH143] importacao da lista CTM agora cria, atualiza e explica. Use P143.ultimo().'); } catch (e4) { }
+}());
+</script>
+<!-- FIM PATCH143_IMPORTAR_CTM -->
+
+<!-- INI PATCH144_IMPORTAR_JSON_SEGURO -->
+<script>
+/* =====================================================================
+ * PATCH 144 - importacao de banco (JSON) com conferencia e desfazer
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.P144) { return; }
+
+  var GLOBAIS_PRESERVADAS = ['config', 'agendaObras', 'obraAtualId', 'versaoBanco'];
+  var conferencia = null;
+  var anterior = null;   /* copia do banco de antes, para desfazer na sessao */
+
+  /* pega o banco vivo (o mesmo objeto que o painel usa) */
+  function bancoVivo() {
+    try { if (typeof db === 'object' && db) { return db; } } catch (e) { }
+    return (window.db && typeof window.db === 'object') ? window.db : null;
+  }
+
+  function copia(o) { return JSON.parse(JSON.stringify(o)); }
+
+  /* ---------- reconhecer o formato do arquivo ---------- */
+  function pareceObra(o) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) { return false; }
+    var temCodigo = (o.id !== undefined && o.id !== null && o.id !== '');
+    var temCara = (typeof o.nome === 'string') || Array.isArray(o.itens) ||
+                  o.valorContrato !== undefined || Array.isArray(o.recebimentos);
+    return temCodigo && temCara;
+  }
+
+  function proporcaoDeObras(lista) {
+    if (!lista.length) { return 0; }
+    var bons = 0, i;
+    for (i = 0; i < lista.length; i++) { if (pareceObra(lista[i])) { bons++; } }
+    return bons / lista.length;
+  }
+
+  function reconhecer(conteudo) {
+    if (!conteudo || typeof conteudo !== 'object') {
+      return { erro: 'O arquivo nao tem o formato de um banco do painel.' };
+    }
+    if (conteudo.formato === 'PAINEL_CONTROLE_OBRAS' && conteudo.banco &&
+        Array.isArray(conteudo.banco.obras)) {
+      return { banco: conteudo.banco, formato: 'pacote exportado pelo painel' };
+    }
+    if (conteudo.banco && Array.isArray(conteudo.banco.obras)) {
+      return { banco: conteudo.banco, formato: 'banco dentro de "banco"' };
+    }
+    if (conteudo.db && Array.isArray(conteudo.db.obras)) {
+      return { banco: conteudo.db, formato: 'banco dentro de "db"' };
+    }
+    if (Array.isArray(conteudo.obras)) {
+      return { banco: conteudo, formato: 'banco direto (com obras)' };
+    }
+    if (Array.isArray(conteudo) && proporcaoDeObras(conteudo) >= 0.8) {
+      return { banco: { obras: conteudo }, formato: 'lista solta de obras' };
+    }
+    if (Array.isArray(conteudo)) {
+      return { erro: 'O arquivo tem uma lista, mas as linhas nao parecem obras ' +
+                     '(faltam codigo e nome). Nao vou trocar o banco por seguranca.' };
+    }
+    return { erro: 'Nao achei a lista de obras neste arquivo. Use um arquivo ' +
+                   'exportado pelo proprio painel (botao de exportar banco).' };
+  }
+
+  /* ---------- conferir o conteudo ---------- */
+  function conferir(banco, atual) {
+    var obras = banco.obras || [];
+    var itens = 0, semCodigo = 0, semNome = 0, i;
+    for (i = 0; i < obras.length; i++) {
+      if (!obras[i] || obras[i].id === undefined || obras[i].id === null || obras[i].id === '') { semCodigo++; }
+      if (!obras[i] || !obras[i].nome) { semNome++; }
+      itens += (obras[i] && Array.isArray(obras[i].itens)) ? obras[i].itens.length : 0;
+    }
+    var obrasAtuais = (atual && Array.isArray(atual.obras)) ? atual.obras.length : 0;
+    var itensAtuais = 0;
+    if (atual && Array.isArray(atual.obras)) {
+      atual.obras.forEach(function (o) { itensAtuais += (o && Array.isArray(o.itens)) ? o.itens.length : 0; });
+    }
+    var preservadas = [];
+    GLOBAIS_PRESERVADAS.forEach(function (k) {
+      if (atual && atual[k] !== undefined && banco[k] === undefined) { preservadas.push(k); }
+    });
+    return {
+      obras: obras.length, itens: itens, semCodigo: semCodigo, semNome: semNome,
+      obrasAtuais: obrasAtuais, itensAtuais: itensAtuais, preservadas: preservadas
+    };
+  }
+
+  function textoResumo(c, formato, nomeArquivo) {
+    var t = 'Arquivo: ' + nomeArquivo + '\n';
+    t += 'Formato reconhecido: ' + formato + '\n\n';
+    t += 'O arquivo traz: ' + c.obras + ' obra(s) e ' + c.itens + ' item(ns).\n';
+    t += 'Voce tem agora:  ' + c.obrasAtuais + ' obra(s) e ' + c.itensAtuais + ' item(ns).\n';
+    if (c.semCodigo) { t += '\nAtencao: ' + c.semCodigo + ' obra(s) do arquivo estao sem codigo.\n'; }
+    if (c.semNome) { t += 'Atencao: ' + c.semNome + ' obra(s) do arquivo estao sem nome.\n'; }
+    if (c.obras < c.obrasAtuais) {
+      t += '\nATENCAO: o arquivo tem MENOS obras do que voce tem agora. ' +
+           'A importacao substitui a lista inteira.\n';
+    }
+    if (c.preservadas.length) {
+      t += '\nVou preservar do banco atual: ' + c.preservadas.join(', ') + '.\n';
+    }
+    t += '\nAntes de trocar, vou baixar uma copia do banco atual para o seu computador.';
+    return t;
+  }
+
+  /* ---------- baixar a copia do banco atual ---------- */
+  function baixarCopia(atual) {
+    try {
+      var pacote = {
+        formato: 'PAINEL_CONTROLE_OBRAS',
+        versaoBanco: 'copia-antes-da-importacao',
+        dataExportacao: new Date().toISOString(),
+        banco: copia(atual)
+      };
+      var nome = 'Banco_antes_da_importacao_' +
+                 new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+      var blob = new Blob([JSON.stringify(pacote)], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) { } }, 4000);
+      return nome;
+    } catch (e) { return ''; }
+  }
+
+  /* ---------- trocar o conteudo do banco vivo, sem trocar o objeto ---------- */
+  function trocarConteudo(vivo, novo) {
+    var k;
+    for (k in vivo) {
+      if (Object.prototype.hasOwnProperty.call(vivo, k)) { delete vivo[k]; }
+    }
+    for (k in novo) {
+      if (Object.prototype.hasOwnProperty.call(novo, k)) { vivo[k] = novo[k]; }
+    }
+    window.db = vivo;
+    window.dbObras = vivo.obras;
+    window.obrasDB = vivo.obras;
+  }
+
+  function arrumar(banco) {
+    banco.obras = Array.isArray(banco.obras) ? banco.obras : [];
+    banco.obras.forEach(function (o) {
+      if (!o) { return; }
+      if (!Array.isArray(o.itens)) { o.itens = []; }
+      if (!Array.isArray(o.recebimentos)) { o.recebimentos = []; }
+    });
+    if (!banco.config) { banco.config = { dimensoes: true, fem: true, fab: true, inst: true }; }
+    var ids = banco.obras.map(function (o) { return o && o.id; });
+    if (!banco.obraAtualId || ids.indexOf(banco.obraAtualId) < 0) {
+      banco.obraAtualId = banco.obras.length ? banco.obras[0].id : null;
+    }
+    return banco;
+  }
+
+  /* ---------- a nova importacao ---------- */
+  function importar(event) {
+    var entrada = event && event.target;
+    var file = entrada && entrada.files ? entrada.files[0] : null;
+    if (!file) { return; }
+    var vivo = bancoVivo();
+    if (!vivo) {
+      alert('O banco do painel ainda nao terminou de carregar. Espere alguns segundos, ' +
+            'recarregue a pagina e tente de novo.');
+      return;
+    }
+
+    var leitor = new FileReader();
+    leitor.onerror = function () { alert('Nao consegui ler o arquivo escolhido.'); };
+    leitor.onload = function (e) {
+      var conteudo;
+      try {
+        conteudo = JSON.parse(e.target.result);
+      } catch (err) {
+        alert('Este arquivo nao e um JSON valido.\n\nDetalhe: ' + (err && err.message ? err.message : err));
+        return;
+      }
+
+      var achado = reconhecer(conteudo);
+      if (achado.erro) { alert(achado.erro); return; }
+
+      var banco = copia(achado.banco);
+      var c = conferir(banco, vivo);
+      conferencia = { formato: achado.formato, arquivo: file.name, contas: c };
+
+      if (!c.obras) {
+        alert('O arquivo foi reconhecido (' + achado.formato + '), mas nao tem nenhuma obra dentro. ' +
+              'Nao vou apagar o seu banco.');
+        return;
+      }
+      if (!confirm(textoResumo(c, achado.formato, file.name) + '\n\nContinuar?')) {
+        alert('Importacao cancelada. Nada foi alterado.');
+        return;
+      }
+      if (!confirm('Ultima confirmacao.\n\nA nuvem do painel e compartilhada: isto substitui a lista de ' +
+                   'obras para TODOS que usam o painel. Se alguem estiver trabalhando agora, o trabalho ' +
+                   'dessa pessoa pode ser perdido.\n\nConfirma a substituicao?')) {
+        alert('Importacao cancelada. Nada foi alterado.');
+        return;
+      }
+
+      /* copia de seguranca: arquivo no computador + desfazer na sessao */
+      anterior = copia(vivo);
+      var nomeCopia = baixarCopia(vivo);
+
+      /* preserva o que o arquivo nao traz */
+      GLOBAIS_PRESERVADAS.forEach(function (k) {
+        if (banco[k] === undefined && vivo[k] !== undefined) { banco[k] = copia(vivo[k]); }
+      });
+      arrumar(banco);
+      trocarConteudo(vivo, banco);
+
+      try { if (typeof popularSelectObras === 'function') { popularSelectObras(); } } catch (e1) { }
+      try { if (typeof preencherSelectObras === 'function') { preencherSelectObras(); } } catch (e2) { }
+      try {
+        if (typeof salvarDB === 'function') { salvarDB(); }
+        else if (typeof render === 'function') { render(); }
+      } catch (e3) { }
+
+      alert('Importacao concluida.\n\nObras: ' + c.obras + '\nItens: ' + c.itens +
+            (nomeCopia ? ('\n\nCopia do banco anterior baixada como:\n' + nomeCopia) :
+                         '\n\nNao consegui baixar a copia do banco anterior.') +
+            '\n\nSe algo ficou errado, digite no console (F12):  P144.desfazer()' +
+            '\n\nConfira o aviso da nuvem no alto da tela: se aparecer erro de salvamento, ' +
+            'a troca ficou so neste computador.');
+    };
+    leitor.readAsText(file);
+    try { entrada.value = ''; } catch (e4) { }
+  }
+
+  window.importarBancoMultiBrowser = importar;
+
+  window.P144 = {
+    ultimo: function () {
+      if (!conferencia) { console.log('[PATCH144] nenhuma importacao nesta sessao.'); return null; }
+      return conferencia;
+    },
+    desfazer: function () {
+      var vivo = bancoVivo();
+      if (!anterior || !vivo) {
+        alert('Nao tenho o banco anterior nesta sessao. Use o arquivo ' +
+              'Banco_antes_da_importacao_... que foi baixado.');
+        return false;
+      }
+      if (!confirm('Voltar ao banco de antes da importacao (' +
+                   ((anterior.obras || []).length) + ' obra(s))?')) { return false; }
+      trocarConteudo(vivo, copia(anterior));
+      try { if (typeof salvarDB === 'function') { salvarDB(); } } catch (e) { }
+      alert('Banco anterior restaurado. Confira a tela e o aviso da nuvem.');
+      return true;
+    },
+    reconhecer: reconhecer,
+    conferir: conferir
+  };
+
+  try {
+    console.log('[PATCH144] importacao de banco (JSON) agora confere, confirma e baixa copia. Use P144.ultimo().');
+  } catch (e5) { }
+}());
+</script>
+<!-- FIM PATCH144_IMPORTAR_JSON_SEGURO -->
+
+<!-- INI PATCH145_SALVAMENTO_SEGURO -->
+<style>
+#p145Barra{position:fixed;left:0;right:0;top:0;z-index:2147483000;display:none;
+  font:600 13px/1.35 Inter,Arial,sans-serif;padding:10px 14px;color:#fff;
+  box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#p145Barra.erro{background:#c0392b}
+#p145Barra.conflito{background:#8e44ad}
+#p145Barra.aviso{background:#c88a00}
+#p145Barra.ok{background:#1e8449}
+#p145Barra .p145txt{display:block;margin-bottom:6px}
+#p145Barra button{font:600 12px Inter,Arial,sans-serif;margin-right:8px;padding:6px 10px;
+  border:0;border-radius:6px;background:#fff;color:#222;cursor:pointer}
+#p145Barra button.p145fechar{background:rgba(255,255,255,.25);color:#fff}
+</style>
+<script>
+/* =====================================================================
+ * PATCH 145 - salvamento seguro na nuvem (conflito, aviso e nova tentativa)
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.P145) { return; }
+
+  var TABELA = 'painel_dados';
+  var LINHA = 1;
+  var ESPERA = 1200;                 /* junta pedidos de salvamento */
+  var TENTATIVAS = [5000, 15000, 60000];
+  var VIGIA = 30000;
+
+  var conhecido = null;   /* hora do ultimo salvamento que este computador conhece */
+  var pendente = false;   /* tem mudanca esperando ir para a nuvem */
+  var salvando = false;
+  var conflito = false;
+  var erro = '';
+  var tentativa = 0;
+  var timerJuntar = null;
+  var timerTentar = null;
+  var enviados = 0;
+  var original = window.sincronizarBancoNuvem;
+
+  function bancoVivo() {
+    try { if (typeof db === 'object' && db) { return db; } } catch (e) { }
+    return (window.db && typeof window.db === 'object') ? window.db : null;
+  }
+  function cliente() { return window._supabase || null; }
+  function status(txt, tipo) {
+    try { if (typeof atualizarStatusNuvem === 'function') { atualizarStatusNuvem(txt, tipo); } } catch (e) { }
+  }
+  function hora(iso) {
+    try { return new Date(iso).toLocaleTimeString('pt-BR'); } catch (e) { return String(iso || ''); }
+  }
+
+  /* ---------------- barra de aviso no alto da tela ---------------- */
+  function barra() {
+    var b = document.getElementById('p145Barra');
+    if (b) { return b; }
+    b = document.createElement('div');
+    b.id = 'p145Barra';
+    b.setAttribute('role', 'status');
+    b.innerHTML = '<span class="p145txt"></span><span class="p145bt"></span>';
+    (document.body || document.documentElement).appendChild(b);
+    return b;
+  }
+  function mostrar(tipo, texto, botoes) {
+    var b = barra();
+    b.className = tipo;
+    b.querySelector('.p145txt').textContent = texto;
+    var area = b.querySelector('.p145bt');
+    area.innerHTML = '';
+    (botoes || []).forEach(function (bt) {
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.textContent = bt.texto;
+      if (bt.leve) { el.className = 'p145fechar'; }
+      el.addEventListener('click', bt.acao);
+      area.appendChild(el);
+    });
+    b.style.display = 'block';
+  }
+  function esconder() {
+    var b = document.getElementById('p145Barra');
+    if (b) { b.style.display = 'none'; }
+  }
+
+  /* ---------------- ler a hora do ultimo salvamento na nuvem ---------------- */
+  function horaDaNuvem() {
+    var b = cliente();
+    if (!b) { return Promise.resolve(null); }
+    return Promise.resolve(b.from(TABELA).select('updated_at').eq('id', LINHA).limit(1))
+      .then(function (r) {
+        if (r && r.error) { throw r.error; }
+        var linhas = (r && r.data) || [];
+        return linhas.length ? (linhas[0].updated_at || null) : null;
+      });
+  }
+
+  /* ---------------- baixar copia do meu banco (antes de sobrescrever) ---------------- */
+  function baixarMeuBanco() {
+    try {
+      var vivo = bancoVivo();
+      if (!vivo) { return ''; }
+      var pacote = {
+        formato: 'PAINEL_CONTROLE_OBRAS',
+        versaoBanco: 'copia-antes-de-sobrescrever',
+        dataExportacao: new Date().toISOString(),
+        banco: JSON.parse(JSON.stringify(vivo))
+      };
+      var nome = 'Banco_deste_computador_' +
+        new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+      var blob = new Blob([JSON.stringify(pacote)], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nome;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) { } }, 4000);
+      return nome;
+    } catch (e) { return ''; }
+  }
+
+  /* ---------------- avisos ---------------- */
+  function avisarConflito(remoto) {
+    conflito = true;
+    mostrar('conflito',
+      'Outra pessoa salvou na nuvem as ' + hora(remoto) + '. Suas mudancas ainda NAO foram enviadas. ' +
+      'Escolha o que fazer para nao apagar o trabalho de ninguem.',
+      [
+        { texto: 'Enviar o meu por cima (baixa uma copia antes)', acao: function () {
+            var nome = baixarMeuBanco();
+            if (nome) { status('copia baixada: ' + nome, 'normal'); }
+            conflito = false;
+            esconder();
+            enviar(true);
+          } },
+        { texto: 'Descartar o meu e recarregar', acao: function () {
+            if (window.confirm('Isto joga fora as mudancas deste computador que ainda nao foram enviadas. Continuar?')) {
+              location.reload();
+            }
+          } },
+        { texto: 'Decido depois', leve: true, acao: esconder }
+      ]);
+    status('conflito com outro computador', 'erro');
+  }
+
+  function avisarErro(motivo) {
+    erro = motivo;
+    mostrar('erro',
+      'NAO consegui salvar na nuvem: ' + motivo + '. Suas mudancas estao apenas neste computador. ' +
+      'Vou tentar de novo sozinho.',
+      [
+        { texto: 'Tentar agora', acao: function () { tentativa = 0; enviar(false); } },
+        { texto: 'Baixar copia do meu banco', acao: function () { baixarMeuBanco(); } },
+        { texto: 'Esconder', leve: true, acao: esconder }
+      ]);
+    status('erro de salvamento', 'erro');
+  }
+
+  function avisarMudancaDeFora(remoto) {
+    mostrar('aviso',
+      'Outra pessoa salvou na nuvem as ' + hora(remoto) + '. Sua tela esta desatualizada ' +
+      '(o painel nao acompanha mudancas em tempo real).',
+      [
+        { texto: 'Recarregar agora', acao: function () { location.reload(); } },
+        { texto: 'Depois', leve: true, acao: esconder }
+      ]);
+  }
+
+  function marcarSucesso(novaHora) {
+    conhecido = novaHora;
+    pendente = false;
+    erro = '';
+    tentativa = 0;
+    conflito = false;
+    enviados++;
+    esconder();
+    status('salvo na nuvem as ' + hora(novaHora), 'ok');
+  }
+
+  function agendarTentativa() {
+    if (timerTentar) { return; }
+    var espera = TENTATIVAS[Math.min(tentativa, TENTATIVAS.length - 1)];
+    tentativa++;
+    timerTentar = setTimeout(function () {
+      timerTentar = null;
+      enviar(false);
+    }, espera);
+  }
+
+  /* ---------------- enviar de verdade ---------------- */
+  function enviar(forcar) {
+    if (salvando) { pendente = true; return Promise.resolve(false); }
+    var b = cliente();
+    var vivo = bancoVivo();
+    if (!vivo) { return Promise.resolve(false); }
+    if (!b) {
+      pendente = true;
+      avisarErro('a conexao com a nuvem nao esta configurada nesta pagina');
+      return Promise.resolve(false);
+    }
+    salvando = true;
+    pendente = true;
+    status('salvando...', 'normal');
+    var marca = new Date().toISOString();
+
+    return horaDaNuvem()
+      .then(function (remoto) {
+        if (!forcar && conhecido && remoto && remoto !== conhecido) {
+          avisarConflito(remoto);
+          return false;
+        }
+        var linha = { id: LINHA, dados: vivo, updated_at: marca };
+        return Promise.resolve(b.from(TABELA).upsert(linha)).then(function (r) {
+          if (r && r.error) { throw r.error; }
+          marcarSucesso(marca);
+          return true;
+        });
+      })
+      .catch(function (e) {
+        var motivo = (e && (e.message || e.details || e.hint)) || 'motivo nao informado';
+        avisarErro(String(motivo));
+        agendarTentativa();
+        return false;
+      })
+      .then(function (ok) {
+        salvando = false;
+        return ok;
+      });
+  }
+
+  /* ---------------- junta pedidos seguidos ---------------- */
+  function pedirSalvamento() {
+    pendente = true;
+    if (timerJuntar) { clearTimeout(timerJuntar); }
+    timerJuntar = setTimeout(function () {
+      timerJuntar = null;
+      enviar(false);
+    }, ESPERA);
+    return true;
+  }
+
+  /* troca a funcao antiga de sincronizar pela versao segura */
+  window.sincronizarBancoNuvem = function () { return pedirSalvamento(); };
+  window.P145_sincronizarAntigo = original;
+
+  /* ---------------- vigia da nuvem ---------------- */
+  function olharNuvem() {
+    if (!cliente() || salvando || conflito) { return; }
+    horaDaNuvem().then(function (remoto) {
+      if (!remoto) { return; }
+      if (conhecido === null) { conhecido = remoto; return; }
+      if (remoto !== conhecido) {
+        if (pendente) { avisarConflito(remoto); }
+        else { avisarMudancaDeFora(remoto); }
+      }
+    }).catch(function () { });
+  }
+
+  /* ---------------- ligar tudo ---------------- */
+  function ligar() {
+    horaDaNuvem().then(function (remoto) {
+      if (conhecido === null) { conhecido = remoto; }
+    }).catch(function () { });
+
+    setInterval(olharNuvem, VIGIA);
+    window.addEventListener('focus', olharNuvem);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) { olharNuvem(); }
+    });
+
+    window.addEventListener('online', function () {
+      if (pendente) { tentativa = 0; enviar(false); }
+    });
+
+    window.addEventListener('beforeunload', function (ev) {
+      if (pendente || conflito) {
+        ev.preventDefault();
+        ev.returnValue = 'Ainda ha mudancas que nao foram salvas na nuvem.';
+        return ev.returnValue;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ligar);
+  } else {
+    ligar();
+  }
+
+  window.P145 = {
+    salvarAgora: function () { return enviar(false); },
+    forcar: function () { return enviar(true); },
+    olhar: olharNuvem,
+    baixarCopia: baixarMeuBanco,
+    estado: function () {
+      return {
+        pendente: pendente,
+        salvando: salvando,
+        conflito: conflito,
+        erro: erro,
+        tentativa: tentativa,
+        horaConhecidaDaNuvem: conhecido,
+        salvamentosFeitos: enviados
+      };
+    }
+  };
+})();
+</script>
+<!-- FIM PATCH145_SALVAMENTO_SEGURO -->
+
+<!-- INI PATCH146_PAINEL_DE_ERROS -->
+<style>
+#p146Bt{position:fixed;right:14px;bottom:14px;z-index:2147482000;border:0;border-radius:22px;
+  padding:9px 13px;font:600 12px Inter,Arial,sans-serif;cursor:pointer;color:#fff;
+  background:#5d6d7e;box-shadow:0 3px 10px rgba(0,0,0,.28)}
+#p146Bt.temErro{background:#c0392b}
+#p146Bt.pisca{animation:p146pisca .7s ease-in-out 3}
+@keyframes p146pisca{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+#p146Tela{position:fixed;inset:0;z-index:2147482100;display:none;background:rgba(0,0,0,.45)}
+#p146Tela.aberto{display:block}
+#p146Cx{position:absolute;right:0;top:0;bottom:0;width:min(560px,100%);background:#fff;
+  display:flex;flex-direction:column;font:13px/1.4 Inter,Arial,sans-serif;color:#222}
+#p146Cx header{padding:12px 14px;background:#2c3e50;color:#fff;font-weight:700;
+  display:flex;justify-content:space-between;align-items:center;gap:8px}
+#p146Cx .p146acoes{padding:8px 14px;border-bottom:1px solid #e3e6e8;display:flex;flex-wrap:wrap;gap:6px}
+#p146Cx .p146acoes button,#p146Cx header button{font:600 12px Inter,Arial,sans-serif;
+  border:1px solid #cfd6dc;background:#f4f6f7;color:#222;border-radius:6px;padding:5px 9px;cursor:pointer}
+#p146Cx header button{background:rgba(255,255,255,.18);color:#fff;border-color:transparent}
+#p146Lista{overflow:auto;padding:8px 14px 20px}
+.p146item{border:1px solid #e3e6e8;border-left:4px solid #c0392b;border-radius:6px;
+  padding:8px 10px;margin-bottom:8px;background:#fdfdfd}
+.p146item.aviso{border-left-color:#c88a00}
+.p146item.rede{border-left-color:#8e44ad}
+.p146item .p146top{font-size:11px;color:#667}
+.p146item .p146msg{font-weight:600;margin:3px 0;word-break:break-word}
+.p146item .p146de{font-size:11px;color:#667;word-break:break-all}
+.p146item pre{white-space:pre-wrap;font-size:11px;background:#f7f9fa;border-radius:4px;
+  padding:6px;margin:6px 0 0;max-height:170px;overflow:auto}
+.p146vazio{color:#667;padding:14px 0}
+</style>
+<script>
+/* =====================================================================
+ * PATCH 146 - painel de erros e registro de ocorrencias
+ * ===================================================================== */
+(function () {
+  'use strict';
+  if (window.P146) { return; }
+
+  var LIMITE = 300;          /* quanto guarda na memoria */
+  var GUARDA = 80;           /* quanto guarda no navegador */
+  var CHAVE = 'p146_ocorrencias';
+  var lista = [];
+  var seq = 0;
+  var dentro = false;        /* evita erro dentro do proprio registro */
+  var pronto = false;
+
+  var conOriginal = {
+    error: (window.console && console.error) ? console.error.bind(console) : function () { },
+    warn: (window.console && console.warn) ? console.warn.bind(console) : function () { }
+  };
+
+  function texto(v) {
+    if (v === null) { return 'nulo'; }
+    if (typeof v === 'undefined') { return 'vazio'; }
+    if (typeof v === 'string') { return v; }
+    if (v instanceof Error) { return v.name + ': ' + v.message; }
+    try { return JSON.stringify(v); } catch (e) { return String(v); }
+  }
+  function curto(s, n) {
+    s = String(s || '');
+    return s.length > n ? s.slice(0, n) + '...' : s;
+  }
+
+  function ler() {
+    try {
+      var cru = localStorage.getItem(CHAVE);
+      if (!cru) { return []; }
+      var v = JSON.parse(cru);
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function gravar() {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(lista.slice(-GUARDA)));
+    } catch (e) { /* sem espaco: o registro na memoria continua valendo */ }
+  }
+
+  /* ---------------- anotar uma ocorrencia ---------------- */
+  function registrar(tipo, mensagem, extra) {
+    if (dentro) { return null; }
+    dentro = true;
+    var reg = null;
+    try {
+      extra = extra || {};
+      reg = {
+        n: ++seq,
+        quando: new Date().toISOString(),
+        tipo: String(tipo || 'erro'),
+        grupo: extra.grupo || (String(tipo).indexOf('aviso') >= 0 ? 'aviso' :
+                (String(tipo).indexOf('rede') >= 0 ? 'rede' : 'erro')),
+        mensagem: curto(texto(mensagem), 600),
+        de: curto(texto(extra.de || ''), 300),
+        detalhe: curto(texto(extra.detalhe || ''), 2000)
+      };
+      var ultimo = lista[lista.length - 1];
+      if (ultimo && ultimo.mensagem === reg.mensagem && ultimo.tipo === reg.tipo &&
+          (new Date(reg.quando) - new Date(ultimo.quando)) < 1500) {
+        ultimo.repetiu = (ultimo.repetiu || 1) + 1;
+        reg = ultimo;
+      } else {
+        lista.push(reg);
+        if (lista.length > LIMITE) { lista = lista.slice(-LIMITE); }
+      }
+      gravar();
+      if (pronto) { atualizarBotao(reg.grupo === 'erro'); redesenhar(); }
+    } catch (e) { /* nunca deixar o registro derrubar a pagina */ }
+    dentro = false;
+    return reg;
+  }
+
+  function contarErros() {
+    var n = 0;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].grupo !== 'aviso') { n += (lista[i].repetiu || 1); }
+    }
+    return n;
+  }
+
+  /* ---------------- botao do canto ---------------- */
+  function botao() {
+    var b = document.getElementById('p146Bt');
+    if (b) { return b; }
+    b = document.createElement('button');
+    b.id = 'p146Bt';
+    b.type = 'button';
+    b.title = 'Ocorrencias do painel (Ctrl + Alt + E)';
+    b.setAttribute('aria-label', 'Abrir a lista de ocorrencias do painel');
+    b.addEventListener('click', abrir);
+    (document.body || document.documentElement).appendChild(b);
+    return b;
+  }
+  function atualizarBotao(piscar) {
+    var b = botao();
+    var n = contarErros();
+    b.textContent = n ? ('Ocorrencias: ' + n) : 'Ocorrencias';
+    b.className = n ? 'temErro' : '';
+    if (piscar && n) {
+      b.classList.remove('pisca');
+      void b.offsetWidth;
+      b.classList.add('pisca');
+    }
+  }
+
+  /* ---------------- tela com a lista ---------------- */
+  function tela() {
+    var t = document.getElementById('p146Tela');
+    if (t) { return t; }
+    t = document.createElement('div');
+    t.id = 'p146Tela';
+    t.innerHTML =
+      '<div id="p146Cx" role="dialog" aria-label="Ocorrencias do painel">' +
+      '<header><span>Ocorrencias do painel</span><button type="button" id="p146Fechar">Fechar</button></header>' +
+      '<div class="p146acoes">' +
+      '<button type="button" id="p146Copiar">Copiar tudo</button>' +
+      '<button type="button" id="p146Baixar">Baixar registro</button>' +
+      '<button type="button" id="p146Limpar">Limpar</button>' +
+      '<label style="font-size:12px;display:flex;align-items:center;gap:4px">' +
+      'Mostrar: <select id="p146Filtro"><option value="tudo">tudo</option>' +
+      '<option value="erro">so erros</option><option value="rede">so rede</option>' +
+      '<option value="aviso">so avisos</option></select></label>' +
+      '</div><div id="p146Lista"></div></div>';
+    (document.body || document.documentElement).appendChild(t);
+    t.addEventListener('click', function (ev) { if (ev.target === t) { fechar(); } });
+    t.querySelector('#p146Fechar').addEventListener('click', fechar);
+    t.querySelector('#p146Copiar').addEventListener('click', copiar);
+    t.querySelector('#p146Baixar').addEventListener('click', baixar);
+    t.querySelector('#p146Limpar').addEventListener('click', limpar);
+    t.querySelector('#p146Filtro').addEventListener('change', redesenhar);
+    return t;
+  }
+
+  function filtro() {
+    var s = document.getElementById('p146Filtro');
+    return s ? s.value : 'tudo';
+  }
+  function visiveis() {
+    var f = filtro();
+    return lista.filter(function (r) { return f === 'tudo' || r.grupo === f; }).slice().reverse();
+  }
+  function horaCurta(iso) {
+    try { return new Date(iso).toLocaleString('pt-BR'); } catch (e) { return iso; }
+  }
+
+  function redesenhar() {
+    var area = document.getElementById('p146Lista');
+    if (!area || !document.getElementById('p146Tela').classList.contains('aberto')) { return; }
+    area.innerHTML = '';
+    var itens = visiveis();
+    if (!itens.length) {
+      var v = document.createElement('div');
+      v.className = 'p146vazio';
+      v.textContent = 'Nenhuma ocorrencia registrada. Otimo sinal.';
+      area.appendChild(v);
+      return;
+    }
+    itens.forEach(function (r) {
+      var d = document.createElement('div');
+      d.className = 'p146item ' + r.grupo;
+      var top = document.createElement('div');
+      top.className = 'p146top';
+      top.textContent = horaCurta(r.quando) + '  |  ' + r.tipo +
+        (r.repetiu ? ('  |  repetiu ' + r.repetiu + ' vezes') : '');
+      var msg = document.createElement('div');
+      msg.className = 'p146msg';
+      msg.textContent = r.mensagem;
+      d.appendChild(top);
+      d.appendChild(msg);
+      if (r.de) {
+        var de = document.createElement('div');
+        de.className = 'p146de';
+        de.textContent = 'onde: ' + r.de;
+        d.appendChild(de);
+      }
+      if (r.detalhe) {
+        var det = document.createElement('details');
+        var res = document.createElement('summary');
+        res.textContent = 'detalhes tecnicos';
+        var pre = document.createElement('pre');
+        pre.textContent = r.detalhe;
+        det.appendChild(res);
+        det.appendChild(pre);
+        d.appendChild(det);
+      }
+      area.appendChild(d);
+    });
+  }
+
+  function abrir() {
+    tela().classList.add('aberto');
+    redesenhar();
+  }
+  function fechar() { tela().classList.remove('aberto'); }
+
+  /* ---------------- copiar, baixar, limpar ---------------- */
+  function emTexto() {
+    var linhas = ['Registro de ocorrencias do painel',
+      'Gerado em: ' + new Date().toLocaleString('pt-BR'),
+      'Endereco: ' + String(location.href),
+      'Navegador: ' + String(navigator.userAgent),
+      'Total anotado: ' + lista.length, ''];
+    lista.forEach(function (r) {
+      linhas.push('[' + horaCurta(r.quando) + '] (' + r.tipo + ') ' + r.mensagem +
+        (r.repetiu ? ' (repetiu ' + r.repetiu + ' vezes)' : ''));
+      if (r.de) { linhas.push('   onde: ' + r.de); }
+      if (r.detalhe) { linhas.push('   detalhe: ' + r.detalhe.replace(/\n/g, ' | ')); }
+      linhas.push('');
+    });
+    return linhas.join('\n');
+  }
+
+  function copiar() {
+    var txt = emTexto();
+    var feito = function () { window.alert('Registro copiado. Cole onde quiser (e-mail, mensagem).'); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(feito, function () { copiarNaMao(txt, feito); });
+        return;
+      }
+    } catch (e) { }
+    copiarNaMao(txt, feito);
+  }
+  function copiarNaMao(txt, feito) {
+    try {
+      var a = document.createElement('textarea');
+      a.value = txt;
+      a.style.position = 'fixed';
+      a.style.left = '-9999px';
+      document.body.appendChild(a);
+      a.select();
+      document.execCommand('copy');
+      a.remove();
+      feito();
+    } catch (e) {
+      window.alert('Nao consegui copiar sozinho. Use o botao Baixar registro.');
+    }
+  }
+
+  function baixar() {
+    try {
+      var nome = 'Ocorrencias_do_painel_' +
+        new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.txt';
+      var blob = new Blob([emTexto()], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) { } }, 4000);
+      return nome;
+    } catch (e) { return ''; }
+  }
+
+  function limpar() {
+    if (!window.confirm('Apagar o registro de ocorrencias deste navegador?')) { return false; }
+    lista = [];
+    try { localStorage.removeItem(CHAVE); } catch (e) { }
+    atualizarBotao(false);
+    redesenhar();
+    return true;
+  }
+
+  /* ---------------- ouvir tudo que da errado ---------------- */
+  function ouvirErros() {
+    window.addEventListener('error', function (ev) {
+      try {
+        var alvo = ev && ev.target;
+        if (alvo && alvo !== window && alvo.tagName) {
+          var end = alvo.src || alvo.href || '';
+          registrar('arquivo nao carregou', 'Nao carregou: ' + alvo.tagName.toLowerCase(),
+            { de: end, grupo: 'rede' });
+          return;
+        }
+        registrar('erro de programa', (ev && ev.message) || 'erro sem mensagem', {
+          de: ((ev && ev.filename) || '') + (ev && ev.lineno ? (' linha ' + ev.lineno) : ''),
+          detalhe: (ev && ev.error && ev.error.stack) || ''
+        });
+      } catch (e) { }
+    }, true);
+
+    window.addEventListener('unhandledrejection', function (ev) {
+      try {
+        var m = ev && ev.reason;
+        registrar('falha nao tratada', (m && (m.message || m.details || m.hint)) || texto(m), {
+          detalhe: (m && m.stack) || ''
+        });
+      } catch (e) { }
+    });
+  }
+
+  function ouvirConsole() {
+    if (!window.console) { return; }
+    console.error = function () {
+      var args = Array.prototype.slice.call(arguments);
+      try {
+        registrar('erro avisado no console', args.map(texto).join(' '), {
+          detalhe: (args[0] && args[0].stack) || ''
+        });
+      } catch (e) { }
+      conOriginal.error.apply(null, args);
+    };
+    console.warn = function () {
+      var args = Array.prototype.slice.call(arguments);
+      try { registrar('aviso do console', args.map(texto).join(' '), { grupo: 'aviso' }); } catch (e) { }
+      conOriginal.warn.apply(null, args);
+    };
+  }
+
+  function ouvirRede() {
+    var fOriginal = window.fetch;
+    if (typeof fOriginal === 'function') {
+      window.fetch = function (entrada, opcoes) {
+        var endereco = '';
+        try { endereco = (typeof entrada === 'string') ? entrada : (entrada && entrada.url) || ''; } catch (e) { }
+        var metodo = (opcoes && opcoes.method) || (entrada && entrada.method) || 'GET';
+        return fOriginal.apply(window, arguments).then(function (r) {
+          try {
+            if (r && !r.ok) {
+              registrar('pedido recusado', 'A nuvem respondeu ' + r.status + ' ' + (r.statusText || ''),
+                { de: metodo + ' ' + endereco, grupo: 'rede' });
+            }
+          } catch (e) { }
+          return r;
+        }, function (e) {
+          try {
+            registrar('pedido nao chegou', (e && e.message) || 'falha de rede',
+              { de: metodo + ' ' + endereco, grupo: 'rede' });
+          } catch (x) { }
+          throw e;
+        });
+      };
+    }
+    try {
+      var abrirXHR = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function (metodo, endereco) {
+        this.__p146 = (metodo || '') + ' ' + (endereco || '');
+        this.addEventListener('error', function () {
+          registrar('pedido nao chegou', 'falha de rede', { de: this.__p146, grupo: 'rede' });
+        });
+        this.addEventListener('load', function () {
+          if (this.status >= 400) {
+            registrar('pedido recusado', 'Resposta ' + this.status, { de: this.__p146, grupo: 'rede' });
+          }
+        });
+        return abrirXHR.apply(this, arguments);
+      };
+    } catch (e) { }
+  }
+
+  /* ---------------- ligar tudo ---------------- */
+  ouvirErros();
+  ouvirConsole();
+  ouvirRede();
+  lista = ler();
+  seq = lista.length ? (lista[lista.length - 1].n || lista.length) : 0;
+
+  function ligar() {
+    pronto = true;
+    botao();
+    tela();
+    atualizarBotao(false);
+    document.addEventListener('keydown', function (ev) {
+      if (ev.ctrlKey && ev.altKey && (ev.key === 'e' || ev.key === 'E')) {
+        ev.preventDefault();
+        if (tela().classList.contains('aberto')) { fechar(); } else { abrir(); }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ligar);
+  } else {
+    ligar();
+  }
+
+  window.P146 = {
+    registrar: registrar,
+    abrir: abrir,
+    fechar: fechar,
+    lista: function () { return lista.slice(); },
+    texto: emTexto,
+    baixar: baixar,
+    limpar: limpar,
+    contar: contarErros
+  };
+})();
+</script>
+<!-- FIM PATCH146_PAINEL_DE_ERROS -->
 </body>
 </html>

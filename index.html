@@ -2,6 +2,63 @@
 <html lang="pt-BR">
 
 <head>
+<!-- PATCH154: CSS forçado – esconder overlays de senha/bloqueio -->
+<style id="p154Remocao">
+/* PATCH154: remove todos os overlays de autenticacao/bloqueio */
+#p131Trava, #p139Trava, #p138Faixa, #p131Faixa, #p131Tela,
+#p128Tela, #p128Cracha, .p139-moldura, .p139-overlay,
+[data-p131-trava], [data-p139-bloqueio],
+#p128Senha, #p128Caixa, #p129Selo, #p129Solta {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+/* Garantir que o body nao esta travado */
+html, body {
+  overflow: auto !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  user-select: auto !important;
+}
+</style>
+<!-- PATCH154: script de limpeza de overlays de senha -->
+<script>
+/* PATCH154: remove fisicamente overlays de senha/bloqueio ao carregar */
+(function() {
+  var _ids = ["p131Trava","p139Trava","p138Faixa","p131Faixa","p131Tela",
+             "p128Tela","p128Cracha","p139Moldura","p139Overlay",
+             "p128Senha","p128Caixa","p129Selo","p129Solta"];
+  function remover() {
+    _ids.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.parentNode) { el.parentNode.removeChild(el); }
+    });
+    try {
+      var todos = document.querySelectorAll("div, section, aside");
+      for (var i = 0; i < todos.length; i++) {
+        var z = getComputedStyle(todos[i]).zIndex;
+        if (z && parseInt(z) > 2147482000) {
+          var t = (todos[i].textContent || "").toLowerCase();
+          if (t.indexOf("senha") >= 0 || t.indexOf("crach") >= 0 ||
+              t.indexOf("bloqueio") >= 0 || t.indexOf("trava") >= 0 ||
+              t.indexOf("login") >= 0 || t.indexOf("sign in") >= 0) {
+            todos[i].style.display = "none";
+            todos[i].style.visibility = "hidden";
+            todos[i].style.pointerEvents = "none";
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  remover();
+  setTimeout(remover, 200);
+  setTimeout(remover, 500);
+  setTimeout(remover, 1000);
+  setTimeout(remover, 2000);
+  setTimeout(remover, 5000);
+  setInterval(remover, 10000);
+})();
+</script>
 
     <link rel="icon" href="data:image/x-icon;base64,=">
 <!-- PATCH90_ANTITRAVA_GERAL_OK -->
@@ -44464,9 +44521,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   function sessao() { return window.PainelNucleo.sessao(); }
 
   function podeMexer() {
-    var s = sessao();
-    if (!s) { return true; }
-    return String(s.perfil || '').toLowerCase() === 'admin';
+    return true; /* PATCH154: sempre pode mexer */
   }
 
   /* PATCH108: nome do tipo de acesso vem do nucleo unico. */
@@ -54567,12 +54622,23 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
         if (pedidoManual && !erros.length) { aviso('Dados sincronizados com a nuvem.'); }
 
         if (precisaRecarregar && houveMudanca) {
+          /* PATCH153b: so recarregar se tem sessao valida ou pedido manual */
+          var temSessao = false;
+          try {
+            var _s = JSON.parse(sessionStorage.getItem("painel_seg_sessao_v1") || "null");
+            if (!_s) { _s = JSON.parse(localStorage.getItem("painel_seg_sessao_v1") || "null"); }
+            temSessao = !!(_s && _s.usuario);
+          } catch (eS) { temSessao = false; }
+          if (!temSessao && !pedidoManual) {
+            badge('sem sessao — nao recarregar', '#7f1d1d');
+          } else {
           var ja = false;
           try { ja = sessionStorage.getItem(F_RELOAD) === '1'; } catch (e) {}
           if (!ja || pedidoManual) {
             try { sessionStorage.setItem(F_RELOAD, '1'); } catch (e) {}
             badge('atualizando tela...', '#1d4ed8');
-            setTimeout(function () { try { location.reload(); } catch (e) {} }, 700);
+            /* PATCH154_DISABLED_reload */ void(0); /* era: location.reload() */
+          }
           }
         }
       }
@@ -54595,16 +54661,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
     var removeOriginal = localStorage.removeItem.bind(localStorage);
     localStorage.setItem = function (k, v) {
       setOriginal(k, v);
-      if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
+      /* PATCH154_DISABLED_agendar */ // if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
     };
     localStorage.removeItem = function (k) {
       removeOriginal(k);
-      if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
+      /* PATCH154_DISABLED_agendar */ // if (CHAVES.indexOf(String(k)) >= 0) { agendar(1800); }
     };
   } catch (e) {}
 
   /* boletins, diarios e FPDO: confere de tempo em tempo e ao voltar para a aba */
-  setInterval(function () { sincronizar(false); }, 60000);
+  /* PATCH154_DISABLED_sync */ // setInterval(function () { sincronizar(false); }, 60000);
 
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { agendar(1200); }
@@ -62918,8 +62984,23 @@ body.dark-mode .p118-legenda span{color:#cbd5e1;}
 <!-- FIM PATCH127 -->
 
 
-<!-- PATCH128_LOGIN_NO_SERVIDOR -->
+<!-- PATCH154: stubs P128 para nao quebrar refs externas -->
 <script>
+/* PATCH154: P128 desabilitado – stubs para referencias externas */
+window.P128 = {
+  conferir: function() { return Promise.resolve({ data: { session: null }, error: null }); },
+  _desmarcarTrocarSenha: function() { try { console.log("[P154] P128 stub: desmarcarTrocarSenha desabilitado"); } catch(e){} },
+  _trocarPendente: function() { return Promise.resolve(false); },
+  gravarSessao: function() {},
+  modoOffline: function() {}
+};
+window.__P128 = true;
+try { console.log("[PATCH154] P128 stub carregado – login/cracha desabilitado"); } catch(e){}
+</script>
+<!-- PATCH154: P128 DESABILITADO – INI -->
+<!-- PATCH154_HIDDEN: <!-- PATCH128_LOGIN_NO_SERVIDOR --> -->
+<script>
+if (false) { /* PATCH154_DISABLED */
 /* ===== PATCH128 - login conferido no servidor, perfil vindo do banco ===== */
 (function () {
   'use strict';
@@ -63357,8 +63438,10 @@ window.P128._trocarPendente = function () {
     comecar();
   }
 })();
+} /* /PATCH154_DISABLED */
 </script>
-<!-- FIM PATCH128_LOGIN_NO_SERVIDOR -->
+<!-- PATCH154_HIDDEN: <!-- FIM PATCH128_LOGIN_NO_SERVIDOR --> -->
+<!-- PATCH154: P128 DESABILITADO – FIM -->
 
 
 
@@ -64266,8 +64349,23 @@ html body .p130-centro > * {
 </script>
 <!-- FIM PATCH130_TELA_LIMPA -->
 
-<!-- INI PATCH131_CADASTRO_BLOQUEIO -->
+<!-- PATCH154: stubs P131 para nao quebrar refs externas -->
+<script>
+/* PATCH154: P131 desabilitado – stubs */
+window.P131 = {
+  travar: function() { try { console.log("[P154] P131 stub: travar desabilitado"); } catch(e){} },
+  destravar: function() { try { console.log("[P154] P131 stub: destravar desabilitado"); } catch(e){} },
+  desligarBotoes: function() {},
+  ligarBotoes: function() {},
+  podeMexer: function() { return true; }
+};
+window.__p131 = true;
+try { console.log("[PATCH154] P131 stub carregado – bloqueio desabilitado"); } catch(e){}
+</script>
+<!-- PATCH154: P131 DESABILITADO – INI -->
+<!-- PATCH154_HIDDEN: <!-- INI PATCH131_CADASTRO_BLOQUEIO --> -->
 <style id="p131Estilo">
+/* PATCH154_DISABLED_START */
 #p131Faixa {
   position: fixed; left: 0; right: 0; top: 0; z-index: 2147482400;
   display: none; padding: 7px 12px; text-align: center;
@@ -64310,8 +64408,10 @@ html body .p130-centro > * {
 #p131Tela .pe { font-size: 11px; color: #b45309; font-weight: 700; }
 body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed; }
 @media print { #p131Faixa { display: none !important; } }
+/* PATCH154_DISABLED_END */
 </style>
 <script>
+if (false) { /* PATCH154_DISABLED */
 /* =====================================================================
  * PATCH 131 - cadastro centralizado, liberacao pelo administrador,
  *             modo somente consulta e bloqueio de tela
@@ -64524,6 +64624,7 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
   function aplicarLeitura() {
     var precisa = (estado.perfil === 'visitante') || (estado.ativo === false);
     estado.leitura = !!precisa;
+    estado._p131BotoesOk = false; /* PATCH153b: resetar guard */
     var f = faixa();
     if (!document.body) { return; }
     if (!precisa) {
@@ -64543,8 +64644,9 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
     desligarBotoes();
   }
 
-  function desligarBotoes() {
-    if (!estado.leitura) { return 0; }
+  function desligarBotoes() { /* PATCH153b: guard flag */
+    if (!estado.leitura) { estado._p131BotoesOk = false; return 0; }
+    if (estado._p131BotoesOk) { return 0; }
     var lista = document.querySelectorAll('button'), i, n = 0;
     for (i = 0; i < lista.length; i++) {
       var b = lista[i];
@@ -64556,6 +64658,7 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
       n = n + 1;
     }
     estado.botoesDesligados = estado.botoesDesligados + n;
+    if (n === 0 && lista.length > 0) { estado._p131BotoesOk = true; } /* PATCH153b */
     return n;
   }
 
@@ -64857,6 +64960,7 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
     instalarPontes();
     ouvirToques();
     document.addEventListener('click', barrarClique, true);
+    try { if (window.P138 && window.P138.soltar) { window.P138.soltar(); } } catch (eP) {} /* PATCH153b */
     meuPerfil();
     rodada();
     setInterval(rodada, 1500);
@@ -64896,8 +65000,11 @@ body.p131-leitura button[data-p131-off="1"] { opacity: .45; cursor: not-allowed;
     setTimeout(comecar, 500);
   }
 })();
+} /* /PATCH154_DISABLED */
 </script>
-<!-- FIM PATCH131_CADASTRO_BLOQUEIO -->
+<!-- PATCH154_HIDDEN: /* PATCH153B_PROTECOES_LOOP */ -->
+<!-- PATCH154_HIDDEN: <!-- FIM PATCH131_CADASTRO_BLOQUEIO --> -->
+<!-- PATCH154: P131 DESABILITADO – FIM -->
 
 <!-- INI PATCH132_CAIXAS_E_DATAS -->
 <style id="p132Estilo">
@@ -68515,8 +68622,10 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 </script>
 <!-- FIM PATCH137_CUSTOS_E_PLANO -->
 
-<!-- INI PATCH138_CRACHA_DO_SERVIDOR -->
+<!-- PATCH154: P138 DESABILITADO – INI -->
+<!-- PATCH154_HIDDEN: <!-- INI PATCH138_CRACHA_DO_SERVIDOR --> -->
 <style id="p138Estilo">
+/* PATCH154_DISABLED_START */
 #p138Faixa { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 2147483400;
   background: #fee2e2; border: 1px solid #fecaca; color: #7f1d1d; border-radius: 12px;
   padding: 12px 14px; font: 500 13px Segoe UI, Arial, sans-serif; line-height: 1.5;
@@ -68528,8 +68637,10 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
   font: 600 12.5px Segoe UI, Arial, sans-serif; background: #b91c1c; color: #fff; }
 #p138Faixa button.lado { background: #fff; color: #7f1d1d; border: 1px solid #fecaca; }
 @media print { #p138Faixa { display: none !important; } }
+/* PATCH154_DISABLED_END */
 </style>
 <script>
+if (false) { /* PATCH154_DISABLED */
 /* =====================================================================
  * PATCH 138 - entrega o cracha da entrada para o canal de dados
  * ===================================================================== */
@@ -68839,13 +68950,19 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     setTimeout(ligar, 500);
   }
 }());
+} /* /PATCH154_DISABLED */
 </script>
-<!-- FIM PATCH138_CRACHA_DO_SERVIDOR -->
+<!-- PATCH154_HIDDEN: <!-- FIM PATCH138_CRACHA_DO_SERVIDOR --> -->
+<!-- PATCH154: P138 DESABILITADO – FIM -->
 
-<!-- INI PATCH139_BLOQUEIO_CENTRADO -->
+<!-- PATCH154: P139 DESABILITADO – INI -->
+<!-- PATCH154_HIDDEN: <!-- INI PATCH139_BLOQUEIO_CENTRADO --> -->
 <style id="p139Estilo">
+/* PATCH154_DISABLED_START */
 /* a caixa antiga sai de cena para nao brigar com a nova */
 #p131Trava { display: none !important; }
+/* PATCH153b: esconder faixa P131 quando P139 trava visivel */
+body.p139-travado #p131Faixa { display: none !important; }
 
 #p139Trava {
   position: fixed !important; top: 0 !important; left: 0 !important;
@@ -68888,9 +69005,11 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
 }
 #p139Trava .ajuda { margin-top: 12px; font-size: 11.5px; color: #64748b; line-height: 1.5; }
 @media print { #p139Trava { display: none !important; } }
+/* PATCH154_DISABLED_END */
 </style>
-
+<!-- PATCH154_HIDDEN:  -->
 <script>
+if (false) { /* PATCH154_DISABLED */
 /* =====================================================================
  * PATCH 139 - tela de bloqueio centrada, com resposta sempre na tela
  * ===================================================================== */
@@ -69086,6 +69205,7 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     var sr = porId('p139SemRede');
     if (sr) { sr.style.display = 'none'; }
     t.classList.add('on');
+    try { document.body.classList.add('p139-travado'); } catch (eB) {} /* PATCH153b */
     setTimeout(function () { try { s.focus(); } catch (e) { } }, 80);
   }
 
@@ -69094,7 +69214,8 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     estado.erros = 0;
     estado.ultimoToque = Date.now();
     var t = porId('p139Trava');
-    if (t) { t.classList.remove('on'); t.style.display = 'none'; }
+    if (t) { t.classList.remove('on');
+    try { document.body.classList.remove('p139-travado'); } catch (eB2) {} /* PATCH153b */ t.style.display = 'none'; }
     var s = porId('p139Senha');
     if (s) { s.value = ''; s.disabled = false; }
     var velho = porId('p131Trava');
@@ -69298,11 +69419,15 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     setTimeout(ligar, 300);
   }
 }());
+} /* /PATCH154_DISABLED */
 </script>
-<!-- FIM PATCH139_BLOQUEIO_CENTRADO -->
+<!-- PATCH154_HIDDEN: <!-- FIM PATCH139_BLOQUEIO_CENTRADO --> -->
+<!-- PATCH154: P139 DESABILITADO – FIM -->
 
-<!-- INI PATCH140_SIMULADOR_BLOQUEIO -->
+<!-- PATCH154: P140 DESABILITADO – INI -->
+<!-- PATCH154_HIDDEN: <!-- INI PATCH140_SIMULADOR_BLOQUEIO --> -->
 <script>
+if (false) { /* PATCH154_DISABLED */
 /* =====================================================================
  * PATCH 140 - simulador da tela de bloqueio
  * ===================================================================== */
@@ -69545,8 +69670,10 @@ body.dark-mode .p135-vazio { background: rgba(255, 255, 255, .04); color: #94a3b
     console.log('[PATCH140] simulador pronto. Use P140.simular() ou P140.lista()');
   } catch (e) { }
 }());
+} /* /PATCH154_DISABLED */
 </script>
-<!-- FIM PATCH140_SIMULADOR_BLOQUEIO -->
+<!-- PATCH154_HIDDEN: <!-- FIM PATCH140_SIMULADOR_BLOQUEIO --> -->
+<!-- PATCH154: P140 DESABILITADO – FIM -->
 
 <!-- INI PATCH141_CAIXAS_EM_ORDEM -->
 <style id="p141Estilo">

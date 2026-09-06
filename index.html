@@ -569,6 +569,55 @@ if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard =
 
         var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        /* ──── PATCH156_AUTH_ANONIMO ──── */
+        /* Autenticacao anonima automatica para resolver 401 Unauthorized.
+         * Requer "Anonymous Sign-In" habilitado no Supabase Dashboard:
+         *   Authentication > Providers > Anonymous > Enable
+         * Se nao estiver habilitado, fallback para credenciais de servico.
+         */
+        (async function patch156Auth() {
+            try {
+                /* 1) Tentar login anonimo (mais seguro, sem credenciais no codigo) */
+                var sessao = await _supabase.auth.signInAnonymously();
+                if (sessao && sessao.data && sessao.data.session) {
+                    console.log('[PATCH156] Sessao anonima criada com sucesso. JWT ativo.');
+                    window.dispatchEvent(new Event('patch156-auth-ok'));
+                    return;
+                }
+            } catch (eAnon) {
+                console.warn('[PATCH156] signInAnonymously falhou:', eAnon.message || eAnon);
+                console.warn('[PATCH156] Verifique se "Anonymous Sign-In" esta habilitado no Supabase:');
+                console.warn('[PATCH156]   Authentication > Providers > Anonymous > Enable');
+            }
+
+            /* 2) Fallback: login com credenciais de servico (se configuradas) */
+            var SERVICE_EMAIL = '';
+            var SERVICE_PASSWORD = '';
+            if (SERVICE_EMAIL && SERVICE_PASSWORD) {
+                try {
+                    var sessao2 = await _supabase.auth.signInWithPassword({
+                        email: SERVICE_EMAIL,
+                        password: SERVICE_PASSWORD
+                    });
+                    if (sessao2 && sessao2.data && sessao2.data.session) {
+                        console.log('[PATCH156] Sessao de servico criada via email/senha.');
+                        window.dispatchEvent(new Event('patch156-auth-ok'));
+                        return;
+                    }
+                } catch (eSvc) {
+                    console.warn('[PATCH156] Login de servico falhou:', eSvc.message || eSvc);
+                }
+            }
+
+            /* 3) Nenhuma autenticacao funcionou - app continua com localStorage */
+            console.warn('[PATCH156] ATENCAO: Nenhuma sessao Supabase ativa.');
+            console.warn('[PATCH156] Dados serao salvos apenas no localStorage (local).');
+            console.warn('[PATCH156] Para ativar a nuvem, habilite Anonymous Auth no Supabase:');
+            console.warn('[PATCH156]   https://supabase.com/dashboard > Authentication > Providers > Anonymous');
+        })();
+        /* ──── FIM PATCH156_AUTH_ANONIMO ──── */
+
+
         // Funções auxiliares preventivas
         if (typeof window.popularCustoObraSelect !== 'function') window.popularCustoObraSelect = function() {};
         if (typeof window.renderCTMDashboard !== 'function') window.renderCTMDashboard = function() {};
@@ -5313,6 +5362,12 @@ body.p53-travado { overflow: hidden !important; }
   #p84PrintStandalone img, #p83PrintStandalone img { max-width: 100% !important; height: auto !important; }
 }
 </style>
+<style>
+/* PATCH158 - Ocultar aba Gestao de Obra e Equipe (sem funcionalidade) */
+#btn-tab-cronograma { display: none !important; }
+#tab-cronograma { display: none !important; }
+</style>
+
 </head>
 
 <body class="dark-mode">
@@ -7279,10 +7334,12 @@ COMPONENTES&#9;PAR42X13CP - NATURAL&#9;1310&#9;Parafuso auto atarraxante 4,2 x 1
                             atualizarStatusNuvem('⚡ Supabase Realtime Ativo', 'ok');
                         } else {
                             console.error("Erro no Supabase:", error);
+                            try { localStorage.setItem('obrasDB_v8', JSON.stringify(db)); console.log('[PATCH157] Fallback: dados salvos no localStorage (nuvem indisponivel).'); } catch (eLS) { console.warn('[PATCH157] Fallback localStorage falhou:', eLS); }  /* PATCH157_CLOUD_FALLBACK */
                             atualizarStatusNuvem('⚠️ Erro de Salvamento', 'erro');
                         }
                     } catch (erro) {
                         console.error("Falha ao conectar no Supabase:", erro);
+                        try { localStorage.setItem('obrasDB_v8', JSON.stringify(db)); console.log('[PATCH157] Fallback (catch): dados salvos no localStorage.'); } catch (eLS2) {}  /* PATCH157_CATCH_FALLBACK */
                         atualizarStatusNuvem('⚠️ Supabase Indisponível', 'erro');
                     } finally {
                         sincronizacaoPutEmAndamento = false;
@@ -21860,6 +21917,7 @@ document.getElementById('meu-menu-abas')?.removeAttribute('open');
     obra.obraflow.tarefas = st.tarefas;
     var tt = document.getElementById('ofTitulo');
     if (tt) obra.obraflow.titulo = tt.innerText || '';
+    try { localStorage.setItem('obrasDB_v8', JSON.stringify(db)); } catch (e) { console.warn('[PATCH157] Erro ao salvar EAP no localStorage:', e); }  /* PATCH157_EAP_DIRECT_SAVE */
     try { if (typeof salvarLocalComoBackup === 'function') salvarLocalComoBackup(); } catch (e) {}
     try { if (typeof sincronizarBancoNuvem === 'function') sincronizarBancoNuvem(); } catch (e) {}
   };

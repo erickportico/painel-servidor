@@ -41620,18 +41620,7 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
       '.pr-ass{margin-top:20px;text-align:center;font-size:9pt}' +
       '</style>';
     janelaImpressao.document.open();
-    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Diário de Obra</title>' + cssImpressao + '</head><body>' + h + '
-<!-- PATCH152_AUTH_FIX -->
-<script>
-(function () {
-  'use strict';
-  if (window.__p152) { return; }
-  window.__p152 = true;
-  try { console.log('[PATCH152] Correcoes de autenticacao aplicadas (trocarSenha RLS + bloqueio integrado).'); } catch (e) {}
-})();
-</script>
-
-</body></html>');
+    janelaImpressao.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Diário de Obra</title>' + cssImpressao + '</head><body>' + h + '</body></html>');
     janelaImpressao.document.close();
     var imprimirJanela = function () {
       try { janelaImpressao.focus(); janelaImpressao.print(); } catch (erro) {}
@@ -41708,6 +41697,16 @@ body.dark-mode #p63ResumoTabela table .p75-total-geral td {
   } else {
     iniciar();
   }
+})();
+</script>
+
+<!-- PATCH155: P152 reposicionado – estava dentro de document.write, causando bug -->
+<script>
+(function () {
+  'use strict';
+  if (window.__p152) { return; }
+  window.__p152 = true;
+  try { console.log('[PATCH152] Correcoes de autenticacao aplicadas (trocarSenha RLS + bloqueio integrado).'); } catch (e) {}
 })();
 </script>
 
